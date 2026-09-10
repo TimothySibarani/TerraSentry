@@ -1,0 +1,249 @@
+/* ============================================================================
+   TerraSentry design tokens — SINGLE SOURCE OF TRUTH
+   Derived from DESIGN.md (xAI-inspired, dark-canvas only).
+
+   Rules:
+   - Every color, font, text size, weight, and radius lives here.
+   - Components consume semantic tokens (bg-background, text-muted-foreground,
+     text-display-sm, ...) or the registered brand tokens (bg-canvas, ...).
+   - There is no light mode; :root holds the dark values.
+   ========================================================================== */
+
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/geist-mono";
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   1. Raw brand palette + typography + shape (DESIGN.md front matter)
+   Spacing needs no tokens: Tailwind's 4px scale matches DESIGN.md exactly
+   (xxs 2 · xs 4 · sm 8 · md 12 · lg 16 · xl 24 · 2xl 32 · 3xl 48 · 4xl 64).
+   ------------------------------------------------------------------------- */
+@theme {
+  /* Surfaces */
+  --color-canvas: #0a0a0a;
+  --color-canvas-soft: #1a1c20;
+  --color-canvas-card: #191919;
+  --color-canvas-mid: #363a3f;
+  --color-hairline: #212327;
+
+  /* Text */
+  --color-ink: #ffffff;
+  --color-ink-hover: #fafaf7;
+  --color-body: #dadbdf;
+  --color-body-mid: #7d8187;
+
+  /* Accents (reserved for status, data, and illustrations) */
+  --color-accent-sunset: #ff7a17;
+  --color-accent-sunset-soft: #ffc285;
+  --color-accent-dusk: #7c3aed;
+  --color-accent-twilight: #c4b5fd;
+  --color-accent-breeze: #a0c3ec;
+  --color-accent-midnight: #0d1726;
+
+  /* Outline pills use translucent white, never solid white */
+  --color-outline-on-dark: rgb(255 255 255 / 0.25);
+
+  /* Faces — Universal Sans substitutes per DESIGN.md */
+  --font-sans:
+    "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono:
+    "Geist Mono Variable", "Geist Mono", ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+
+  /* Display ladder (weight 400, negative tracking is the signature) */
+  --text-display-xl: 6rem;
+  --text-display-xl--line-height: 6rem;
+  --text-display-xl--letter-spacing: -2.4px;
+  --text-display-lg: 4.5rem;
+  --text-display-lg--line-height: 4.5rem;
+  --text-display-lg--letter-spacing: -1.8px;
+  --text-display-md: 3rem;
+  --text-display-md--line-height: 3rem;
+  --text-display-md--letter-spacing: -1.2px;
+  --text-display-sm: 2rem;
+  --text-display-sm--line-height: 2.25rem;
+  --text-display-sm--letter-spacing: -0.6px;
+  --text-display-xs: 1.25rem;
+  --text-display-xs--line-height: 1.75rem;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.75rem;
+  --text-body-md: 1rem;
+  --text-body-md--line-height: 1.5rem;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
+
+  /* Mono eyebrow (Geist Mono, uppercase, positive tracking) */
+  --text-caption-mono: 0.875rem;
+  --text-caption-mono--line-height: 1.25rem;
+  --text-caption-mono--letter-spacing: 1.4px;
+  --text-caption-mono-sm: 0.75rem;
+  --text-caption-mono-sm--line-height: 1rem;
+  --text-caption-mono-sm--letter-spacing: 1.2px;
+
+  /* The brand never bolds: flatten the weight scale to 400 */
+  --font-weight-medium: 400;
+  --font-weight-semibold: 400;
+  --font-weight-bold: 400;
+  --font-weight-extrabold: 400;
+  --font-weight-black: 400;
+
+  /* Card / input radius is 8px; buttons and badges are pills via rounded-full */
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ---------------------------------------------------------------------------
+   2. Semantic aliases — shadcn variables resolve to DESIGN.md tokens
+   ------------------------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+
+  --background: var(--color-canvas);
+  --foreground: var(--color-ink);
+
+  --card: var(--color-canvas-card);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-canvas-soft);
+  --popover-foreground: var(--color-ink);
+
+  --primary: var(--color-ink);
+  --primary-foreground: var(--color-canvas);
+  --secondary: var(--color-canvas-soft);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-canvas-soft);
+  --muted-foreground: var(--color-body-mid);
+  --accent: var(--color-canvas-soft);
+  --accent-foreground: var(--color-ink);
+
+  --destructive: var(--color-accent-sunset);
+  --destructive-foreground: var(--color-canvas);
+
+  --border: var(--color-hairline);
+  --input: var(--color-hairline);
+  --ring: var(--color-outline-on-dark);
+
+  /* Status palette — the accents are reserved for exactly this */
+  --status-compliant: var(--color-accent-breeze);
+  --status-risk: var(--color-accent-sunset);
+  --status-review: var(--color-accent-twilight);
+
+  /* Data visualization */
+  --chart-1: var(--color-accent-sunset);
+  --chart-2: var(--color-accent-dusk);
+  --chart-3: var(--color-accent-breeze);
+  --chart-4: var(--color-accent-twilight);
+  --chart-5: var(--color-accent-sunset-soft);
+
+  /* Sidebar (reserved for the cockpit shell) */
+  --sidebar: var(--color-canvas);
+  --sidebar-foreground: var(--color-ink);
+  --sidebar-primary: var(--color-ink);
+  --sidebar-primary-foreground: var(--color-canvas);
+  --sidebar-accent: var(--color-canvas-soft);
+  --sidebar-accent-foreground: var(--color-ink);
+  --sidebar-border: var(--color-hairline);
+  --sidebar-ring: var(--color-outline-on-dark);
+}
+
+/* ---------------------------------------------------------------------------
+   3. Register semantic aliases as Tailwind utilities
+   (@theme inline keeps the var() reference at use site)
+   ------------------------------------------------------------------------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-status-compliant: var(--status-compliant);
+  --color-status-risk: var(--status-risk);
+  --color-status-review: var(--status-review);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* ---------------------------------------------------------------------------
+   4. Base layer
+   ------------------------------------------------------------------------- */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply bg-background;
+  }
+
+  body {
+    @apply bg-background font-sans text-body-md text-foreground antialiased;
+  }
+
+  /* Weight 400 everywhere — hierarchy comes from size, tracking, and color */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-normal;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-sunset);
+    color: var(--color-canvas);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   5. Brand utilities
+   ------------------------------------------------------------------------- */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption-mono);
+  line-height: var(--text-caption-mono--line-height);
+  letter-spacing: var(--text-caption-mono--letter-spacing);
+  text-transform: uppercase;
+}
+
+@utility eyebrow-sm {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption-mono-sm);
+  line-height: var(--text-caption-mono-sm--line-height);
+  letter-spacing: var(--text-caption-mono-sm--letter-spacing);
+  text-transform: uppercase;
+}
