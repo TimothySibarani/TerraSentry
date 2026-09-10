@@ -1,0 +1,12 @@
+{
+  "name": "@terrasentry/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd ../.. && uv run fastapi dev apps/api/src/terrasentry_api/main.py",
+    "lint": "cd ../.. && uv run ruff check apps/api python",
+    "format": "cd ../.. && uv run ruff format apps/api python",
+    "typecheck": "cd ../.. && uv run pyright apps/api/src python",
+    "test": "cd ../.. && uv run pytest apps/api/tests python"
+  }
+}

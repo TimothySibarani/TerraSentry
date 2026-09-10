@@ -1,0 +1,23 @@
+[project]
+name = "terrasentry-core"
+version = "0.1.0"
+description = "TerraSentry domain core: agents, tools, evidence, scoring, and DDS generation."
+requires-python = ">=3.13"
+dependencies = [
+  "terrasentry-integrations",
+  "strands-agents>=1.0",
+  "boto3>=1.35",
+  "pydantic>=2.10",
+  "shapely>=2.1",
+  "pyproj>=3.7",
+]
+
+[project.optional-dependencies]
+agentcore = ["bedrock-agentcore>=0.1"]
+
+[tool.uv.sources]
+terrasentry-integrations = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

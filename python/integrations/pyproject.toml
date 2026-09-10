@@ -1,0 +1,15 @@
+[project]
+name = "terrasentry-integrations"
+version = "0.1.0"
+description = "External gateways: Global Forest Watch, NASA FIRMS, and SAP."
+requires-python = ">=3.13"
+dependencies = [
+  "httpx>=0.28",
+  "tenacity>=9.0",
+  "aiolimiter>=1.2",
+  "pydantic>=2.10",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
