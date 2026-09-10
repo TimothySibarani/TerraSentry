@@ -56,13 +56,23 @@ class Step:
 
 
 class _Emitter:
+    """Emits steps and measures how long the *work* took.
+
+    Time spent inside ``on_step`` is excluded from ``elapsed_ms``. The web panel paces
+    its display by sleeping in that callback, and without this subtraction every step
+    would report the pacing delay as if it were computation -- a number that is not just
+    useless but actively misleading to anyone reading the panel.
+    """
+
     def __init__(self, on_step: StepFn | None) -> None:
         self.on_step = on_step
         self.index = 0
         self.started = time.perf_counter()
+        self.consumer_time = 0.0
         self.steps: list[Step] = []
 
     def emit(self, phase: str, title: str, detail: str = "", status: str = "done", **data: Any) -> Step:
+        elapsed = time.perf_counter() - self.started - self.consumer_time
         step = Step(
             index=self.index,
             phase=phase,
@@ -70,16 +80,18 @@ class _Emitter:
             detail=detail,
             status=status,
             data=data,
-            elapsed_ms=int((time.perf_counter() - self.started) * 1000),
+            elapsed_ms=int(elapsed * 1000),
         )
         self.index += 1
         self.steps.append(step)
         if self.on_step is not None:
+            consumer_start = time.perf_counter()
             try:
                 self.on_step(step)
             except Exception:
                 # A broken consumer must never break a screening.
                 pass
+            self.consumer_time += time.perf_counter() - consumer_start
         return step
 
 
