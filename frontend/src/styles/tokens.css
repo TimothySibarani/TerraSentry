@@ -49,9 +49,29 @@
   --sans: ui-sans-serif, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
 
   --rail-w: 304px;
+
+  /* Tells the browser this is a dark surface, so it renders scrollbars, form controls
+     and focus rings to match instead of painting a bright default over the top. Without
+     it the rail gets a white scrollbar and the search field a white background. */
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
+
+/* Scrollbars are chrome, not content: present when needed, quiet otherwise. */
+.rail, .canvas, pre {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--rule-strong);
+  border: 3px solid var(--base);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+::-webkit-scrollbar-corner { background: transparent; }
 
 html, body { height: 100%; }
 body {
@@ -94,8 +114,9 @@ body {
 
 .rail {
   grid-area: rail; background: var(--rail); border-right: 1px solid var(--rule-strong);
-  overflow-y: auto;
+  overflow-y: auto; overflow-x: hidden;
 }
+.rail::-webkit-scrollbar-thumb { border-color: var(--rail); }
 .rail h3 {
   margin: 0; padding: 9px 14px 7px; font-size: 10px; font-weight: 700;
   letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted);
