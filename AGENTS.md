@@ -4,6 +4,10 @@ Repo architecture, stack decisions, and conventions live in `docs/architecture.m
 Use `pnpm` for JS/TS work and `uv` for Python work. Run `pnpm check` before
 finishing a change.
 
+# Documentations
+- use the find-docs skill to query necessary documentations using context7.
+
+
 # Coding standards
 
 - TypeScript is strict and Effect-first for domain/runtime code: services + Layers, `Schema` at
