@@ -1,0 +1,15 @@
+# Core
+boto3>=1.34            # Amazon Bedrock Converse API
+requests>=2.31         # NASA FIRMS / GFW HTTP clients
+python-dotenv>=1.0
+
+# Geospatial
+shapely>=2.0           # geometry operations
+pyproj>=3.6            # geodesic area -- avoids picking the wrong UTM zone
+
+# Raster analysis (only needed for LocalRasterBackend)
+# rasterio>=1.3
+# numpy>=1.26
+
+# Dev
+pytest>=8.0

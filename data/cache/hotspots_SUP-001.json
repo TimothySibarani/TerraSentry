@@ -1,0 +1,18 @@
+{
+  "_note": "PRE-COMPUTED demo result from NASA FIRMS. Replace with a real windowed pull via tools/firms.py fetch_history.",
+  "supplier_id": "SUP-001",
+  "inside": {
+    "total": 23,
+    "high_confidence": 19,
+    "by_year": {"2021": 1, "2022": 2, "2023": 19, "2024": 1},
+    "peak_month": {"month": "2023-08", "count": 14},
+    "hotspot_ids": ["VIIRS_SNPP_SP:2023-08-14T0612:-0.17420,110.58110"]
+  },
+  "buffer_only": {
+    "total": 6,
+    "high_confidence": 3,
+    "by_year": {"2023": 5, "2024": 1},
+    "peak_month": {"month": "2023-08", "count": 5},
+    "hotspot_ids": []
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "_note": "PRE-COMPUTED demo result. Clean comparison case.",
+  "supplier_id": "SUP-002",
+  "polygon_area_ha": 1966.8,
+  "tree_cover_2020_ha": 1802.3,
+  "loss_since_cutoff_ha": 0.0,
+  "loss_by_year": {},
+  "canopy_threshold_pct": 30,
+  "dataset": "Hansen Global Forest Change (DEMO PLACEHOLDER)",
+  "notes": ["No post-cutoff loss detected."]
+}

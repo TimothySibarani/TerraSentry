@@ -1,0 +1,6 @@
+{
+  "_note": "PRE-COMPUTED demo result. Clean comparison case.",
+  "supplier_id": "SUP-002",
+  "inside": {"total": 0, "high_confidence": 0, "by_year": {}, "peak_month": null, "hotspot_ids": []},
+  "buffer_only": {"total": 2, "high_confidence": 0, "by_year": {"2022": 2}, "peak_month": null, "hotspot_ids": []}
+}
