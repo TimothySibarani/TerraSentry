@@ -22,3 +22,6 @@ data/rasters/
 Thumbs.db
 .vscode/
 .idea/
+
+# Node (the panel lives in frontend/; nothing at the root needs installing)
+node_modules/

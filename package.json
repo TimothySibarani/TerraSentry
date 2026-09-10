@@ -1,0 +1,19 @@
+{
+  "name": "rimba",
+  "private": true,
+  "description": "Agentic supplier due diligence for EUDR compliance. Python owns the agent, the pipeline and the data; the panel in frontend/ is Astro + React.",
+  "scripts": {
+    "setup": "npm --prefix frontend install",
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "serve": "node scripts/py.mjs -m scripts.serve",
+    "test": "node scripts/py.mjs -m pytest tests -q",
+    "screen": "node scripts/py.mjs -m scripts.run_screening --supplier SUP-001",
+    "preflight": "node scripts/py.mjs -m scripts.preflight",
+    "agent": "node scripts/py.mjs -m scripts.run_agent --supplier SUP-001 --dry-run"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

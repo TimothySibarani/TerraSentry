@@ -99,8 +99,14 @@ machine without Node never blocks a demo.
 **Working on the UI:**
 
 ```bash
-cd frontend && npm install && npm run dev
+npm run setup && npm run dev
 ```
+
+The root `package.json` holds no dependencies of its own — it delegates to `frontend/`
+and wraps the Python entry points, so the whole workflow is reachable from one place:
+`npm run dev` / `build` / `serve` / `test` / `screen` / `preflight`. Python remains the
+core: it owns the agent, the pipeline, the rubric and the data. Node is a build-time
+dependency of the panel and nothing else.
 
 Astro serves the interface on 4321 and proxies `/api` and `/data` to the Python service
 on 8765, so run both. Rebuild before a demo:
