@@ -92,7 +92,7 @@ export default function EvidenceMap({ layers }) {
               <rect x="0" y="0" width={W * swipe} height={H} />
             </clipPath>
             <pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-              <line x1="0" y1="0" x2="0" y2="7" stroke="#f0b429" strokeWidth="2.5" opacity="0.55" />
+              <line x1="0" y1="0" x2="0" y2="7" className="map-hatch" strokeWidth="2.5" opacity="0.55" />
             </pattern>
           </defs>
 
@@ -104,7 +104,7 @@ export default function EvidenceMap({ layers }) {
             </>
           ) : (
             <>
-              <rect width={W} height={H} fill="#0b1a14" />
+              <rect width={W} height={H} className="map-ground" />
               <text x={W / 2} y={26} textAnchor="middle" className="map-note">
                 no cached satellite composite — run scripts/fetch_imagery.py
               </text>

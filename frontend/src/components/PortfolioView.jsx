@@ -29,7 +29,7 @@ export default function PortfolioView() {
   useEffect(load, []);
 
   if (loading && !data) return <div className="empty">Screening the supply base…</div>;
-  if (error) return <div className="empty" style={{ color: "var(--bad)" }}>{error}</div>;
+  if (error) return <div className="empty" style={{ color: "var(--nogo)" }}>{error}</div>;
   if (!data) return null;
 
   const t = data.totals;
@@ -93,7 +93,7 @@ export default function PortfolioView() {
               <span className="spacer" />
               <span className="gmeta">
                 {g.supplier_count} suppliers · {fmt(g.volume_m3_month)} m³
-                {g.exceptions ? <> · <b style={{ color: "var(--bad)" }}>{g.exceptions} exception(s)</b></> : null}
+                {g.exceptions ? <> · <b style={{ color: "var(--nogo)" }}>{g.exceptions} exception(s)</b></> : null}
               </span>
             </summary>
             <SupplierTable rows={g.suppliers} />
@@ -105,6 +105,16 @@ export default function PortfolioView() {
           affordable.
         </div>
       </section>
+
+      {/* Where the numbers came from. A compliance tool that will not say this is asking
+          to be taken on faith, and an auditor will not extend it. */}
+      <div className="provenance">
+        <span><b>Tree cover</b> Hansen GFC · cutoff 2020-12-31</span>
+        <span><b>Fire</b> NASA FIRMS VIIRS_SNPP_SP</span>
+        <span><b>Entities</b> synthetic registry — not a live feed</span>
+        <span><b>Rubric</b> deterministic, no model</span>
+        <span><b>Screened</b> {data.generated_at.replace("T", " ").replace("+00:00", "Z")}</span>
+      </div>
     </div>
   );
 }
@@ -175,7 +185,7 @@ function SupplierRow({ r, withAction }) {
       <td className="reason">
         {r.reason}
         {withAction && r.action !== "None" && (
-          <div style={{ marginTop: 4, color: "var(--flag)" }}>→ {r.action}</div>
+          <div style={{ marginTop: 4, color: "var(--escalate)" }}>→ {r.action}</div>
         )}
       </td>
     </tr>

@@ -51,10 +51,38 @@ def test_astro_panel_keeps_every_accessibility_affordance():
     assert 'className="facts"' in FRONTEND, "evidence must read in words before JSON"
 
 
+# Light-theme surfaces the panel actually paints on.
+SURFACES = ("#ffffff", "#f8f8f5", "#f2f2ee", "#fcfcfa")
+BAND_COLOURS = ("#136c3c", "#15537f", "#8a5300", "#b02219", "#7a1712")
+
+
 def test_astro_text_colours_meet_wcag_aa():
-    for colour in ("#7b9789", "#f26a6e", "#8ba396"):
-        assert contrast(colour, PANEL) >= 4.5
-        assert colour in FRONTEND
+    """Text must clear 4.5:1 on every surface it can land on, not just the best one."""
+    for colour in ("#191916", "#63635b", "#0f5c38", *BAND_COLOURS):
+        assert colour in FRONTEND, f"{colour} is not the palette the panel uses"
+        worst = min(contrast(colour, bg) for bg in SURFACES)
+        assert worst >= 4.5, f"{colour} is {worst:.2f}:1 at worst, needs 4.5"
+
+
+def test_band_markers_are_legible_in_reverse():
+    """Pills and the distribution bar put white text on the band colour."""
+    for colour in BAND_COLOURS:
+        ratio = contrast("#ffffff", colour)
+        assert ratio >= 4.5, f"white on {colour} is {ratio:.2f}:1"
+
+
+def test_colour_is_reserved_for_meaning():
+    """Grey carries the interface; colour means risk. If everything is coloured, nothing is."""
+    assert "--go:" in FRONTEND and "--nogo:" in FRONTEND
+    for generic in ("#3ddc97", "#f0b429", "#6ba7d8"):
+        assert generic not in FRONTEND, f"{generic} is the generic dashboard accent, not a risk band"
+
+
+def test_identifiers_are_monospaced():
+    """An ID that renders in body text reads as prose. Real tools do not do that."""
+    assert "--mono:" in FRONTEND
+    for cls in (".sid", ".score", "td.num", ".src"):
+        assert cls in FRONTEND
 
 
 def test_rows_are_keyboard_operable():
@@ -98,3 +126,39 @@ def test_no_emoji_used_as_an_icon():
     """Emoji render differently per platform and carry no accessible name."""
     for ch in "🌲🔥📊✅❌⚠️🚀":
         assert ch not in HTML
+
+
+def test_no_component_references_an_undefined_css_variable():
+    """A dangling var() does not error. It just silently stops working.
+
+    Renaming the palette is exactly when this happens: the stylesheet moves on and the
+    components keep asking for tokens that no longer exist.
+    """
+    import re
+
+    css = (ROOT / "frontend" / "src" / "styles" / "tokens.css").read_text(encoding="utf-8")
+    defined = set(re.findall(r"^\s*(--[a-z-]+):", css, re.M))
+
+    used = set()
+    for path in (ROOT / "frontend" / "src").rglob("*"):
+        if path.suffix in {".jsx", ".astro", ".css"}:
+            used |= set(re.findall(r"var\((--[a-z-]+)\)", path.read_text(encoding="utf-8")))
+
+    dangling = sorted(used - defined)
+    assert not dangling, f"components reference undefined tokens: {dangling}"
+
+
+def test_components_use_tokens_not_raw_hex():
+    """Raw hex in a component is how a palette drifts out of sync with itself."""
+    import re
+
+    offenders = []
+    for path in (ROOT / "frontend" / "src").rglob("*"):
+        if path.suffix != ".jsx":
+            continue
+        for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for match in re.findall(r"#[0-9a-fA-F]{6}", line):
+                # White is a genuine primitive here: SVG halos and reversed text.
+                if match.lower() not in {"#ffffff", "#fff"}:
+                    offenders.append(f"{path.name}:{n} {match}")
+    assert not offenders, f"raw hex outside the palette: {offenders}"

@@ -58,7 +58,7 @@ export default function SupplierDetail({ supplierId }) {
             <div className="map-empty">
               Geometry cannot be mapped — it did not pass validation.
               <br />
-              <span style={{ color: "var(--bad)" }}>{result.problems?.[0] || "invalid geometry"}</span>
+              <span style={{ color: "var(--nogo)" }}>{result.problems?.[0] || "invalid geometry"}</span>
             </div>
           )}
           {result && !blocked && result.map && <EvidenceMap layers={result.map} />}
@@ -73,7 +73,7 @@ export default function SupplierDetail({ supplierId }) {
               </button>
             </small>
           </h2>
-          {error && <div className="empty" style={{ color: "var(--bad)" }}>{error}</div>}
+          {error && <div className="empty" style={{ color: "var(--nogo)" }}>{error}</div>}
           {!steps.length && !error && <div className="empty">Starting…</div>}
           {steps.map((s) => (
             <div key={s.index} className={`step ${s.status}${s.phase === "branch" ? " branch" : ""}`}>
@@ -171,7 +171,7 @@ function BlockedScore({ result }) {
   return (
     <>
       <div className="scorewrap">
-        <div className="score" style={{ color: "var(--bad)" }}>—</div>
+        <div className="score" style={{ color: "var(--nogo)" }}>—</div>
         <div>
           <span className="pill BLOCKED">BLOCKED</span>
           <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>
@@ -194,7 +194,7 @@ function BlockedDds({ result }) {
   return (
     <>
       <div className="body" style={{ paddingBottom: 4 }}>
-        <div style={{ color: "var(--bad)", fontWeight: 700, marginBottom: 4 }}>
+        <div style={{ color: "var(--nogo)", fontWeight: 700, marginBottom: 4 }}>
           Not issuable — assessment blocked
         </div>
         <div style={{ fontSize: 13, color: "var(--muted)" }}>
@@ -231,7 +231,7 @@ function Dds({ dds }) {
   return (
     <>
       <div className="body" style={{ paddingBottom: 4 }}>
-        <div style={{ color: "var(--flag)", fontWeight: 700, marginBottom: 4 }}>
+        <div style={{ color: "var(--escalate)", fontWeight: 700, marginBottom: 4 }}>
           Not issuable — {dds.gaps.length} gap(s)
         </div>
         <div style={{ fontSize: 13, color: "var(--muted)" }}>
