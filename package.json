@@ -1,0 +1,27 @@
+{
+  "name": "terrasentry",
+  "private": true,
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "turbo run format",
+    "lint:py": "uv run ruff check .",
+    "format:py": "uv run ruff format .",
+    "typecheck:py": "uv run pyright",
+    "test:py": "uv run pytest",
+    "gen:api": "uv run python -m terrasentry_api.export_openapi > packages/api-client/openapi.json && pnpm --filter @terrasentry/api-client gen",
+    "check": "pnpm lint && pnpm lint:py && pnpm typecheck && pnpm typecheck:py"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.5",
+    "effect": "catalog:",
+    "turbo": "^2.10.12"
+  }
+}

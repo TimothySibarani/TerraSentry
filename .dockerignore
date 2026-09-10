@@ -1,0 +1,17 @@
+.git
+.venv
+node_modules
+**/node_modules
+**/__pycache__
+.turbo
+**/.turbo
+cdk.out
+dist
+**/dist
+**/.output
+**/.tanstack
+coverage
+htmlcov
+.agents
+.claude
+skills-lock.json

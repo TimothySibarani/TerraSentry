@@ -1,0 +1,24 @@
+packages:
+  - "apps/*"
+  - "infra/*"
+  - "packages/*"
+
+catalog:
+  effect: 4.0.0-rc.113
+  typescript: ^5.9.0
+  "@types/node": ^22.20.2
+
+minimumReleaseAge: 60
+
+allowBuilds:
+  "@biomejs/biome": true
+  "@tailwindcss/oxide": true
+  esbuild: true
+  lightningcss: true
+  msgpackr-extract: true
+  sharp: true
+
+minimumReleaseAgeExclude:
+  - '@effect/vitest@4.0.0-rc.113'
+  - '@types/node@22.20.2'
+  - effect@4.0.0-rc.113
