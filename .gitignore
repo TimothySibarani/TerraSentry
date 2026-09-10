@@ -22,3 +22,8 @@ data/rasters/
 Thumbs.db
 .vscode/
 .idea/
+
+.agents/
+.claude/
+
+skills-lock.json
