@@ -60,7 +60,8 @@ src/rimba/scoring.py     Deterministic risk rubric  <- NOT an LLM
 src/rimba/dds.py         TRACES-aligned Due Diligence Statement builder
 src/rimba/evidence.py    Evidence ledger with citations
 src/rimba/agent/         Bedrock orchestration loop, tool specs, prompts
-web/index.html           Local web panel (reasoning stream, scorecard, evidence, DDS)
+web/index.html           Local web panel (map, reasoning stream, scorecard, evidence, DDS)
+web/map.js               Evidence map renderer -- no Leaflet, no CDN, works offline
 scripts/                 CLI + local server entrypoints
 tests/                   Unit tests for the deterministic parts
 ```
@@ -95,6 +96,21 @@ The pipeline finishes in about 10 ms, which is too fast to read, so the panel pa
 display (toggle it off with the *paced* checkbox). The steps and their payloads are real
 and unmodified; each shows its true elapsed time. Never describe the pacing as
 processing time.
+
+### Satellite imagery for the map
+
+```bash
+python -m scripts.fetch_imagery --supplier SUP-001 --search-only
+```
+
+Lists real Sentinel-2 scenes over the plot from the AWS Registry of Open Data, via the
+Earth-search STAC API — no key, no cost. Drop `--search-only` to render before/after PNGs
+into `data/cache/imagery/`, which the map picks up automatically (needs `pip install rasterio numpy`).
+
+**Not Google Maps, on purpose.** Google discards old imagery once new imagery arrives,
+stores no acquisition date, and its terms forbid storing and re-serving the images —
+which is exactly what an evidence pack must do. Sentinel-2 is dated, archived to 2017,
+free, and lives on AWS.
 
 ### Try it — command line
 
@@ -136,6 +152,10 @@ tools do the real work. Build the tools first or the agent has nothing to orches
 - **Do not build authentication.** Not scored, eats a week.
 - **Do not build a real SAP Ariba integration.** Mock the interface; show where it plugs in.
 - **Pick one commodity and one province.** Breadth is not scored; a working depth demo is.
+- **Kill the old server before starting a new one.** Python sets `SO_REUSEADDR`, and on
+  Windows that lets a second process bind a port the first is already on. Both answer,
+  and the stale one shadows your fixes. `scripts/serve.py` now refuses to start rather
+  than shadow — but if you launch it another way, check the port.
 - FIRMS `day_range` is capped at **5 days per request** — history requires windowed calls. Already
   handled in `tools/firms.py`, but budget for the transaction limit (5000 per 10 minutes).
 

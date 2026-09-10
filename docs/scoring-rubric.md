@@ -47,7 +47,7 @@ produce a better score than one that does the work and finds nothing.
 
 | Supplier | Score | Band |
 |---|---|---|
-| SUP-001 PT Rimba Lestari Jaya | 56.7 | ESCALATE |
+| SUP-001 PT Rimba Lestari Jaya | 56.2 | ESCALATE |
 | SUP-002 PT Hijau Nusantara Mandiri | 100.0 | GO |
 
 Keep this table updated. **If you change a weight, the pitch narrative changes too** --

@@ -3,16 +3,269 @@
   "supplier_id": "SUP-001",
   "inside": {
     "total": 23,
-    "high_confidence": 19,
-    "by_year": {"2021": 1, "2022": 2, "2023": 19, "2024": 1},
-    "peak_month": {"month": "2023-08", "count": 14},
-    "hotspot_ids": ["VIIRS_SNPP_SP:2023-08-14T0612:-0.17420,110.58110"]
+    "high_confidence": 20,
+    "by_year": {
+      "2021": 1,
+      "2022": 2,
+      "2023": 19,
+      "2024": 1
+    },
+    "peak_month": {
+      "month": "2023-08",
+      "count": 14
+    },
+    "hotspot_ids": [
+      "VIIRS_SNPP_SP:2023-08-14T0612:-0.17420,110.58110"
+    ],
+    "points": [
+      {
+        "lon": 110.57611,
+        "lat": -0.18345,
+        "acq_date": "2023-08-14",
+        "confidence": "h",
+        "frp": 33.9,
+        "id": "VIIRS_SNPP_SP:2023-08-14:-0.18345,110.57611"
+      },
+      {
+        "lon": 110.56785,
+        "lat": -0.18217,
+        "acq_date": "2023-08-17",
+        "confidence": "h",
+        "frp": 32.1,
+        "id": "VIIRS_SNPP_SP:2023-08-17:-0.18217,110.56785"
+      },
+      {
+        "lon": 110.56347,
+        "lat": -0.18438,
+        "acq_date": "2023-08-13",
+        "confidence": "h",
+        "frp": 17.5,
+        "id": "VIIRS_SNPP_SP:2023-08-13:-0.18438,110.56347"
+      },
+      {
+        "lon": 110.57205,
+        "lat": -0.17946,
+        "acq_date": "2023-08-25",
+        "confidence": "h",
+        "frp": 7.1,
+        "id": "VIIRS_SNPP_SP:2023-08-25:-0.17946,110.57205"
+      },
+      {
+        "lon": 110.57388,
+        "lat": -0.18347,
+        "acq_date": "2023-08-13",
+        "confidence": "h",
+        "frp": 25.3,
+        "id": "VIIRS_SNPP_SP:2023-08-13:-0.18347,110.57388"
+      },
+      {
+        "lon": 110.56384,
+        "lat": -0.18207,
+        "acq_date": "2023-08-15",
+        "confidence": "h",
+        "frp": 30.8,
+        "id": "VIIRS_SNPP_SP:2023-08-15:-0.18207,110.56384"
+      },
+      {
+        "lon": 110.57277,
+        "lat": -0.17413,
+        "acq_date": "2023-08-25",
+        "confidence": "h",
+        "frp": 23.3,
+        "id": "VIIRS_SNPP_SP:2023-08-25:-0.17413,110.57277"
+      },
+      {
+        "lon": 110.56471,
+        "lat": -0.1781,
+        "acq_date": "2023-08-17",
+        "confidence": "h",
+        "frp": 37.2,
+        "id": "VIIRS_SNPP_SP:2023-08-17:-0.17810,110.56471"
+      },
+      {
+        "lon": 110.56213,
+        "lat": -0.18171,
+        "acq_date": "2023-08-17",
+        "confidence": "h",
+        "frp": 33.4,
+        "id": "VIIRS_SNPP_SP:2023-08-17:-0.18171,110.56213"
+      },
+      {
+        "lon": 110.5689,
+        "lat": -0.18486,
+        "acq_date": "2023-08-11",
+        "confidence": "h",
+        "frp": 21.1,
+        "id": "VIIRS_SNPP_SP:2023-08-11:-0.18486,110.56890"
+      },
+      {
+        "lon": 110.56735,
+        "lat": -0.1738,
+        "acq_date": "2023-08-24",
+        "confidence": "h",
+        "frp": 22.8,
+        "id": "VIIRS_SNPP_SP:2023-08-24:-0.17380,110.56735"
+      },
+      {
+        "lon": 110.57407,
+        "lat": -0.18393,
+        "acq_date": "2023-08-26",
+        "confidence": "h",
+        "frp": 33.9,
+        "id": "VIIRS_SNPP_SP:2023-08-26:-0.18393,110.57407"
+      },
+      {
+        "lon": 110.57495,
+        "lat": -0.17763,
+        "acq_date": "2023-08-09",
+        "confidence": "h",
+        "frp": 17.1,
+        "id": "VIIRS_SNPP_SP:2023-08-09:-0.17763,110.57495"
+      },
+      {
+        "lon": 110.5689,
+        "lat": -0.17643,
+        "acq_date": "2023-08-25",
+        "confidence": "h",
+        "frp": 34.9,
+        "id": "VIIRS_SNPP_SP:2023-08-25:-0.17643,110.56890"
+      },
+      {
+        "lon": 110.57238,
+        "lat": -0.17829,
+        "acq_date": "2023-09-04",
+        "confidence": "h",
+        "frp": 8.4,
+        "id": "VIIRS_SNPP_SP:2023-09-04:-0.17829,110.57238"
+      },
+      {
+        "lon": 110.56744,
+        "lat": -0.17841,
+        "acq_date": "2023-09-09",
+        "confidence": "h",
+        "frp": 17.6,
+        "id": "VIIRS_SNPP_SP:2023-09-09:-0.17841,110.56744"
+      },
+      {
+        "lon": 110.57771,
+        "lat": -0.18273,
+        "acq_date": "2023-09-04",
+        "confidence": "h",
+        "frp": 6.2,
+        "id": "VIIRS_SNPP_SP:2023-09-04:-0.18273,110.57771"
+      },
+      {
+        "lon": 110.56765,
+        "lat": -0.17798,
+        "acq_date": "2023-09-05",
+        "confidence": "h",
+        "frp": 7.8,
+        "id": "VIIRS_SNPP_SP:2023-09-05:-0.17798,110.56765"
+      },
+      {
+        "lon": 110.56646,
+        "lat": -0.18352,
+        "acq_date": "2023-09-06",
+        "confidence": "h",
+        "frp": 4.1,
+        "id": "VIIRS_SNPP_SP:2023-09-06:-0.18352,110.56646"
+      },
+      {
+        "lon": 110.57946,
+        "lat": -0.17017,
+        "acq_date": "2021-09-14",
+        "confidence": "n",
+        "frp": 11.6,
+        "id": "VIIRS_SNPP_SP:2021-09-14:-0.17017,110.57946"
+      },
+      {
+        "lon": 110.58936,
+        "lat": -0.18749,
+        "acq_date": "2022-08-03",
+        "confidence": "n",
+        "frp": 5.3,
+        "id": "VIIRS_SNPP_SP:2022-08-03:-0.18749,110.58936"
+      },
+      {
+        "lon": 110.57951,
+        "lat": -0.17922,
+        "acq_date": "2022-09-21",
+        "confidence": "h",
+        "frp": 11.2,
+        "id": "VIIRS_SNPP_SP:2022-09-21:-0.17922,110.57951"
+      },
+      {
+        "lon": 110.58142,
+        "lat": -0.17117,
+        "acq_date": "2024-08-19",
+        "confidence": "n",
+        "frp": 10.4,
+        "id": "VIIRS_SNPP_SP:2024-08-19:-0.17117,110.58142"
+      }
+    ]
   },
   "buffer_only": {
     "total": 6,
     "high_confidence": 3,
-    "by_year": {"2023": 5, "2024": 1},
-    "peak_month": {"month": "2023-08", "count": 5},
-    "hotspot_ids": []
-  }
+    "by_year": {
+      "2023": 5,
+      "2024": 1
+    },
+    "peak_month": {
+      "month": "2023-08",
+      "count": 5
+    },
+    "hotspot_ids": [],
+    "points": [
+      {
+        "lon": 110.56425,
+        "lat": -0.14317,
+        "acq_date": "2023-08-11",
+        "confidence": "n",
+        "frp": 11.4,
+        "id": "VIIRS_SNPP_SP:2023-08-11:-0.14317,110.56425"
+      },
+      {
+        "lon": 110.57477,
+        "lat": -0.147,
+        "acq_date": "2023-08-25",
+        "confidence": "n",
+        "frp": 4.6,
+        "id": "VIIRS_SNPP_SP:2023-08-25:-0.14700,110.57477"
+      },
+      {
+        "lon": 110.57897,
+        "lat": -0.14061,
+        "acq_date": "2023-08-21",
+        "confidence": "n",
+        "frp": 4.9,
+        "id": "VIIRS_SNPP_SP:2023-08-21:-0.14061,110.57897"
+      },
+      {
+        "lon": 110.56954,
+        "lat": -0.14579,
+        "acq_date": "2023-08-21",
+        "confidence": "n",
+        "frp": 12.8,
+        "id": "VIIRS_SNPP_SP:2023-08-21:-0.14579,110.56954"
+      },
+      {
+        "lon": 110.57664,
+        "lat": -0.14237,
+        "acq_date": "2023-08-22",
+        "confidence": "n",
+        "frp": 6.0,
+        "id": "VIIRS_SNPP_SP:2023-08-22:-0.14237,110.57664"
+      },
+      {
+        "lon": 110.57213,
+        "lat": -0.14047,
+        "acq_date": "2023-08-20",
+        "confidence": "n",
+        "frp": 7.5,
+        "id": "VIIRS_SNPP_SP:2023-08-20:-0.14047,110.57213"
+      }
+    ]
+  },
+  "_synthetic_geometry_note": "Point coordinates are SYNTHETIC, generated to match the counts above for the demo map. Replace with a real FIRMS pull."
 }

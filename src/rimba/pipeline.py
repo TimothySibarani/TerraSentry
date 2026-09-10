@@ -157,6 +157,40 @@ def boundary_loss_ha(forest: ForestChangeResult) -> float:
     return forest.boundary_loss_ha
 
 
+def build_map_layers(supplier: dict[str, Any], geom, hotspots: dict[str, Any]) -> dict[str, Any]:
+    """Assemble everything the map panel needs to draw the evidence.
+
+    Returns plain GeoJSON and point lists -- no tiles, no projection, no styling. The
+    renderer in ``web/map.js`` owns all of that, so this stays testable and the panel can
+    be swapped without touching Python.
+
+    Imagery is referenced by path, never fetched here. If a pre-rendered composite exists
+    in ``data/cache/imagery/`` it is listed; if not, the map simply draws without it.
+    Demo Day must never wait on a satellite scene download.
+    """
+    sid = supplier["supplier_id"]
+    layers: dict[str, Any] = {
+        "plot": geo.to_geojson_feature(geom, {"supplier_id": sid, "role": "plot"}),
+        "adjacent": [],
+        "hotspots_inside": hotspots.get("inside", {}).get("points", []),
+        "hotspots_buffer": hotspots.get("buffer_only", {}).get("points", []),
+        "imagery": [],
+    }
+
+    for parcel_id in supplier.get("adjacent_parcels") or []:
+        path = DATA / "polygons" / f"{parcel_id}.geojson"
+        if path.exists():
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            raw.setdefault("properties", {})["role"] = "adjacent"
+            layers["adjacent"].append(raw)
+
+    manifest = DATA / "cache" / "imagery" / f"{sid}.json"
+    if manifest.exists():
+        layers["imagery"] = json.loads(manifest.read_text(encoding="utf-8")).get("scenes", [])
+
+    return layers
+
+
 # -- the pipeline ---------------------------------------------------------
 
 
@@ -383,6 +417,7 @@ def run(supplier_id: str, on_step: StepFn | None = None) -> dict[str, Any]:
         "supplier_id": sid,
         "geometry": report.to_dict(),
         "geojson": geo.to_geojson_feature(geom, {"supplier_id": sid}),
+        "map": build_map_layers(supplier, geom, hotspots),
         "forest_change": forest.to_dict(),
         "hotspots": inside,
         "adjacent_parcel_branch_taken": branch_taken,

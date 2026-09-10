@@ -28,7 +28,7 @@ import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -36,8 +36,30 @@ sys.path.insert(0, str(ROOT / "src"))
 from rimba import pipeline  # noqa: E402
 
 WEB = ROOT / "web"
+DATA_DIR = ROOT / "data"
 DEFAULT_PORT = 8765
+
+# Only these are servable from data/. Everything else in there is either input the panel
+# does not need or, in a real deployment, supplier data that has no business on a URL.
+SERVABLE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".geojson", ".json"}
+CONTENT_TYPES = {
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+    ".webp": "image/webp", ".geojson": "application/geo+json",
+    ".json": "application/json", ".js": "text/javascript; charset=utf-8",
+}
 DEFAULT_PACE_MS = 550
+
+
+class Server(ThreadingHTTPServer):
+    """Refuses to start if the port is already taken.
+
+    Python enables SO_REUSEADDR by default, and on Windows that lets a second process
+    bind a port another process is already listening on. Both then answer, whichever the
+    OS picks first -- so a stale server from an earlier run silently shadows the new one
+    and you debug phantom 404s against code you already fixed. Fail loudly instead.
+    """
+
+    allow_reuse_address = False
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -74,6 +96,14 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, html, "text/html; charset=utf-8")
             return
 
+        if route == "/map.js":
+            self._send(200, (WEB / "map.js").read_bytes(), CONTENT_TYPES[".js"])
+            return
+
+        if route.startswith("/data/"):
+            self._serve_data(route)
+            return
+
         if route == "/api/suppliers":
             self._json(pipeline.list_suppliers())
             return
@@ -93,6 +123,27 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         self._send(404, b"not found", "text/plain; charset=utf-8")
+
+    # -- static data --------------------------------------------------------
+
+    def _serve_data(self, route: str) -> None:
+        """Serve cached imagery and geometry, and nothing else.
+
+        Resolves the path and confirms it is still inside data/ before reading. Without
+        that check a request for /data/../../.env walks straight out of the tree -- the
+        oldest bug in static file serving, and worth the four lines.
+        """
+        rel = unquote(route[len("/data/"):])
+        target = (DATA_DIR / rel).resolve()
+        try:
+            target.relative_to(DATA_DIR.resolve())
+        except ValueError:
+            self._send(403, b"outside data directory", "text/plain; charset=utf-8")
+            return
+        if target.suffix.lower() not in SERVABLE_SUFFIXES or not target.is_file():
+            self._send(404, b"not found", "text/plain; charset=utf-8")
+            return
+        self._send(200, target.read_bytes(), CONTENT_TYPES.get(target.suffix.lower(), "application/octet-stream"))
 
     # -- SSE --------------------------------------------------------------
 
@@ -144,7 +195,13 @@ def main() -> None:
             raise SystemExit(2)
 
     url = f"http://localhost:{port}"
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    try:
+        server = Server(("127.0.0.1", port), Handler)
+    except OSError as exc:
+        print(f"Cannot bind port {port}: {exc}")
+        print("Another RIMBA server is probably still running. Stop it, or pass a different port:")
+        print(f"    python -m scripts.serve {port + 1}")
+        raise SystemExit(1)
     print(f"RIMBA panel  ->  {url}")
     print("Ctrl+C to stop.\n")
     try:
