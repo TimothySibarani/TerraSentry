@@ -8,7 +8,7 @@
   :root {
     --bg: #0e1512; --panel: #16201c; --panel-2: #1c2823; --line: #2a3a33;
     --text: #e8f0ec; --muted: #8ba396; --accent: #3ddc97; --flag: #f0b429;
-    --bad: #e5484d; --info: #6ba7d8; --radius: 10px;
+    --bad: #f26a6e; --info: #6ba7d8; --radius: 10px;
   }
   * { box-sizing: border-box; }
   body {
@@ -42,6 +42,31 @@
   .body { padding: 14px 16px; }
   .empty { color: var(--muted); font-size: 14px; padding: 26px 16px; text-align: center; }
   [hidden] { display: none !important; }
+
+  /* Keyboard operability. Every interactive control needs a focus ring, and the sticky
+     header must not cover the focused element when tab-scrolling reaches it
+     (WCAG 2.2 "focus not obscured"). */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  tr.row:focus-visible { outline-offset: -2px; }
+  tr.row, details > summary { scroll-margin-top: 88px; }
+
+  /* Motion is decoration here, never information. Honour the OS setting. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* A wide table must scroll inside its own box rather than pushing the page sideways. */
+  .tablewrap { overflow-x: auto; }
+  .tablewrap table { min-width: 640px; }
 
   /* ---------- portfolio ---------- */
   .wrap { padding: 18px 22px 60px; display: flex; flex-direction: column; gap: 18px; }
@@ -125,7 +150,7 @@
   .step.info .dot { background: var(--info); }
   .step .title { font-weight: 650; font-size: 15px; }
   .step .detail { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
-  .step .meta { color: #5f7a6e; font-size: 11.5px; margin-top: 5px; letter-spacing: 0.4px; text-transform: uppercase; }
+  .step .meta { color: #7b9789; font-size: 11.5px; margin-top: 5px; letter-spacing: 0.4px; text-transform: uppercase; }
   .step.branch { background: linear-gradient(90deg, rgba(240,180,41,0.13), transparent); border-left: 3px solid var(--flag); }
   .step.branch .title::before { content: "UNPLANNED  "; color: var(--flag); font-size: 11px; letter-spacing: 1.5px; }
 
@@ -150,6 +175,11 @@
   details.ev[open] summary::before { content: "▾ "; }
   details.ev[open] summary { color: var(--accent); }
   .src { color: var(--muted); font-size: 11.5px; display: block; margin-top: 2px; }
+  .facts { margin: 0; padding: 10px 16px 4px; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 12.5px; }
+  .facts dt { color: var(--muted); }
+  .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+  details.raw { border: none; }
+  details.raw > summary { padding: 6px 16px 12px; font-size: 11.5px; color: var(--muted); }
   pre { margin: 0; padding: 12px 16px; background: #0a100d; font-size: 11.5px; overflow-x: auto; color: #b8ccc2; line-height: 1.45; }
   .gap { padding: 12px 16px; border-bottom: 1px solid var(--line); }
   .gap:last-child { border-bottom: none; }
@@ -291,8 +321,15 @@ async function loadPortfolio() {
       ${table(g.suppliers, false)}
     </details>`).join("");
 
-  document.querySelectorAll("tr.row").forEach(tr =>
-    tr.addEventListener("click", () => openDetail(tr.dataset.sid, tr.dataset.name)));
+  document.querySelectorAll("tr.row").forEach(tr => {
+    const open = () => openDetail(tr.dataset.sid, tr.dataset.name);
+    tr.addEventListener("click", open);
+    // A div-with-onclick is invisible to keyboard and screen-reader users. Enter and
+    // Space are what role="button" promises, so both have to actually work.
+    tr.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+    });
+  });
   $("refresh").disabled = false;
 }
 
@@ -305,12 +342,14 @@ function bandColor(b) {
 }
 
 function table(rows, withAction) {
-  return `<table><thead><tr>
+  return `<div class="tablewrap"><table><thead><tr>
       <th>Supplier</th><th>Band</th><th class="num">Score</th><th class="num">Area</th>
       <th class="num">m³/mo</th><th>${withAction ? "Why / what to do" : "Finding"}</th>
     </tr></thead><tbody>
     ${rows.map(r => `
-      <tr class="row" data-sid="${esc(r.supplier_id)}" data-name="${esc(r.legal_name)}">
+      <tr class="row" tabindex="0" role="button"
+          aria-label="${esc(r.legal_name)}, ${r.band.replace("_", " ")}${r.score === null ? "" : ", score " + r.score}. Open assessment."
+          data-sid="${esc(r.supplier_id)}" data-name="${esc(r.legal_name)}">
         <td>${esc(r.legal_name)}
           ${r.tier === "smallholder" ? '<span class="tag">smallholder</span>' : ""}
           ${r.geolocation_requirement === "point" ? '<span class="tag">GPS point</span>' : ""}
@@ -321,7 +360,7 @@ function table(rows, withAction) {
         <td class="num">${fmt(r.volume_m3_month)}</td>
         <td class="reason">${esc(r.reason)}${withAction && r.action !== "None" ? `<div style="margin-top:4px;color:var(--flag)">→ ${esc(r.action)}</div>` : ""}</td>
       </tr>`).join("")}
-    </tbody></table>`;
+    </tbody></table></div>`;
 }
 
 /* ---------------- detail ---------------- */
@@ -388,12 +427,46 @@ function renderDds(dds) {
          <div class="req">${esc(g.requirement)}</div><div class="why">${esc(g.why)}</div></div>`).join("")}`;
 }
 
+const LABEL = (k) => k.replace(/_/g, " ").replace(/\w/g, c => c.toUpperCase());
+
+function facts(artifact, limit = 8) {
+  // Raw JSON is the right thing for an auditor and the wrong thing on a projector.
+  // Flatten the scalars into a readable list; the untouched artifact stays one
+  // disclosure deeper for anyone who wants to verify it.
+  const out = [];
+  const walk = (obj, prefix = "") => {
+    for (const [k, v] of Object.entries(obj || {})) {
+      if (out.length >= limit || v === null || v === undefined || v === "") continue;
+      if (Array.isArray(v)) {
+        if (v.length && typeof v[0] !== "object")
+          out.push([LABEL(prefix + k), v.slice(0, 3).join(", ") + (v.length > 3 ? ` +${v.length - 3} more` : "")]);
+        else if (v.length) out.push([LABEL(prefix + k), `${v.length} item(s)`]);
+      } else if (typeof v === "object") {
+        walk(v, k + " ");
+      } else if (typeof v === "boolean") {
+        out.push([LABEL(prefix + k), v ? "yes" : "no"]);
+      } else {
+        out.push([LABEL(prefix + k), String(v)]);
+      }
+    }
+  };
+  walk(artifact);
+  return out;
+}
+
 function renderEvidence(ev) {
   if (!ev) return;
   $("evcount").textContent = `(${ev.evidence_count})`;
-  $("evidence").innerHTML = ev.evidence.map(e => `
-    <details class="ev"><summary>${esc(e.claim)}<span class="src">${esc(e.source)} · ${esc(e.claim_id)}</span></summary>
-    <pre>${esc(JSON.stringify(e.artifact, null, 2))}</pre></details>`).join("");
+  $("evidence").innerHTML = ev.evidence.map(e => {
+    const rows = facts(e.artifact);
+    return `<details class="ev">
+      <summary>${esc(e.claim)}<span class="src">${esc(e.source)} · ${esc(e.claim_id)}</span></summary>
+      ${rows.length ? `<dl class="facts">${rows.map(([k, v]) =>
+        `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>` : ""}
+      <details class="raw"><summary>Raw artifact (JSON)</summary>
+        <pre>${esc(JSON.stringify(e.artifact, null, 2))}</pre></details>
+    </details>`;
+  }).join("");
 }
 
 function renderBlocked(r) {
