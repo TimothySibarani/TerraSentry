@@ -89,6 +89,7 @@ class Orchestrator:
         system_prompt: str,
         max_turns: int = 12,
         temperature: float = 0.2,
+        ledger: EvidenceLedger | None = None,
     ) -> None:
         self.client = client
         self.model_id = model_id
@@ -97,9 +98,12 @@ class Orchestrator:
         self.system_prompt = system_prompt
         self.max_turns = max_turns
         self.temperature = temperature
+        # Tools own the ledger: a claim exists only because a tool observed something.
+        # Pass the session's ledger in so RunResult carries the real one.
+        self.ledger = ledger
 
     def run(self, supplier: str, task: str) -> RunResult:
-        ledger = EvidenceLedger(supplier=supplier)
+        ledger = self.ledger if self.ledger is not None else EvidenceLedger(supplier=supplier)
         messages: list[dict[str, Any]] = [{"role": "user", "content": [{"text": task}]}]
         turns: list[TurnRecord] = []
         final_text = ""
@@ -139,7 +143,7 @@ class Orchestrator:
                 log.info("tool_use %s(%s)", name, json.dumps(args)[:200])
 
                 try:
-                    result = self._invoke(name, args, ledger)
+                    result = self._invoke(name, args)
                     status = "success"
                 except Exception as exc:  # surfaced to the model so it can adapt
                     result = {"error": f"{type(exc).__name__}: {exc}"}
@@ -168,15 +172,11 @@ class Orchestrator:
             ledger=ledger,
         )
 
-    def _invoke(self, name: str, args: dict[str, Any], ledger: EvidenceLedger) -> dict[str, Any]:
+    def _invoke(self, name: str, args: dict[str, Any]) -> dict[str, Any]:
         fn = self.tools.get(name)
         if fn is None:
             raise KeyError(f"Unknown tool: {name}")
-        # Tools that want to record citations accept the ledger; the rest ignore it.
-        try:
-            return fn(**args, ledger=ledger)
-        except TypeError:
-            return fn(**args)
+        return fn(**args)
 
 
 def _text_of(message: dict[str, Any]) -> str:

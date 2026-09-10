@@ -129,6 +129,9 @@ def load_cached_forest_change(supplier_id: str) -> ForestChangeResult:
         tree_cover_2020_ha=raw["tree_cover_2020_ha"],
         loss_since_cutoff_ha=raw["loss_since_cutoff_ha"],
         loss_by_year=raw.get("loss_by_year", {}),
+        boundary_loss_ha=raw.get("boundary_loss_ha", 0.0),
+        interior_loss_ha=raw.get("interior_loss_ha", 0.0),
+        boundary_adjoins_parcel=raw.get("boundary_adjoins_parcel"),
         canopy_threshold=raw.get("canopy_threshold_pct", 30),
         dataset=raw.get("dataset", "Hansen Global Forest Change"),
         backend="cache",
@@ -141,20 +144,17 @@ def load_cached_hotspots(supplier_id: str) -> dict:
 
 
 def boundary_loss_ha(forest: ForestChangeResult) -> float:
-    """Pull boundary-adjacent loss out of the analysis notes.
+    """Loss adjoining a shared boundary, in hectares.
 
-    TODO(geospatial owner): once the raster pipeline is real, compute this properly by
-    intersecting the loss mask with an inward buffer of the polygon edge. Parsing a note
-    is demo scaffolding, not a design.
+    Reads a real field. This used to parse a float out of an English sentence in the
+    analysis notes, which meant the entire adjacent-parcel branch -- the centrepiece of
+    the pitch -- silently stopped firing if anyone reworded a note. Never make a
+    load-bearing decision depend on prose.
+
+    TODO(geospatial owner): populate this in the raster pipeline by intersecting the
+    loss mask with an inward buffer of the polygon edge.
     """
-    for note in forest.notes:
-        if "boundary" in note.lower():
-            for token in note.replace("(", " ").replace(")", " ").split():
-                try:
-                    return float(token)
-                except ValueError:
-                    continue
-    return 0.0
+    return forest.boundary_loss_ha
 
 
 # -- the pipeline ---------------------------------------------------------

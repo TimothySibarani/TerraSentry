@@ -16,5 +16,8 @@
   "notes": [
     "31.0 ha of the loss forms a contiguous regular-edged block in the plot interior.",
     "7.2 ha sits on the northern boundary, adjoining parcel PARCEL-N-114 -- attribution ambiguous from geometry alone."
-  ]
+  ],
+  "boundary_loss_ha": 7.2,
+  "interior_loss_ha": 31.0,
+  "boundary_adjoins_parcel": "PARCEL-N-114"
 }

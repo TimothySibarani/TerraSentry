@@ -60,6 +60,12 @@ class ForestChangeResult:
     tree_cover_2020_ha: float
     loss_since_cutoff_ha: float
     loss_by_year: dict[str, float] = field(default_factory=dict)
+    # Where the loss sits matters as much as how much there is. Loss on a shared
+    # boundary cannot be attributed from geometry alone and is what triggers the
+    # ownership investigation -- so it is a first-class field, never parsed from prose.
+    boundary_loss_ha: float = 0.0
+    interior_loss_ha: float = 0.0
+    boundary_adjoins_parcel: str | None = None
     canopy_threshold: int = DEFAULT_CANOPY_THRESHOLD
     dataset: str = "Hansen Global Forest Change"
     backend: str = "unknown"
@@ -90,6 +96,9 @@ class ForestChangeResult:
             "loss_since_cutoff_ha": round(self.loss_since_cutoff_ha, 3),
             "loss_share_of_plot": round(self.loss_share_of_plot, 5),
             "loss_by_year": {k: round(v, 3) for k, v in sorted(self.loss_by_year.items())},
+            "boundary_loss_ha": round(self.boundary_loss_ha, 3),
+            "interior_loss_ha": round(self.interior_loss_ha, 3),
+            "boundary_adjoins_parcel": self.boundary_adjoins_parcel,
             "canopy_threshold_pct": self.canopy_threshold,
             "dataset": self.dataset,
             "backend": self.backend,
@@ -146,6 +155,9 @@ class CachedBackend(ForestChangeBackend):
             tree_cover_2020_ha=payload["tree_cover_2020_ha"],
             loss_since_cutoff_ha=payload["loss_since_cutoff_ha"],
             loss_by_year=payload.get("loss_by_year", {}),
+            boundary_loss_ha=payload.get("boundary_loss_ha", 0.0),
+            interior_loss_ha=payload.get("interior_loss_ha", 0.0),
+            boundary_adjoins_parcel=payload.get("boundary_adjoins_parcel"),
             canopy_threshold=payload.get("canopy_threshold_pct", canopy_threshold),
             dataset=payload.get("dataset", "Hansen Global Forest Change"),
             backend="cache",

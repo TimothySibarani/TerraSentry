@@ -7,5 +7,9 @@
   "loss_by_year": {},
   "canopy_threshold_pct": 30,
   "dataset": "Hansen Global Forest Change (DEMO PLACEHOLDER)",
-  "notes": ["No post-cutoff loss detected."]
+  "notes": [
+    "No post-cutoff loss detected."
+  ],
+  "boundary_loss_ha": 0.0,
+  "interior_loss_ha": 0.0
 }
