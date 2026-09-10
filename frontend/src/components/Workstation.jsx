@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Dossier from "./Dossier.jsx";
 import Overview from "./Overview.jsx";
 import { getPortfolio } from "../lib/api.js";
@@ -16,6 +16,7 @@ export default function Workstation() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [filter, setFilter] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -39,6 +40,20 @@ export default function Workstation() {
     window.history.pushState({ id }, "", url);
     setSelected(id);
   }, []);
+
+  const needle = filter.trim().toLowerCase();
+  const match = useCallback(
+    (r) => !needle || r.legal_name.toLowerCase().includes(needle) || r.supplier_id.toLowerCase().includes(needle),
+    [needle]
+  );
+  const groups = useMemo(
+    () =>
+      (data?.groups || [])
+        .map((g) => ({ ...g, suppliers: g.suppliers.filter(match) }))
+        .filter((g) => g.suppliers.length),
+    [data, match]
+  );
+  const exceptions = useMemo(() => (data?.exceptions || []).filter(match), [data, match]);
 
   const t = data?.totals;
 
@@ -64,23 +79,38 @@ export default function Workstation() {
 
         {data && (
           <>
+            <div className="filter">
+              <input
+                type="search"
+                value={filter}
+                placeholder="Filter by name or id"
+                aria-label="Filter suppliers by name or id"
+                onChange={(e) => setFilter(e.target.value)}
+              />
+            </div>
+
             <h3>
               Needs a decision
-              <span>{data.exceptions.length}</span>
+              <span>{exceptions.length}</span>
             </h3>
-            {data.exceptions.length === 0 && (
-              <div className="empty" style={{ color: "var(--go)" }}>Queue is clear.</div>
+            {exceptions.length === 0 && (
+              <div className="railempty">
+                {needle ? "No match in the queue." : "Queue is clear."}
+              </div>
             )}
-            {data.exceptions.map((r) => (
+            {exceptions.map((r) => (
               <QueueItem key={r.supplier_id} r={r} active={selected === r.supplier_id} onSelect={select} showWhy />
             ))}
 
             <h3>
               Supply base
-              <span>{data.totals.suppliers}</span>
+              <span>{groups.reduce((n, g) => n + g.suppliers.length, 0)}</span>
             </h3>
-            {data.groups.map((g) => (
-              <details key={g.id} className="grp" open={g.exceptions > 0}>
+            {groups.length === 0 && needle && (
+              <div className="railempty">Nothing matches “{filter}”.</div>
+            )}
+            {groups.map((g) => (
+              <details key={g.id} className="grp" open={g.exceptions > 0 || Boolean(needle)}>
                 <summary>
                   <span className={`bd ${g.worst_band}`} />
                   <span className="gn">{g.name}</span>
@@ -96,7 +126,11 @@ export default function Workstation() {
       </nav>
 
       <main className="canvas">
-        {selected ? <Dossier key={selected} supplierId={selected} /> : data ? <Overview data={data} /> : null}
+        {selected ? (
+          <Dossier key={selected} supplierId={selected} />
+        ) : data ? (
+          <Overview data={data} onSelect={select} selected={selected} />
+        ) : null}
       </main>
 
       <div className="status">

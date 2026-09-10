@@ -94,6 +94,9 @@ export default function EvidenceMap({ layers }) {
             <pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
               <line x1="0" y1="0" x2="0" y2="7" className="map-hatch" strokeWidth="2.5" opacity="0.55" />
             </pattern>
+            <pattern id="ambiguous" width="6" height="6" patternTransform="rotate(-45)" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="0" y2="6" className="map-amb-line" strokeWidth="3" />
+            </pattern>
           </defs>
 
           {hasImagery ? (
@@ -122,6 +125,16 @@ export default function EvidenceMap({ layers }) {
 
           <path d={path(layers.plot)} className="map-plot-halo" />
           <path d={path(layers.plot)} className="map-plot" />
+
+          {/* The strip inside the plot along a shared edge. Loss here cannot be
+              attributed from geometry alone, and that ambiguity is what makes the
+              agent widen the investigation -- so it has to be visible, not implied. */}
+          {layers.boundary_zone && (
+            <>
+              <path d={path(layers.boundary_zone)} className="map-boundary-zone" />
+              <path d={path(layers.boundary_zone)} className="map-boundary-edge" />
+            </>
+          )}
 
           {showHotspots && (
             <>
@@ -168,9 +181,10 @@ export default function EvidenceMap({ layers }) {
       <div className="map-legend">
         <span><i className="k-plot" />concession</span>
         <span><i className="k-adj" />adjacent parcel</span>
-        <span><i className="k-hs-high" />hotspot, high confidence</span>
-        <span><i className="k-hs" />hotspot</span>
-        <span><i className="k-hs-buf" />hotspot outside plot</span>
+        {layers.boundary_zone && <span><i className="k-amb" />shared edge — attribution ambiguous</span>}
+        <span><i className="k-hs-high" />high confidence</span>
+        <span><i className="k-hs" />hotspot inside ({(layers.hotspots_inside || []).length})</span>
+        <span><i className="k-hs-buf" />outside the boundary ({(layers.hotspots_buffer || []).length})</span>
       </div>
     </>
   );

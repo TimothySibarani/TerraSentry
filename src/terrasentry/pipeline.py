@@ -171,6 +171,38 @@ def _permit_state(permit_number: str, record: dict[str, Any] | None) -> bool | N
     return record.get("status") == "active"
 
 
+def _boundary_zone(geom, adjacent: list[dict[str, Any]], inward_m: float = 260.0):
+    """The band just inside the plot along any edge shared with a neighbouring parcel.
+
+    Computed, not drawn by hand: intersect the two boundaries to find the shared edge,
+    buffer it, and clip that to the plot. Returns None when nothing is shared, which is
+    the common case and must not render as an empty shape.
+
+    The buffer distance is in metres converted crudely to degrees. That is fine for a
+    visual band and wrong for anything measured -- area still comes from the geodesic
+    calculation in tools.geometry, never from this.
+    """
+    if not adjacent:
+        return None
+    from shapely.geometry import shape as _shape
+    from shapely.ops import unary_union
+
+    deg = inward_m / 111_320.0
+    shared = []
+    for feature in adjacent:
+        other = _shape(feature["geometry"] if feature.get("type") == "Feature" else feature)
+        edge = geom.boundary.intersection(other.boundary)
+        if not edge.is_empty:
+            shared.append(edge)
+    if not shared:
+        return None
+
+    band = unary_union(shared).buffer(deg).intersection(geom)
+    if band.is_empty:
+        return None
+    return geo.to_geojson_feature(band, {"role": "boundary_zone", "inward_m": inward_m})
+
+
 def build_map_layers(supplier: dict[str, Any], geom, hotspots: dict[str, Any]) -> dict[str, Any]:
     """Assemble everything the map panel needs to draw the evidence.
 
@@ -197,6 +229,12 @@ def build_map_layers(supplier: dict[str, Any], geom, hotspots: dict[str, Any]) -
             raw = json.loads(path.read_text(encoding="utf-8"))
             raw.setdefault("properties", {})["role"] = "adjacent"
             layers["adjacent"].append(raw)
+
+    # The ambiguous strip: where the plot's edge is shared with a neighbour, loss cannot
+    # be attributed from geometry alone. This is the single most important spatial fact in
+    # an assessment and it was not drawn anywhere -- the map showed the neighbouring parcel
+    # but never said which edge the problem sits on.
+    layers["boundary_zone"] = _boundary_zone(geom, layers["adjacent"])
 
     manifest = DATA / "cache" / "imagery" / f"{sid}.json"
     if manifest.exists():
