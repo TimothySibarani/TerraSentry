@@ -7,7 +7,7 @@ Standard library only -- no Flask, no extra install. One less thing to break on 
 borrowed laptop five minutes before a demo.
 
 Endpoints:
-    GET  /                          the panel
+    GET  /                          the panel (built Astro app if present, else web/index.html)
     GET  /api/portfolio             whole supply base screened, aggregated
     GET  /api/suppliers             demo suppliers
     GET  /api/screen?supplier=ID    full dossier as JSON (no streaming)
@@ -38,6 +38,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from rimba import pipeline, portfolio  # noqa: E402
 
 WEB = ROOT / "web"
+DIST = ROOT / "frontend" / "dist"
 DATA_DIR = ROOT / "data"
 DEFAULT_PORT = 8765
 
@@ -48,6 +49,9 @@ CONTENT_TYPES = {
     ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
     ".webp": "image/webp", ".geojson": "application/geo+json",
     ".json": "application/json", ".js": "text/javascript; charset=utf-8",
+    ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
+    ".mjs": "text/javascript; charset=utf-8", ".map": "application/json",
+    ".svg": "image/svg+xml", ".woff2": "font/woff2", ".ico": "image/x-icon",
 }
 DEFAULT_PACE_MS = 550
 
@@ -113,9 +117,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         route = urlparse(self.path).path
 
-        if route in ("/", "/index.html"):
-            html = (WEB / "index.html").read_bytes()
-            self._send(200, html, "text/html; charset=utf-8")
+        if self._serve_frontend(route):
             return
 
         if route == "/map.js":
@@ -152,6 +154,43 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         self._send(404, b"not found", "text/plain; charset=utf-8")
+
+    # -- frontend -----------------------------------------------------------
+
+    def _serve_frontend(self, route: str) -> bool:
+        """Serve the built Astro panel, falling back to the original vanilla one.
+
+        Keeping both working matters during the migration: if a build is broken or Node
+        is unavailable on someone's machine, `web/index.html` still runs. Returns True
+        when the request was handled.
+        """
+        if route.startswith(("/api/", "/data/")):
+            return False
+
+        if DIST.is_dir():
+            rel = "index.html" if route == "/" else route.lstrip("/")
+            if rel.endswith("/"):
+                rel += "index.html"
+            target = (DIST / rel).resolve()
+            try:
+                target.relative_to(DIST.resolve())
+            except ValueError:
+                self._send(403, b"outside dist", "text/plain; charset=utf-8")
+                return True
+            if target.is_dir():
+                target = target / "index.html"
+            if target.is_file():
+                self._send(200, target.read_bytes(),
+                           CONTENT_TYPES.get(target.suffix.lower(), "application/octet-stream"))
+                return True
+            # An unknown path under a static build is a 404, not a silent fallthrough.
+            if route not in ("/", "/index.html", "/map.js"):
+                return False
+
+        if route in ("/", "/index.html"):
+            self._send(200, (WEB / "index.html").read_bytes(), "text/html; charset=utf-8")
+            return True
+        return False
 
     # -- static data --------------------------------------------------------
 

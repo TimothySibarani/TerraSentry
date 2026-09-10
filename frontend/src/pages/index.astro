@@ -1,0 +1,9 @@
+---
+import Base from "../layouts/Base.layout.astro";
+import PortfolioView from "../components/PortfolioView.jsx";
+---
+<Base title="RIMBA — Supply base">
+  <!-- client:load: this island IS the page content, so deferring it would only show an
+       empty frame first. Everything above it is static HTML with no JS shipped. -->
+  <PortfolioView client:load />
+</Base>

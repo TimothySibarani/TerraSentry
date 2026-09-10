@@ -61,7 +61,9 @@ src/rimba/scoring.py     Deterministic risk rubric  <- NOT an LLM
 src/rimba/dds.py         TRACES-aligned Due Diligence Statement builder
 src/rimba/evidence.py    Evidence ledger with citations
 src/rimba/agent/         Bedrock orchestration loop, tool specs, prompts
-web/index.html           Local web panel (map, reasoning stream, scorecard, evidence, DDS)
+frontend/                Astro + React panel (primary UI, deep-linkable supplier pages)
+frontend/src/components/ PortfolioView, SupplierDetail, EvidenceMap islands
+web/index.html           No-build fallback panel, kept working on purpose
 web/map.js               Evidence map renderer -- no Leaflet, no CDN, works offline
 scripts/                 CLI, local server, portfolio seeding, imagery, preflight
 tests/                   Unit tests for the deterministic parts
@@ -88,6 +90,28 @@ Required keys (all free to obtain — see `docs/data-sources.md`):
 ```bash
 python -m scripts.serve
 ```
+
+The panel is an **Astro + React** app in `frontend/`. The Python server serves the built
+files, so one process runs the whole thing at demo time. If `frontend/dist` is missing,
+the server falls back to the dependency-free `web/index.html` — so a broken build or a
+machine without Node never blocks a demo.
+
+**Working on the UI:**
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+Astro serves the interface on 4321 and proxies `/api` and `/data` to the Python service
+on 8765, so run both. Rebuild before a demo:
+
+```bash
+cd frontend && npm run build
+```
+
+Astro ships JavaScript only for the islands that need it (`client:load` on the data
+views); the header, layout and static copy ship none. Node is a build-time dependency
+only — nothing in the runtime path needs it.
 
 Opens http://localhost:8765 on the **supply base**: 23 suppliers screened, KPI tiles, a
 risk distribution, and an exception queue of the handful that need a decision. Click any

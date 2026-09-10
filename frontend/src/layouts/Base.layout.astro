@@ -1,0 +1,25 @@
+---
+import "../styles/tokens.css";
+const { title = "RIMBA — Supplier Due Diligence Panel", context = "" } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content="Supplier due diligence and EUDR compliance screening." />
+  </head>
+  <body>
+    <!-- Static chrome: no JavaScript is shipped for any of this. -->
+    <header>
+      <div>
+        <div class="brand">RIMBA</div>
+        <div class="tagline">{context || "Supplier due diligence & EUDR compliance co-pilot"}</div>
+      </div>
+      <div class="spacer"></div>
+      <slot name="actions" />
+    </header>
+    <slot />
+  </body>
+</html>

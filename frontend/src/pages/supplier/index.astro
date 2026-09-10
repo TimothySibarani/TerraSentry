@@ -1,0 +1,8 @@
+---
+import Base from "../../layouts/Base.layout.astro";
+import SupplierPage from "../../components/SupplierPage.jsx";
+---
+<Base title="RIMBA — Supplier assessment">
+  <a slot="actions" class="ghost backlink" href="/">← Supply base</a>
+  <SupplierPage client:load />
+</Base>

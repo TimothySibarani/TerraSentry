@@ -7,7 +7,16 @@ a mouse, colours that failed contrast, and motion with no reduced-motion escape.
 
 from pathlib import Path
 
-HTML = (Path(__file__).resolve().parents[1] / "web" / "index.html").read_text(encoding="utf-8")
+ROOT = Path(__file__).resolve().parents[1]
+HTML = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+
+# The Astro panel is the primary UI; web/index.html is kept as a no-build fallback.
+# Both must carry the same affordances, so the guards run over both.
+FRONTEND = chr(10).join(
+    p.read_text(encoding="utf-8")
+    for p in sorted((ROOT / "frontend" / "src").rglob("*"))
+    if p.suffix in {".jsx", ".astro", ".css", ".js"}
+)
 
 
 def _lin(c):
@@ -28,6 +37,24 @@ def contrast(fg, bg):
 
 
 PANEL = "#16201c"
+
+
+def test_astro_panel_keeps_every_accessibility_affordance():
+    """A rewrite is exactly when hard-won accessibility work gets quietly dropped."""
+    assert "tabIndex={0}" in FRONTEND, "portfolio rows must be reachable by tab"
+    assert 'role="button"' in FRONTEND
+    assert "aria-label" in FRONTEND
+    assert '"Enter"' in FRONTEND and '" "' in FRONTEND
+    assert ":focus-visible" in FRONTEND
+    assert "prefers-reduced-motion" in FRONTEND
+    assert "tablewrap" in FRONTEND
+    assert 'className="facts"' in FRONTEND, "evidence must read in words before JSON"
+
+
+def test_astro_text_colours_meet_wcag_aa():
+    for colour in ("#7b9789", "#f26a6e", "#8ba396"):
+        assert contrast(colour, PANEL) >= 4.5
+        assert colour in FRONTEND
 
 
 def test_rows_are_keyboard_operable():
