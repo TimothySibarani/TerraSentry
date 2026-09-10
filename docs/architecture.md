@@ -13,7 +13,7 @@ Nothing here needs predicting. Every input already exists in public data. The wo
 
 ```
         +------------------------------------------------+
-        |  SAP Joule  ·  RIMBA reasoning panel            |   interface
+        |  SAP Joule  ·  TerraSentry reasoning panel            |   interface
         +----------------------+-------------------------+
                                |
         +----------------------v-------------------------+

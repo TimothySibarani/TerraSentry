@@ -1,6 +1,6 @@
 {
   "source_label": "SYNTHETIC entity registry -- NOT a live feed. Built to mirror the shape of Indonesian company records (AHU/Kemenkumham) for demonstration only. No real company is depicted.",
-  "generated_for": "AI Agentic Hackathon 2026 -- RIMBA demo",
+  "generated_for": "AI Agentic Hackathon 2026 -- TerraSentry demo",
   "entities": [
     {
       "entity_id": "ENT-001",

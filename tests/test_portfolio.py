@@ -1,6 +1,6 @@
 """Portfolio screening: the aggregate view a mill actually works from."""
 
-from rimba import portfolio
+from terrasentry import portfolio
 
 
 def _p():

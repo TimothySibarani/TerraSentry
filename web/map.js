@@ -1,4 +1,4 @@
-/* RIMBA evidence map — dependency-free.
+/* TerraSentry evidence map — dependency-free.
  *
  * Deliberately not Leaflet. This view has a fixed extent (one concession and its
  * immediate surroundings), so the slippy-map machinery buys nothing, and a CDN

@@ -1,6 +1,6 @@
 """Ownership heuristics: signals, never verdicts."""
 
-from rimba.tools.entity import EntityRegistry
+from terrasentry.tools.entity import EntityRegistry
 
 
 def _registry() -> EntityRegistry:

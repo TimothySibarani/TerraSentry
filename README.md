@@ -1,4 +1,4 @@
-# RIMBA
+# TerraSentry
 
 **Agentic AI Co-pilot for Supplier Due Diligence and EUDR Compliance in Land-Based Commodity Supply Chains**
 
@@ -13,7 +13,7 @@ coffee, cocoa, soy, cattle) on the EU market must prove the goods are deforestat
 **31 December 2020**, legal in the country of origin, and backed by a plot-level geolocated
 **Due Diligence Statement (DDS)** filed through EU TRACES.
 
-RIMBA turns *"a company name and a patch of land"* into **an evidence dossier that holds up in front of
+TerraSentry turns *"a company name and a patch of land"* into **an evidence dossier that holds up in front of
 an auditor**.
 
 It is not a prediction problem. Every input already exists in public data — satellite imagery, fire
@@ -36,11 +36,11 @@ Everything else in this repo exists to make that moment possible and defensible.
 ## Non-negotiable design rules
 
 1. **The LLM never invents the score.** Code computes the score from a deterministic rubric
-   (`src/rimba/scoring.py`). The model writes the narrative that explains it. This makes results
+   (`src/terrasentry/scoring.py`). The model writes the narrative that explains it. This makes results
    reproducible and gives a straight answer to *"what if the AI hallucinates?"* — the number isn't
    from the AI.
 2. **Every claim carries a citation.** Anything entering the dossier passes through
-   `src/rimba/evidence.py` with a source, an artifact, and a retrieval timestamp. The Verifier step
+   `src/terrasentry/evidence.py` with a source, an artifact, and a retrieval timestamp. The Verifier step
    drops claims that cannot be traced.
 3. **No-Go is never automatic.** The agent assembles the file; a human signs it.
 4. **Simulated data is labelled as simulated.** Geospatial and fire data are real and independently
@@ -54,13 +54,13 @@ docs/                    Architecture, scoring rubric, data sources, demo script
 data/polygons/           Demo supplier concession polygons (GeoJSON, WGS84)
 data/entities/           Synthetic corporate registry for entity-anomaly demo
 data/cache/              Pre-computed analysis results for Demo Day (do not process live on stage)
-src/rimba/pipeline.py    Screening pipeline, emits steps (shared by CLI and web panel)
-src/rimba/portfolio.py   Screens the whole supply base; totals, bands, exception queue
-src/rimba/tools/         Agent tools: geometry, FIRMS hotspots, forest change, entity lookup
-src/rimba/scoring.py     Deterministic risk rubric  <- NOT an LLM
-src/rimba/dds.py         TRACES-aligned Due Diligence Statement builder
-src/rimba/evidence.py    Evidence ledger with citations
-src/rimba/agent/         Bedrock orchestration loop, tool specs, prompts
+src/terrasentry/pipeline.py    Screening pipeline, emits steps (shared by CLI and web panel)
+src/terrasentry/portfolio.py   Screens the whole supply base; totals, bands, exception queue
+src/terrasentry/tools/         Agent tools: geometry, FIRMS hotspots, forest change, entity lookup
+src/terrasentry/scoring.py     Deterministic risk rubric  <- NOT an LLM
+src/terrasentry/dds.py         TRACES-aligned Due Diligence Statement builder
+src/terrasentry/evidence.py    Evidence ledger with citations
+src/terrasentry/agent/         Bedrock orchestration loop, tool specs, prompts
 frontend/                Astro + React panel (primary UI, deep-linkable supplier pages)
 frontend/src/components/ PortfolioView, SupplierDetail, EvidenceMap islands
 web/index.html           No-build fallback panel, kept working on purpose
@@ -156,7 +156,7 @@ python -m scripts.run_screening --supplier SUP-001
 python -m scripts.run_screening --list
 ```
 
-Both entrypoints call the same `rimba.pipeline.run()`. If they ever disagree, that is a bug.
+Both entrypoints call the same `terrasentry.pipeline.run()`. If they ever disagree, that is a bug.
 
 ## Build order (recommended)
 

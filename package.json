@@ -1,5 +1,5 @@
 {
-  "name": "rimba",
+  "name": "terrasentry",
   "private": true,
   "description": "Agentic supplier due diligence for EUDR compliance. Python owns the agent, the pipeline and the data; the panel in frontend/ is Astro + React.",
   "scripts": {

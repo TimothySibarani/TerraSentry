@@ -2,7 +2,7 @@
 
 import time
 
-from rimba import pipeline
+from terrasentry import pipeline
 
 
 def test_elapsed_excludes_consumer_time():

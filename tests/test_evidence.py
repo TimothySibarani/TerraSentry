@@ -1,6 +1,6 @@
 """A claim without an artifact is an opinion."""
 
-from rimba.evidence import EvidenceLedger
+from terrasentry.evidence import EvidenceLedger
 
 
 def test_ledger_records_and_ids_claims():

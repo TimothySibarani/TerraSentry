@@ -9,7 +9,7 @@ import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-from rimba import pipeline
+from terrasentry import pipeline
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -108,7 +108,7 @@ def _reject(token):
 
 
 def test_transposed_coordinates_give_a_finite_area_and_a_clear_problem():
-    from rimba import pipeline
+    from terrasentry import pipeline
 
     r = pipeline.run("SUP-023")
     import math

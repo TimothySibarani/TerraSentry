@@ -236,7 +236,7 @@ def run(supplier_id: str, on_step: StepFn | None = None) -> dict[str, Any]:
             f"Plot area is {report.area_ha:,.1f} ha; EUDR Article 9 requires a "
             f"{report.geolocation_requirement}."
         ),
-        source="RIMBA geometry tool (geodesic, WGS84)",
+        source="TerraSentry geometry tool (geodesic, WGS84)",
         artifact=report.to_dict(),
     )
     if report.blocking:

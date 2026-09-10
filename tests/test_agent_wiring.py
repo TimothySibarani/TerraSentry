@@ -5,10 +5,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from rimba.agent.orchestrator import Orchestrator
-from rimba.agent.prompts import ORCHESTRATOR_SYSTEM
-from rimba.agent.toolspec import ALL_TOOLS
-from rimba.agent.tools_registry import ScreeningSession
+from terrasentry.agent.orchestrator import Orchestrator
+from terrasentry.agent.prompts import ORCHESTRATOR_SYSTEM
+from terrasentry.agent.toolspec import ALL_TOOLS
+from terrasentry.agent.tools_registry import ScreeningSession
 
 
 def _spec_names():
@@ -37,7 +37,7 @@ def test_tool_arguments_match_their_schemas():
 def test_full_loop_runs_offline_and_matches_the_reference_pipeline():
     from run_agent import ScriptedClient
 
-    from rimba import pipeline
+    from terrasentry import pipeline
 
     session = ScreeningSession("SUP-001")
     agent = Orchestrator(

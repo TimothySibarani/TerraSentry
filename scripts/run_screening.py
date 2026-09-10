@@ -4,7 +4,7 @@
     python -m scripts.run_screening --supplier SUP-002 --json
     python -m scripts.run_screening --list
 
-Thin wrapper. All logic lives in ``rimba.pipeline`` so the CLI and the web panel
+Thin wrapper. All logic lives in ``terrasentry.pipeline`` so the CLI and the web panel
 (``scripts/serve.py``) run exactly the same code path. If the two ever disagree, that is
 a bug.
 """
@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from rimba import pipeline  # noqa: E402
+from terrasentry import pipeline  # noqa: E402
 
 ICON = {"done": "ok  ", "flag": "FLAG", "blocked": "STOP", "info": "  ->"}
 
@@ -30,7 +30,7 @@ def print_step(step: pipeline.Step) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run a RIMBA screening over the demo dataset.")
+    parser = argparse.ArgumentParser(description="Run a TerraSentry screening over the demo dataset.")
     parser.add_argument("--supplier", help="Supplier id (e.g. SUP-001) or legal name.")
     parser.add_argument("--json", action="store_true", help="Emit the full dossier as JSON.")
     parser.add_argument("--quiet", action="store_true", help="Suppress the step-by-step trace.")

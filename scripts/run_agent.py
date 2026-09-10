@@ -23,11 +23,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from rimba.agent.orchestrator import Orchestrator  # noqa: E402
-from rimba.agent.prompts import ORCHESTRATOR_SYSTEM  # noqa: E402
-from rimba.agent.toolspec import ALL_TOOLS  # noqa: E402
-from rimba.agent.tools_registry import ScreeningSession  # noqa: E402
-from rimba.config import settings  # noqa: E402
+from terrasentry.agent.orchestrator import Orchestrator  # noqa: E402
+from terrasentry.agent.prompts import ORCHESTRATOR_SYSTEM  # noqa: E402
+from terrasentry.agent.toolspec import ALL_TOOLS  # noqa: E402
+from terrasentry.agent.tools_registry import ScreeningSession  # noqa: E402
+from terrasentry.config import settings  # noqa: E402
 
 
 class ScriptedClient:
@@ -81,7 +81,7 @@ def build_client(region: str):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run the RIMBA agent.")
+    parser = argparse.ArgumentParser(description="Run the TerraSentry agent.")
     parser.add_argument("--supplier", default="SUP-001")
     parser.add_argument("--model", default=settings.model_orchestrator,
                         help="Bedrock model id. Defaults to MODEL_ORCHESTRATOR from the environment.")

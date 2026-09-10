@@ -3,7 +3,7 @@
 import pytest
 from shapely.geometry import Polygon
 
-from rimba.tools import geometry as geo
+from terrasentry.tools import geometry as geo
 
 
 def test_demo_polygon_area_is_about_4200_ha():

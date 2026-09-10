@@ -65,7 +65,7 @@ class ScreeningSession:
                 f"Plot area is {self.geometry.area_ha:,.1f} ha; EUDR Article 9 requires a "
                 f"{self.geometry.geolocation_requirement}."
             ),
-            source="RIMBA geometry tool (geodesic, WGS84)",
+            source="TerraSentry geometry tool (geodesic, WGS84)",
             artifact=self.geometry.to_dict(),
         )
         return self.geometry.to_dict()

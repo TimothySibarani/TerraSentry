@@ -1,4 +1,4 @@
-"""Local web panel for RIMBA.
+"""Local web panel for TerraSentry.
 
     python -m scripts.serve
     then open http://localhost:8765
@@ -35,7 +35,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from rimba import pipeline, portfolio  # noqa: E402
+from terrasentry import pipeline, portfolio  # noqa: E402
 
 WEB = ROOT / "web"
 DIST = ROOT / "frontend" / "dist"
@@ -89,7 +89,7 @@ class Server(ThreadingHTTPServer):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "RIMBA/0.1"
+    server_version = "TerraSentry/0.1"
 
     # -- helpers ----------------------------------------------------------
 
@@ -267,10 +267,10 @@ def main() -> None:
         server = Server(("127.0.0.1", port), Handler)
     except OSError as exc:
         print(f"Cannot bind port {port}: {exc}")
-        print("Another RIMBA server is probably still running. Stop it, or pass a different port:")
+        print("Another TerraSentry server is probably still running. Stop it, or pass a different port:")
         print(f"    python -m scripts.serve {port + 1}")
         raise SystemExit(1)
-    print(f"RIMBA panel  ->  {url}")
+    print(f"TerraSentry panel  ->  {url}")
     print("Ctrl+C to stop.\n")
     try:
         webbrowser.open(url)

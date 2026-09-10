@@ -1,6 +1,6 @@
 # Scoring rubric
 
-Implemented in `src/rimba/scoring.py`. **No language model touches it.**
+Implemented in `src/terrasentry/scoring.py`. **No language model touches it.**
 
 ## Direction and bands
 

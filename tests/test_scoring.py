@@ -1,9 +1,9 @@
 """The rubric must be deterministic and must not let deforestation average away."""
 
-from rimba.scoring import Recommendation, score
-from rimba.tools.entity import EntityFinding
-from rimba.tools.forest_change import ForestChangeResult
-from rimba.tools.geometry import GeometryReport
+from terrasentry.scoring import Recommendation, score
+from terrasentry.tools.entity import EntityFinding
+from terrasentry.tools.forest_change import ForestChangeResult
+from terrasentry.tools.geometry import GeometryReport
 
 
 def _clean_geometry() -> GeometryReport:

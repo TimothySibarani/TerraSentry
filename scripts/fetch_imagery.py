@@ -7,7 +7,7 @@ Why Sentinel-2 and not Google Maps: Google discards old imagery once new imagery
 arrives, stores no acquisition date, and its terms forbid storing and re-serving the
 images -- which is exactly what an evidence pack has to do. Sentinel-2 is dated, free,
 archived back to 2017, and lives in the AWS Registry of Open Data, so the imagery in a
-RIMBA dossier comes from an AWS open dataset.
+TerraSentry dossier comes from an AWS open dataset.
 
 Data: https://registry.opendata.aws/sentinel-2-l2a-cogs/
 Search: Earth-search STAC API (no key required)
@@ -37,8 +37,8 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from rimba.pipeline import DATA, find_supplier, load_registry_payload  # noqa: E402
-from rimba.tools import geometry as geo  # noqa: E402
+from terrasentry.pipeline import DATA, find_supplier, load_registry_payload  # noqa: E402
+from terrasentry.tools import geometry as geo  # noqa: E402
 
 STAC_URL = "https://earth-search.aws.element84.com/v1/search"
 COLLECTION = "sentinel-2-l2a"

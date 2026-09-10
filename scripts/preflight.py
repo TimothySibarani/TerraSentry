@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from rimba.config import settings  # noqa: E402
+from terrasentry.config import settings  # noqa: E402
 
 OK, BAD, WARN = "  ok  ", " FAIL ", " warn "
 
@@ -51,7 +51,7 @@ def main() -> None:
                         help="Model id for the smoke test.")
     args = parser.parse_args()
 
-    print(f"\nRIMBA preflight -- region {args.region}\n")
+    print(f"\nTerraSentry preflight -- region {args.region}\n")
 
     try:
         import boto3

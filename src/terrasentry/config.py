@@ -29,7 +29,7 @@ class Settings:
 
     forest_change_backend: str = os.environ.get("FOREST_CHANGE_BACKEND", "cache")
 
-    data_dir: str = os.environ.get("RIMBA_DATA_DIR", "data")
+    data_dir: str = os.environ.get("TerraSentry_DATA_DIR", "data")
     max_agent_turns: int = int(os.environ.get("MAX_AGENT_TURNS", "12"))
 
     def require(self, *names: str) -> None:
