@@ -1,0 +1,3852 @@
+{
+  "schema_version": 1,
+  "rng_seed": 20260911,
+  "distribution": {
+    "compliant": 30,
+    "high_risk": 12,
+    "ambiguous": 8
+  },
+  "disclosure": "Coordinates are synthetic but placed inside real forest regions of Sumatra and Kalimantan so Hansen GFC and NASA FIRMS return real data for them.",
+  "records": [
+    {
+      "record_id": "REC-001",
+      "supplier_id": "SUP-001",
+      "polygon": {
+        "id": "PLY-001",
+        "label": "Live scenario B — high risk (Riau peat forests)",
+        "region": "Riau peat forests",
+        "province": "Riau",
+        "archetype": "high_risk",
+        "scenario": "high_risk_live",
+        "is_demo": true,
+        "area_ha": 851.58,
+        "centroid_lat": 1.03932,
+        "centroid_lon": 102.023674,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.03748530898524,
+                1.0661819011905884
+              ],
+              [
+                102.00839856331761,
+                1.038517005555664
+              ],
+              [
+                102.00598372645702,
+                1.0354816858474887
+              ],
+              [
+                102.01412159172754,
+                1.0227015177269239
+              ],
+              [
+                102.02060873074875,
+                1.0273778763921662
+              ],
+              [
+                102.02962596142176,
+                1.0162817947469291
+              ],
+              [
+                102.03748530898524,
+                1.0661819011905884
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-001",
+        "legal_name": "PT Sumber Sejahtera Sriwijaya",
+        "trading_name": "Sumber Sejahtera Sriwijaya (SYNTH-001)",
+        "group": "Grup Sriwijaya",
+        "nib": "9260597875842",
+        "npwp": "12.854.808.3-759.034",
+        "hgu_number": "HGU No. 343/HGU/BPN/2020",
+        "pbp_number": null,
+        "permit_status": "suspended",
+        "concession_area_ha": 15021.4,
+        "province": "Riau",
+        "kabupaten": "Siak",
+        "beneficial_owners": [
+          "Bayu Hartono",
+          "Nur Hidayat"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2021 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-002",
+      "supplier_id": "SUP-002",
+      "polygon": {
+        "id": "PLY-002",
+        "label": "Live scenario A — compliant (Jambi lowland forest)",
+        "region": "Jambi lowland forest",
+        "province": "Jambi",
+        "archetype": "compliant",
+        "scenario": "compliant_live",
+        "is_demo": true,
+        "area_ha": 2394.01,
+        "centroid_lat": -1.013023,
+        "centroid_lon": 102.262624,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.28051453359316,
+                -1.0171938418770978
+              ],
+              [
+                102.29859342136874,
+                -1.0091730196942914
+              ],
+              [
+                102.27203861977597,
+                -0.9911887126258663
+              ],
+              [
+                102.24809989522788,
+                -0.9843884888381145
+              ],
+              [
+                102.24737509253816,
+                -0.9941753466729937
+              ],
+              [
+                102.2386561431347,
+                -0.9861247914061548
+              ],
+              [
+                102.24984600151777,
+                -1.0433153863611278
+              ],
+              [
+                102.25742089826534,
+                -1.0520655282892681
+              ],
+              [
+                102.28051453359316,
+                -1.0171938418770978
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-002",
+        "legal_name": "PT Sawit Sejahtera Nusantara",
+        "trading_name": "Sawit Sejahtera Nusantara (SYNTH-002)",
+        "group": "Grup Andalas",
+        "nib": "2555580706858",
+        "npwp": "11.122.849.2-995.018",
+        "hgu_number": "HGU No. 557/HGU/BPN/2014",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 16863.2,
+        "province": "Jambi",
+        "kabupaten": "Tebo",
+        "beneficial_owners": [
+          "Lestari Nugroho",
+          "Fitri Utami"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-003",
+      "supplier_id": "SUP-003",
+      "polygon": {
+        "id": "PLY-003",
+        "label": "Demo high_risk — South Sumatra peat forest",
+        "region": "South Sumatra peat forest",
+        "province": "South Sumatra",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": true,
+        "area_ha": 3584.76,
+        "centroid_lat": -2.559128,
+        "centroid_lon": 103.451789,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                103.43344346334439,
+                -2.4973951183532126
+              ],
+              [
+                103.42622108463499,
+                -2.577794258322168
+              ],
+              [
+                103.45701597376754,
+                -2.5923715011879347
+              ],
+              [
+                103.47007709653045,
+                -2.5844153656924878
+              ],
+              [
+                103.50262315561409,
+                -2.6120090022266806
+              ],
+              [
+                103.43344346334439,
+                -2.4973951183532126
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-003",
+        "legal_name": "PT Mitra Makmur Khatulistiwa",
+        "trading_name": "Mitra Makmur Khatulistiwa (SYNTH-003)",
+        "group": "Grup Khatulistiwa",
+        "nib": "5558401725901",
+        "npwp": "98.232.797.6-701.029",
+        "hgu_number": "HGU No. 759/HGU/BPN/2011",
+        "pbp_number": null,
+        "permit_status": "suspended",
+        "concession_area_ha": 11848.6,
+        "province": "South Sumatra",
+        "kabupaten": "Musi Banyuasin",
+        "beneficial_owners": [
+          "Fitri Nugroho",
+          "Sari Wijaya"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2021 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-004",
+      "supplier_id": "SUP-004",
+      "polygon": {
+        "id": "PLY-004",
+        "label": "Demo high_risk — Central Kalimantan forest",
+        "region": "Central Kalimantan forest",
+        "province": "Central Kalimantan",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": true,
+        "area_ha": 5796.31,
+        "centroid_lat": -1.900697,
+        "centroid_lon": 113.5803,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                113.62240414604807,
+                -1.8766443877288244
+              ],
+              [
+                113.56724756928247,
+                -1.8554158197789814
+              ],
+              [
+                113.53344937744882,
+                -1.9293504449597338
+              ],
+              [
+                113.59742238433591,
+                -1.9395368824869208
+              ],
+              [
+                113.61377790340501,
+                -1.9123576037639363
+              ],
+              [
+                113.62240414604807,
+                -1.8766443877288244
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-004",
+        "legal_name": "PT Bumi Sejahtera Sriwijaya",
+        "trading_name": "Bumi Sejahtera Sriwijaya (SYNTH-004)",
+        "group": "Grup Borneo",
+        "nib": "8070367347992",
+        "npwp": "10.828.888.4-361.664",
+        "hgu_number": "HGU No. 613/HGU/BPN/2009",
+        "pbp_number": null,
+        "permit_status": "expired",
+        "concession_area_ha": 953.9,
+        "province": "Central Kalimantan",
+        "kabupaten": "Katingan",
+        "beneficial_owners": [
+          "Indah Kusuma",
+          "Kartika Pratama"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2021 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-005",
+      "supplier_id": "SUP-005",
+      "polygon": {
+        "id": "PLY-005",
+        "label": "Demo ambiguous — East Kalimantan forest",
+        "region": "East Kalimantan forest",
+        "province": "East Kalimantan",
+        "archetype": "ambiguous",
+        "scenario": null,
+        "is_demo": true,
+        "area_ha": 873.55,
+        "centroid_lat": 0.252042,
+        "centroid_lon": 116.790064,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                116.81152197879938,
+                0.2643393230287839
+              ],
+              [
+                116.76643237688715,
+                0.2589544944061638
+              ],
+              [
+                116.7816824179679,
+                0.2397309747879633
+              ],
+              [
+                116.79613020027234,
+                0.23736416301829721
+              ],
+              [
+                116.79863278684961,
+                0.24216740780184304
+              ],
+              [
+                116.8023251045219,
+                0.24409618053787674
+              ],
+              [
+                116.80732993918154,
+                0.25579376391843056
+              ],
+              [
+                116.81152197879938,
+                0.2643393230287839
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-005",
+        "legal_name": "PT Agro Mandiri Nusantara",
+        "trading_name": "Agro Mandiri Nusantara (SYNTH-005)",
+        "group": "Grup Khatulistiwa",
+        "nib": "8870679587971",
+        "npwp": "59.830.564.1-445.280",
+        "hgu_number": "HGU No. 898/HGU/BPN/2011",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 8020.1,
+        "province": "East Kalimantan",
+        "kabupaten": "Kutai Timur",
+        "beneficial_owners": [
+          "Wulan Kusuma",
+          "Adi Saputra"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "ambiguous"
+    },
+    {
+      "record_id": "REC-006",
+      "supplier_id": "SUP-006",
+      "polygon": {
+        "id": "PLY-006",
+        "label": "Demo compliant — West Kalimantan forest",
+        "region": "West Kalimantan forest",
+        "province": "West Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": true,
+        "area_ha": 3179.31,
+        "centroid_lat": 0.85966,
+        "centroid_lon": 111.850941,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                111.885495728597,
+                0.85821075170075
+              ],
+              [
+                111.86671950448115,
+                0.8879939505554673
+              ],
+              [
+                111.84817116467198,
+                0.8848466769383523
+              ],
+              [
+                111.84125651783108,
+                0.8850336244826673
+              ],
+              [
+                111.80419532893558,
+                0.8407031196895105
+              ],
+              [
+                111.87889079455255,
+                0.8406470452890895
+              ],
+              [
+                111.88804252690386,
+                0.8483122104987277
+              ],
+              [
+                111.885495728597,
+                0.85821075170075
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-006",
+        "legal_name": "PT Mitra Jaya Borneo",
+        "trading_name": "Mitra Jaya Borneo (SYNTH-006)",
+        "group": "Grup Andalas",
+        "nib": "8861333190436",
+        "npwp": "23.682.909.1-124.381",
+        "hgu_number": "HGU No. 80/HGU/BPN/2008",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 10529.7,
+        "province": "West Kalimantan",
+        "kabupaten": "Kapuas Hulu",
+        "beneficial_owners": [
+          "Eko Kusuma",
+          "Eko Saputra"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-007",
+      "supplier_id": "SUP-007",
+      "polygon": {
+        "id": "PLY-007",
+        "label": "Demo ambiguous — Riau peat forests",
+        "region": "Riau peat forests",
+        "province": "Riau",
+        "archetype": "ambiguous",
+        "scenario": null,
+        "is_demo": true,
+        "area_ha": 1063.88,
+        "centroid_lat": 1.031757,
+        "centroid_lon": 102.480873,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.49849453126808,
+                1.0386520840888434
+              ],
+              [
+                102.48313126145243,
+                1.0474525038810312
+              ],
+              [
+                102.47869383977309,
+                1.0546877248669673
+              ],
+              [
+                102.46690127779868,
+                1.0331437069578888
+              ],
+              [
+                102.46275931417105,
+                1.0317169380898
+              ],
+              [
+                102.46088435591412,
+                1.0180381151829925
+              ],
+              [
+                102.46937898565287,
+                1.0189197254070261
+              ],
+              [
+                102.49749228326752,
+                1.0192449240236525
+              ],
+              [
+                102.49849453126808,
+                1.0386520840888434
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-007",
+        "legal_name": "PT Agro Sejahtera Andalas",
+        "trading_name": "Agro Sejahtera Andalas (SYNTH-007)",
+        "group": "Grup Andalas",
+        "nib": "1430819156849",
+        "npwp": "85.755.232.4-309.969",
+        "hgu_number": "HGU No. 247/HGU/BPN/2018",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 3771.8,
+        "province": "Riau",
+        "kabupaten": "Siak",
+        "beneficial_owners": [
+          "Maya Kusuma",
+          "Lestari Hartono"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "ambiguous"
+    },
+    {
+      "record_id": "REC-008",
+      "supplier_id": "SUP-008",
+      "polygon": {
+        "id": "PLY-008",
+        "label": "Batch record — Jambi lowland forest (high_risk)",
+        "region": "Jambi lowland forest",
+        "province": "Jambi",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 4579.3,
+        "centroid_lat": -2.052508,
+        "centroid_lon": 102.872828,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.89749546449386,
+                -2.040881518329741
+              ],
+              [
+                102.88658181497607,
+                -2.016348566735646
+              ],
+              [
+                102.85246272228673,
+                -2.0189494436141744
+              ],
+              [
+                102.84348246486255,
+                -2.0282598320612157
+              ],
+              [
+                102.83965939871635,
+                -2.078467631633651
+              ],
+              [
+                102.83640734858108,
+                -2.0805425316745234
+              ],
+              [
+                102.91466090167762,
+                -2.0804994411473468
+              ],
+              [
+                102.91040177952505,
+                -2.0645756224801945
+              ],
+              [
+                102.89749546449386,
+                -2.040881518329741
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-008",
+        "legal_name": "PT Hutan Makmur Khatulistiwa",
+        "trading_name": "Hutan Makmur Khatulistiwa (SYNTH-008)",
+        "group": "Grup Nusantara",
+        "nib": "5630249205403",
+        "npwp": "68.963.007.8-364.909",
+        "hgu_number": null,
+        "pbp_number": "SK.2547/MENLHK-PKTL/PBPH/2014",
+        "permit_status": "expired",
+        "concession_area_ha": 13391.4,
+        "province": "Jambi",
+        "kabupaten": "Tebo",
+        "beneficial_owners": [
+          "Putra Hidayat",
+          "Lestari Wijaya"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2020 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-009",
+      "supplier_id": "SUP-009",
+      "polygon": {
+        "id": "PLY-009",
+        "label": "Batch record — South Sumatra peat forest (high_risk)",
+        "region": "South Sumatra peat forest",
+        "province": "South Sumatra",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 3092.97,
+        "centroid_lat": -2.670542,
+        "centroid_lon": 104.125051,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                104.15798627887467,
+                -2.654786028442087
+              ],
+              [
+                104.15415686381884,
+                -2.642998701927351
+              ],
+              [
+                104.09579102959201,
+                -2.662520979042164
+              ],
+              [
+                104.06626670098952,
+                -2.6806536702340185
+              ],
+              [
+                104.15819022810136,
+                -2.6914560225201787
+              ],
+              [
+                104.15798627887467,
+                -2.654786028442087
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-009",
+        "legal_name": "PT Sumber Sentosa Sriwijaya",
+        "trading_name": "Sumber Sentosa Sriwijaya (SYNTH-009)",
+        "group": "Grup Borneo",
+        "nib": "6884839664577",
+        "npwp": "94.988.913.2-781.929",
+        "hgu_number": "HGU No. 625/HGU/BPN/2019",
+        "pbp_number": null,
+        "permit_status": "suspended",
+        "concession_area_ha": 2691.2,
+        "province": "South Sumatra",
+        "kabupaten": "Musi Banyuasin",
+        "beneficial_owners": [
+          "Citra Hartono",
+          "Dewi Saputra"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2021 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-010",
+      "supplier_id": "SUP-010",
+      "polygon": {
+        "id": "PLY-010",
+        "label": "Demo compliant — Central Kalimantan forest",
+        "region": "Central Kalimantan forest",
+        "province": "Central Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": true,
+        "area_ha": 2999.17,
+        "centroid_lat": -1.681229,
+        "centroid_lon": 113.824398,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                113.85276282204669,
+                -1.6767860973471032
+              ],
+              [
+                113.8251552176657,
+                -1.6506304888743004
+              ],
+              [
+                113.80430913849588,
+                -1.6559826787474372
+              ],
+              [
+                113.80217910003637,
+                -1.6654732420274536
+              ],
+              [
+                113.78833901885264,
+                -1.6892058915021888
+              ],
+              [
+                113.83928518772188,
+                -1.7093321922118143
+              ],
+              [
+                113.85134657074173,
+                -1.7092582623364565
+              ],
+              [
+                113.85276282204669,
+                -1.6767860973471032
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-010",
+        "legal_name": "PT Karya Sentosa Borneo",
+        "trading_name": "Karya Sentosa Borneo (SYNTH-010)",
+        "group": "Grup Khatulistiwa",
+        "nib": "3064929843247",
+        "npwp": "43.704.360.6-426.259",
+        "hgu_number": "HGU No. 86/HGU/BPN/2020",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 6594.7,
+        "province": "Central Kalimantan",
+        "kabupaten": "Katingan",
+        "beneficial_owners": [
+          "Putra Hartono",
+          "Maya Hidayat"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-011",
+      "supplier_id": "SUP-011",
+      "polygon": {
+        "id": "PLY-011",
+        "label": "Batch record — East Kalimantan forest (ambiguous)",
+        "region": "East Kalimantan forest",
+        "province": "East Kalimantan",
+        "archetype": "ambiguous",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 132.55,
+        "centroid_lat": 0.736421,
+        "centroid_lon": 117.219357,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                117.22261546159444,
+                0.7403823097023632
+              ],
+              [
+                117.2237027735662,
+                0.7452914556219132
+              ],
+              [
+                117.22087567145542,
+                0.7461015893754936
+              ],
+              [
+                117.22161876271795,
+                0.7495471074884801
+              ],
+              [
+                117.21236283916338,
+                0.7273841974500235
+              ],
+              [
+                117.22098284849741,
+                0.7305671478360987
+              ],
+              [
+                117.22213067265383,
+                0.7338703344700386
+              ],
+              [
+                117.22498317719385,
+                0.7336707160104656
+              ],
+              [
+                117.22261546159444,
+                0.7403823097023632
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-011",
+        "legal_name": "PT Agro Jaya Borneo",
+        "trading_name": "Agro Jaya Borneo (SYNTH-011)",
+        "group": "Grup Nusantara",
+        "nib": "8362080549597",
+        "npwp": "95.036.117.5-530.291",
+        "hgu_number": "HGU No. 526/HGU/BPN/2017",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 5159.9,
+        "province": "East Kalimantan",
+        "kabupaten": "Kutai Timur",
+        "beneficial_owners": [
+          "Lestari Saputra",
+          "Eko Saputra"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "ambiguous"
+    },
+    {
+      "record_id": "REC-012",
+      "supplier_id": "SUP-012",
+      "polygon": {
+        "id": "PLY-012",
+        "label": "Batch record — West Kalimantan forest (compliant)",
+        "region": "West Kalimantan forest",
+        "province": "West Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 3581.1,
+        "centroid_lat": 0.69415,
+        "centroid_lon": 111.244393,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                111.27106153347634,
+                0.7075830814004512
+              ],
+              [
+                111.21837955894784,
+                0.7271032121130496
+              ],
+              [
+                111.20539331331905,
+                0.7093108370505256
+              ],
+              [
+                111.21916082740054,
+                0.7046151595124327
+              ],
+              [
+                111.22581599389717,
+                0.6556469609361275
+              ],
+              [
+                111.29254619551078,
+                0.692850321485258
+              ],
+              [
+                111.27106153347634,
+                0.7075830814004512
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-012",
+        "legal_name": "PT Sawit Lestari Nusantara",
+        "trading_name": "Sawit Lestari Nusantara (SYNTH-012)",
+        "group": "Grup Khatulistiwa",
+        "nib": "5134095959198",
+        "npwp": "34.559.269.1-867.531",
+        "hgu_number": "HGU No. 381/HGU/BPN/2005",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 3190.5,
+        "province": "West Kalimantan",
+        "kabupaten": "Kapuas Hulu",
+        "beneficial_owners": [
+          "Bayu Nugroho",
+          "Taufik Nugroho"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-013",
+      "supplier_id": "SUP-013",
+      "polygon": {
+        "id": "PLY-013",
+        "label": "Batch record — Riau peat forests (compliant)",
+        "region": "Riau peat forests",
+        "province": "Riau",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 1647.17,
+        "centroid_lat": -0.618659,
+        "centroid_lon": 101.156761,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                101.18451458980734,
+                -0.6070313564528025
+              ],
+              [
+                101.13725484006126,
+                -0.5989666915747458
+              ],
+              [
+                101.1400042536019,
+                -0.6020754396871034
+              ],
+              [
+                101.13175301217221,
+                -0.6338082962492013
+              ],
+              [
+                101.14855122235717,
+                -0.6298370114064102
+              ],
+              [
+                101.16371745908596,
+                -0.6440813668549988
+              ],
+              [
+                101.18451458980734,
+                -0.6070313564528025
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-013",
+        "legal_name": "PT Hutan Makmur Borneo",
+        "trading_name": "Hutan Makmur Borneo (SYNTH-013)",
+        "group": "Grup Andalas",
+        "nib": "7123518326897",
+        "npwp": "78.066.333.0-146.138",
+        "hgu_number": "HGU No. 599/HGU/BPN/2018",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 16630.0,
+        "province": "Riau",
+        "kabupaten": "Siak",
+        "beneficial_owners": [
+          "Wulan Wijaya",
+          "Nur Halim"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-014",
+      "supplier_id": "SUP-014",
+      "polygon": {
+        "id": "PLY-014",
+        "label": "Batch record — Jambi lowland forest (compliant)",
+        "region": "Jambi lowland forest",
+        "province": "Jambi",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 2343.55,
+        "centroid_lat": -1.30483,
+        "centroid_lon": 102.055215,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.03339318011017,
+                -1.2644958197114002
+              ],
+              [
+                102.03215428329777,
+                -1.2896918440293477
+              ],
+              [
+                102.0421034435007,
+                -1.3231242962583734
+              ],
+              [
+                102.03427570560207,
+                -1.3311353413543996
+              ],
+              [
+                102.0948623468574,
+                -1.3220995632294614
+              ],
+              [
+                102.03339318011017,
+                -1.2644958197114002
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-014",
+        "legal_name": "PT Bumi Lestari Nusantara",
+        "trading_name": "Bumi Lestari Nusantara (SYNTH-014)",
+        "group": "Grup Sriwijaya",
+        "nib": "5367571316002",
+        "npwp": "23.913.475.9-106.199",
+        "hgu_number": "HGU No. 441/HGU/BPN/2017",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 5995.8,
+        "province": "Jambi",
+        "kabupaten": "Tebo",
+        "beneficial_owners": [
+          "Sari Halim",
+          "Joko Saputra"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-015",
+      "supplier_id": "SUP-015",
+      "polygon": {
+        "id": "PLY-015",
+        "label": "Batch record — South Sumatra peat forest (compliant)",
+        "region": "South Sumatra peat forest",
+        "province": "South Sumatra",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 2743.79,
+        "centroid_lat": -3.180098,
+        "centroid_lon": 104.007166,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                104.02864792601792,
+                -3.1554348625822355
+              ],
+              [
+                104.01193926558139,
+                -3.156016442283149
+              ],
+              [
+                103.99510457528608,
+                -3.149949664320467
+              ],
+              [
+                103.97658899605136,
+                -3.1830255639558236
+              ],
+              [
+                104.01424811224967,
+                -3.215277744113724
+              ],
+              [
+                104.0178263433185,
+                -3.2125488013827708
+              ],
+              [
+                104.02969891175911,
+                -3.1935109150035768
+              ],
+              [
+                104.02864792601792,
+                -3.1554348625822355
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-015",
+        "legal_name": "PT Mitra Sejahtera Andalas",
+        "trading_name": "Mitra Sejahtera Andalas (SYNTH-015)",
+        "group": "Grup Andalas",
+        "nib": "7478567166153",
+        "npwp": "70.843.570.6-517.113",
+        "hgu_number": "HGU No. 452/HGU/BPN/2010",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 14583.9,
+        "province": "South Sumatra",
+        "kabupaten": "Musi Banyuasin",
+        "beneficial_owners": [
+          "Adi Utami",
+          "Putra Kusuma"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-016",
+      "supplier_id": "SUP-016",
+      "polygon": {
+        "id": "PLY-016",
+        "label": "Batch record — Central Kalimantan forest (high_risk)",
+        "region": "Central Kalimantan forest",
+        "province": "Central Kalimantan",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 4593.98,
+        "centroid_lat": -2.34612,
+        "centroid_lon": 113.439703,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                113.44468115838517,
+                -2.3171958551378573
+              ],
+              [
+                113.44186370460268,
+                -2.2974694421815456
+              ],
+              [
+                113.43026851336906,
+                -2.3091946669205257
+              ],
+              [
+                113.39627212123874,
+                -2.3139889133177385
+              ],
+              [
+                113.43141132641325,
+                -2.375991491825698
+              ],
+              [
+                113.44099886301852,
+                -2.3965132157099105
+              ],
+              [
+                113.4823240979285,
+                -2.3598322655466597
+              ],
+              [
+                113.44468115838517,
+                -2.3171958551378573
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-016",
+        "legal_name": "PT Anugerah Lestari Khatulistiwa",
+        "trading_name": "Anugerah Lestari Khatulistiwa (SYNTH-016)",
+        "group": "Grup Nusantara",
+        "nib": "7109605262310",
+        "npwp": "82.394.802.5-071.035",
+        "hgu_number": null,
+        "pbp_number": "SK.2662/MENLHK-PKTL/PBPH/2019",
+        "permit_status": "suspended",
+        "concession_area_ha": 17856.8,
+        "province": "Central Kalimantan",
+        "kabupaten": "Katingan",
+        "beneficial_owners": [
+          "Dewi Hidayat",
+          "Dewi Pratama"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2019 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-017",
+      "supplier_id": "SUP-017",
+      "polygon": {
+        "id": "PLY-017",
+        "label": "Batch record — East Kalimantan forest (compliant)",
+        "region": "East Kalimantan forest",
+        "province": "East Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 2341.53,
+        "centroid_lat": 0.018589,
+        "centroid_lon": 115.777633,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                115.79959211551146,
+                0.014149758789821665
+              ],
+              [
+                115.79485529387075,
+                0.016256713353402154
+              ],
+              [
+                115.7943928246989,
+                0.023244572533984535
+              ],
+              [
+                115.80354347851026,
+                0.036451974061905625
+              ],
+              [
+                115.7436381595161,
+                0.03791421181855281
+              ],
+              [
+                115.7451992327049,
+                0.019028415216004162
+              ],
+              [
+                115.79982682011014,
+                -0.010438903915638124
+              ],
+              [
+                115.81147693344333,
+                0.008214493407973436
+              ],
+              [
+                115.79959211551146,
+                0.014149758789821665
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-017",
+        "legal_name": "PT Mitra Jaya Andalas",
+        "trading_name": "Mitra Jaya Andalas (SYNTH-017)",
+        "group": "Grup Sriwijaya",
+        "nib": "3296125192451",
+        "npwp": "17.177.124.2-422.693",
+        "hgu_number": "HGU No. 958/HGU/BPN/2014",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 9404.5,
+        "province": "East Kalimantan",
+        "kabupaten": "Kutai Timur",
+        "beneficial_owners": [
+          "Adi Santoso",
+          "Joko Halim"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-018",
+      "supplier_id": "SUP-018",
+      "polygon": {
+        "id": "PLY-018",
+        "label": "Batch record — West Kalimantan forest (compliant)",
+        "region": "West Kalimantan forest",
+        "province": "West Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 3108.56,
+        "centroid_lat": 0.125128,
+        "centroid_lon": 111.239846,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                111.25080817038646,
+                0.15864631636994572
+              ],
+              [
+                111.20052688287412,
+                0.13228502073018303
+              ],
+              [
+                111.21508082352098,
+                0.11477375596912251
+              ],
+              [
+                111.24760560589435,
+                0.09269617020889878
+              ],
+              [
+                111.27239853079284,
+                0.11271346316713948
+              ],
+              [
+                111.25080817038646,
+                0.15864631636994572
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-018",
+        "legal_name": "PT Mitra Perkasa Sriwijaya",
+        "trading_name": "Mitra Perkasa Sriwijaya (SYNTH-018)",
+        "group": "Grup Borneo",
+        "nib": "2415692187344",
+        "npwp": "95.665.790.8-130.402",
+        "hgu_number": "HGU No. 950/HGU/BPN/2013",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 14196.2,
+        "province": "West Kalimantan",
+        "kabupaten": "Kapuas Hulu",
+        "beneficial_owners": [
+          "Citra Saputra",
+          "Citra Hidayat"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-019",
+      "supplier_id": "SUP-019",
+      "polygon": {
+        "id": "PLY-019",
+        "label": "Batch record — Riau peat forests (compliant)",
+        "region": "Riau peat forests",
+        "province": "Riau",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 3700.01,
+        "centroid_lat": -0.165846,
+        "centroid_lon": 101.075639,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                101.10351152209316,
+                -0.1506828093197573
+              ],
+              [
+                101.06055276713924,
+                -0.13321064645798586
+              ],
+              [
+                101.04022995430974,
+                -0.14936499788659321
+              ],
+              [
+                101.03997290641995,
+                -0.16160058753997011
+              ],
+              [
+                101.07950307834258,
+                -0.204357234174832
+              ],
+              [
+                101.1064492472983,
+                -0.18126660115511195
+              ],
+              [
+                101.11011280304801,
+                -0.1690442633516053
+              ],
+              [
+                101.10351152209316,
+                -0.1506828093197573
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-019",
+        "legal_name": "PT Anugerah Perkasa Nusantara",
+        "trading_name": "Anugerah Perkasa Nusantara (SYNTH-019)",
+        "group": "Grup Khatulistiwa",
+        "nib": "8118201008677",
+        "npwp": "12.790.588.4-407.199",
+        "hgu_number": "HGU No. 650/HGU/BPN/2015",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 16378.4,
+        "province": "Riau",
+        "kabupaten": "Siak",
+        "beneficial_owners": [
+          "Gunawan Pratama",
+          "Taufik Wijaya"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-020",
+      "supplier_id": "SUP-020",
+      "polygon": {
+        "id": "PLY-020",
+        "label": "Batch record — Jambi lowland forest (compliant)",
+        "region": "Jambi lowland forest",
+        "province": "Jambi",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 2826.65,
+        "centroid_lat": -1.738818,
+        "centroid_lon": 102.506211,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.53852348680374,
+                -1.731233490589069
+              ],
+              [
+                102.52114504598629,
+                -1.7213672286804025
+              ],
+              [
+                102.52944016538802,
+                -1.7165148163641653
+              ],
+              [
+                102.52034340058486,
+                -1.7012780144676811
+              ],
+              [
+                102.45782986679924,
+                -1.7616656355896945
+              ],
+              [
+                102.53218147014917,
+                -1.75587081452414
+              ],
+              [
+                102.53852348680374,
+                -1.731233490589069
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-020",
+        "legal_name": "PT Mitra Sentosa Sriwijaya",
+        "trading_name": "Mitra Sentosa Sriwijaya (SYNTH-020)",
+        "group": "Grup Borneo",
+        "nib": "3833273712430",
+        "npwp": "80.636.680.6-946.346",
+        "hgu_number": "HGU No. 433/HGU/BPN/2017",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 8390.8,
+        "province": "Jambi",
+        "kabupaten": "Tebo",
+        "beneficial_owners": [
+          "Joko Saputra",
+          "Kartika Saputra"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-021",
+      "supplier_id": "SUP-021",
+      "polygon": {
+        "id": "PLY-021",
+        "label": "Batch record — South Sumatra peat forest (compliant)",
+        "region": "South Sumatra peat forest",
+        "province": "South Sumatra",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 971.99,
+        "centroid_lat": -2.211232,
+        "centroid_lon": 103.141838,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                103.16043118978848,
+                -2.2051256500704266
+              ],
+              [
+                103.12143945714234,
+                -2.196375015724442
+              ],
+              [
+                103.12646598952563,
+                -2.218263738709015
+              ],
+              [
+                103.1296024666583,
+                -2.22432236267938
+              ],
+              [
+                103.13597680055634,
+                -2.2228566948339745
+              ],
+              [
+                103.16512341324162,
+                -2.219994117309043
+              ],
+              [
+                103.16043118978848,
+                -2.2051256500704266
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-021",
+        "legal_name": "PT Anugerah Lestari Andalas",
+        "trading_name": "Anugerah Lestari Andalas (SYNTH-021)",
+        "group": "Grup Khatulistiwa",
+        "nib": "3539786538985",
+        "npwp": "33.377.394.9-130.418",
+        "hgu_number": "HGU No. 147/HGU/BPN/2011",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 9841.2,
+        "province": "South Sumatra",
+        "kabupaten": "Musi Banyuasin",
+        "beneficial_owners": [
+          "Nur Santoso",
+          "Indah Utami"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-022",
+      "supplier_id": "SUP-022",
+      "polygon": {
+        "id": "PLY-022",
+        "label": "Batch record — Central Kalimantan forest (ambiguous)",
+        "region": "Central Kalimantan forest",
+        "province": "Central Kalimantan",
+        "archetype": "ambiguous",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 424.35,
+        "centroid_lat": -1.716633,
+        "centroid_lon": 111.800065,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                111.7942233071317,
+                -1.6978013205161349
+              ],
+              [
+                111.79259496587092,
+                -1.712726950612334
+              ],
+              [
+                111.78681066817005,
+                -1.7170500874716692
+              ],
+              [
+                111.77923755832713,
+                -1.7148045668458443
+              ],
+              [
+                111.78402923371546,
+                -1.7175955512097685
+              ],
+              [
+                111.81782833256715,
+                -1.7312490779862226
+              ],
+              [
+                111.7942233071317,
+                -1.6978013205161349
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-022",
+        "legal_name": "PT Sawit Perkasa Sriwijaya",
+        "trading_name": "Sawit Perkasa Sriwijaya (SYNTH-022)",
+        "group": "Grup Sriwijaya",
+        "nib": "6149198173838",
+        "npwp": "64.117.368.4-061.938",
+        "hgu_number": "HGU No. 283/HGU/BPN/2006",
+        "pbp_number": "SK.1961/MENLHK-PKTL/PBPH/2006",
+        "permit_status": "active",
+        "concession_area_ha": 15517.5,
+        "province": "Central Kalimantan",
+        "kabupaten": "Katingan",
+        "beneficial_owners": [
+          "Maya Hartono",
+          "Wulan Hartono"
+        ],
+        "certifications": [
+          "RSPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "ambiguous"
+    },
+    {
+      "record_id": "REC-023",
+      "supplier_id": "SUP-023",
+      "polygon": {
+        "id": "PLY-023",
+        "label": "Batch record — East Kalimantan forest (compliant)",
+        "region": "East Kalimantan forest",
+        "province": "East Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 1884.93,
+        "centroid_lat": 0.065874,
+        "centroid_lon": 116.178184,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                116.20452253290004,
+                0.07777589292134345
+              ],
+              [
+                116.1880538736777,
+                0.0916563892688746
+              ],
+              [
+                116.17959522451356,
+                0.0813778925033796
+              ],
+              [
+                116.14724101178935,
+                0.07110508496564959
+              ],
+              [
+                116.1647027333464,
+                0.04422077180988239
+              ],
+              [
+                116.1925841808319,
+                0.048958545439693565
+              ],
+              [
+                116.20452253290004,
+                0.07777589292134345
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-023",
+        "legal_name": "PT Agro Jaya Khatulistiwa",
+        "trading_name": "Agro Jaya Khatulistiwa (SYNTH-023)",
+        "group": "Grup Sriwijaya",
+        "nib": "2452708419840",
+        "npwp": "34.380.502.4-111.192",
+        "hgu_number": "HGU No. 492/HGU/BPN/2012",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 14001.7,
+        "province": "East Kalimantan",
+        "kabupaten": "Kutai Timur",
+        "beneficial_owners": [
+          "Maya Nugroho",
+          "Bayu Halim"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-024",
+      "supplier_id": "SUP-024",
+      "polygon": {
+        "id": "PLY-024",
+        "label": "Batch record — West Kalimantan forest (compliant)",
+        "region": "West Kalimantan forest",
+        "province": "West Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 409.04,
+        "centroid_lat": -0.733448,
+        "centroid_lon": 112.082207,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                112.09561068593682,
+                -0.7332614901278749
+              ],
+              [
+                112.08304912495298,
+                -0.7208730725236069
+              ],
+              [
+                112.08157311352359,
+                -0.7257086951725815
+              ],
+              [
+                112.06696179425059,
+                -0.7296047148219909
+              ],
+              [
+                112.07788171139013,
+                -0.7417388834352455
+              ],
+              [
+                112.08437128779103,
+                -0.7451533364338011
+              ],
+              [
+                112.09279832327245,
+                -0.7360009674288505
+              ],
+              [
+                112.09561068593682,
+                -0.7332614901278749
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-024",
+        "legal_name": "PT Anugerah Makmur Nusantara",
+        "trading_name": "Anugerah Makmur Nusantara (SYNTH-024)",
+        "group": "Grup Borneo",
+        "nib": "8435562144432",
+        "npwp": "94.306.802.4-417.222",
+        "hgu_number": "HGU No. 430/HGU/BPN/2017",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 16395.8,
+        "province": "West Kalimantan",
+        "kabupaten": "Kapuas Hulu",
+        "beneficial_owners": [
+          "Indah Saputra",
+          "Gunawan Nugroho"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-025",
+      "supplier_id": "SUP-025",
+      "polygon": {
+        "id": "PLY-025",
+        "label": "Batch record — Riau peat forests (compliant)",
+        "region": "Riau peat forests",
+        "province": "Riau",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 317.75,
+        "centroid_lat": -0.677336,
+        "centroid_lon": 102.777537,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.78691638933472,
+                -0.6703234578323165
+              ],
+              [
+                102.78233194358629,
+                -0.6677376063388744
+              ],
+              [
+                102.776807598494,
+                -0.6689096700436514
+              ],
+              [
+                102.77420798930339,
+                -0.6679668853030161
+              ],
+              [
+                102.7665476635369,
+                -0.681629279639168
+              ],
+              [
+                102.78144103789819,
+                -0.6886233701532021
+              ],
+              [
+                102.78691638933472,
+                -0.6703234578323165
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-025",
+        "legal_name": "PT Hutan Mandiri Nusantara",
+        "trading_name": "Hutan Mandiri Nusantara (SYNTH-025)",
+        "group": "Grup Nusantara",
+        "nib": "6649070921982",
+        "npwp": "88.959.749.4-703.100",
+        "hgu_number": "HGU No. 267/HGU/BPN/2005",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 4196.6,
+        "province": "Riau",
+        "kabupaten": "Siak",
+        "beneficial_owners": [
+          "Adi Hartono",
+          "Hendra Halim"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-026",
+      "supplier_id": "SUP-026",
+      "polygon": {
+        "id": "PLY-026",
+        "label": "Batch record — Jambi lowland forest (ambiguous)",
+        "region": "Jambi lowland forest",
+        "province": "Jambi",
+        "archetype": "ambiguous",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 681.27,
+        "centroid_lat": -2.307634,
+        "centroid_lon": 102.393205,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.41008160594289,
+                -2.2992157627683527
+              ],
+              [
+                102.39051880414979,
+                -2.2928639388267964
+              ],
+              [
+                102.38080075810383,
+                -2.2974696969876147
+              ],
+              [
+                102.38345223880796,
+                -2.305671984452111
+              ],
+              [
+                102.38743268097728,
+                -2.331761383596602
+              ],
+              [
+                102.41008160594289,
+                -2.2992157627683527
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-026",
+        "legal_name": "PT Mitra Sejahtera Andalas",
+        "trading_name": "Mitra Sejahtera Andalas (SYNTH-026)",
+        "group": "Grup Borneo",
+        "nib": "6286576248378",
+        "npwp": "96.385.492.6-772.829",
+        "hgu_number": "HGU No. 837/HGU/BPN/2009",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 16957.3,
+        "province": "Jambi",
+        "kabupaten": "Tebo",
+        "beneficial_owners": [
+          "Citra Santoso",
+          "Bayu Hartono"
+        ],
+        "certifications": [
+          "RSPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "ambiguous"
+    },
+    {
+      "record_id": "REC-027",
+      "supplier_id": "SUP-027",
+      "polygon": {
+        "id": "PLY-027",
+        "label": "Batch record — South Sumatra peat forest (compliant)",
+        "region": "South Sumatra peat forest",
+        "province": "South Sumatra",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 1073.78,
+        "centroid_lat": -3.761412,
+        "centroid_lon": 103.155447,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                103.14133664594148,
+                -3.7390504670592564
+              ],
+              [
+                103.15579248109783,
+                -3.734340070108509
+              ],
+              [
+                103.17060732440511,
+                -3.7756419496041445
+              ],
+              [
+                103.15353465869761,
+                -3.7912483774210313
+              ],
+              [
+                103.14133664594148,
+                -3.7390504670592564
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-027",
+        "legal_name": "PT Sawit Lestari Sriwijaya",
+        "trading_name": "Sawit Lestari Sriwijaya (SYNTH-027)",
+        "group": "Grup Nusantara",
+        "nib": "9780019715940",
+        "npwp": "59.352.824.0-823.283",
+        "hgu_number": "HGU No. 586/HGU/BPN/2008",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 15498.5,
+        "province": "South Sumatra",
+        "kabupaten": "Musi Banyuasin",
+        "beneficial_owners": [
+          "Indah Saputra",
+          "Bayu Wijaya"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-028",
+      "supplier_id": "SUP-028",
+      "polygon": {
+        "id": "PLY-028",
+        "label": "Batch record — Central Kalimantan forest (high_risk)",
+        "region": "Central Kalimantan forest",
+        "province": "Central Kalimantan",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 4779.95,
+        "centroid_lat": -1.00799,
+        "centroid_lon": 111.510831,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                111.44570532083958,
+                -0.9782309061185235
+              ],
+              [
+                111.48123357589998,
+                -1.015638331305231
+              ],
+              [
+                111.50736198264102,
+                -1.0351535280259545
+              ],
+              [
+                111.54744513651491,
+                -1.044525146364954
+              ],
+              [
+                111.54687348388967,
+                -1.0365095242474187
+              ],
+              [
+                111.55478696455421,
+                -0.9945432134933545
+              ],
+              [
+                111.55405992986576,
+                -0.9917259742421871
+              ],
+              [
+                111.44570532083958,
+                -0.9782309061185235
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-028",
+        "legal_name": "PT Anugerah Sejahtera Borneo",
+        "trading_name": "Anugerah Sejahtera Borneo (SYNTH-028)",
+        "group": "Grup Sriwijaya",
+        "nib": "6542053347530",
+        "npwp": "36.857.446.4-279.175",
+        "hgu_number": null,
+        "pbp_number": "SK.4198/MENLHK-PKTL/PBPH/2006",
+        "permit_status": "expired",
+        "concession_area_ha": 9561.9,
+        "province": "Central Kalimantan",
+        "kabupaten": "Katingan",
+        "beneficial_owners": [
+          "Joko Halim",
+          "Taufik Pratama"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2023 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-029",
+      "supplier_id": "SUP-029",
+      "polygon": {
+        "id": "PLY-029",
+        "label": "Batch record — East Kalimantan forest (high_risk)",
+        "region": "East Kalimantan forest",
+        "province": "East Kalimantan",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 2155.36,
+        "centroid_lat": 0.514806,
+        "centroid_lon": 116.958744,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                117.0026831467369,
+                0.49134107661144166
+              ],
+              [
+                117.00334282561448,
+                0.4987586506603223
+              ],
+              [
+                116.95609250251641,
+                0.5354798612196565
+              ],
+              [
+                116.94553492512665,
+                0.5370129692741616
+              ],
+              [
+                116.91218346958647,
+                0.5158448541630016
+              ],
+              [
+                117.0026831467369,
+                0.49134107661144166
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-029",
+        "legal_name": "PT Anugerah Makmur Andalas",
+        "trading_name": "Anugerah Makmur Andalas (SYNTH-029)",
+        "group": "Grup Andalas",
+        "nib": "8300058728404",
+        "npwp": "51.876.819.9-416.819",
+        "hgu_number": null,
+        "pbp_number": "SK.445/MENLHK-PKTL/PBPH/2015",
+        "permit_status": "expired",
+        "concession_area_ha": 15281.1,
+        "province": "East Kalimantan",
+        "kabupaten": "Kutai Timur",
+        "beneficial_owners": [
+          "Putra Pratama",
+          "Yusuf Utami"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2019 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-030",
+      "supplier_id": "SUP-030",
+      "polygon": {
+        "id": "PLY-030",
+        "label": "Batch record — West Kalimantan forest (compliant)",
+        "region": "West Kalimantan forest",
+        "province": "West Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 1750.62,
+        "centroid_lat": 0.556942,
+        "centroid_lon": 111.439238,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                111.46353816442264,
+                0.5714809942092922
+              ],
+              [
+                111.41645732431117,
+                0.571329670564437
+              ],
+              [
+                111.40486214382982,
+                0.5640364786101684
+              ],
+              [
+                111.4390705809261,
+                0.5371589998374631
+              ],
+              [
+                111.45971917759572,
+                0.5363166733319764
+              ],
+              [
+                111.44679999619522,
+                0.5467593682162585
+              ],
+              [
+                111.46083172192498,
+                0.541429601149404
+              ],
+              [
+                111.46353816442264,
+                0.5714809942092922
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-030",
+        "legal_name": "PT Sawit Jaya Nusantara",
+        "trading_name": "Sawit Jaya Nusantara (SYNTH-030)",
+        "group": "Grup Sriwijaya",
+        "nib": "4505995394523",
+        "npwp": "83.533.733.0-232.997",
+        "hgu_number": "HGU No. 618/HGU/BPN/2012",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 16178.1,
+        "province": "West Kalimantan",
+        "kabupaten": "Kapuas Hulu",
+        "beneficial_owners": [
+          "Rahmat Nugroho",
+          "Yusuf Nugroho"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-031",
+      "supplier_id": "SUP-031",
+      "polygon": {
+        "id": "PLY-031",
+        "label": "Batch record — Riau peat forests (compliant)",
+        "region": "Riau peat forests",
+        "province": "Riau",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 368.92,
+        "centroid_lat": 1.137025,
+        "centroid_lon": 102.78855,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.79920621604714,
+                1.1449429481054012
+              ],
+              [
+                102.78701329840803,
+                1.1460287291156324
+              ],
+              [
+                102.77971121440908,
+                1.1421254172389272
+              ],
+              [
+                102.77911483916347,
+                1.1293667056149683
+              ],
+              [
+                102.78152616382604,
+                1.125893788152358
+              ],
+              [
+                102.79804365945961,
+                1.132964154293031
+              ],
+              [
+                102.79920621604714,
+                1.1449429481054012
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-031",
+        "legal_name": "PT Karya Makmur Khatulistiwa",
+        "trading_name": "Karya Makmur Khatulistiwa (SYNTH-031)",
+        "group": "Grup Borneo",
+        "nib": "6835865888293",
+        "npwp": "85.227.255.3-713.154",
+        "hgu_number": "HGU No. 941/HGU/BPN/2020",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 14558.4,
+        "province": "Riau",
+        "kabupaten": "Siak",
+        "beneficial_owners": [
+          "Indah Kusuma",
+          "Putra Halim"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-032",
+      "supplier_id": "SUP-032",
+      "polygon": {
+        "id": "PLY-032",
+        "label": "Batch record — Jambi lowland forest (compliant)",
+        "region": "Jambi lowland forest",
+        "province": "Jambi",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 541.94,
+        "centroid_lat": -1.052613,
+        "centroid_lon": 102.834145,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.83508627245976,
+                -1.0424826524730262
+              ],
+              [
+                102.82999180246709,
+                -1.0413827505391748
+              ],
+              [
+                102.82276634983118,
+                -1.044559986144106
+              ],
+              [
+                102.82046160229245,
+                -1.059698191394488
+              ],
+              [
+                102.828748100386,
+                -1.0618348029962523
+              ],
+              [
+                102.83365106169424,
+                -1.0610664406248338
+              ],
+              [
+                102.84565196255129,
+                -1.0604074489908866
+              ],
+              [
+                102.85176718661292,
+                -1.052906960913283
+              ],
+              [
+                102.83508627245976,
+                -1.0424826524730262
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-032",
+        "legal_name": "PT Karya Sentosa Borneo",
+        "trading_name": "Karya Sentosa Borneo (SYNTH-032)",
+        "group": "Grup Khatulistiwa",
+        "nib": "2630225427819",
+        "npwp": "37.433.950.4-550.971",
+        "hgu_number": "HGU No. 598/HGU/BPN/2010",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 14213.5,
+        "province": "Jambi",
+        "kabupaten": "Tebo",
+        "beneficial_owners": [
+          "Wulan Saputra",
+          "Rahmat Saputra"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-033",
+      "supplier_id": "SUP-033",
+      "polygon": {
+        "id": "PLY-033",
+        "label": "Batch record — South Sumatra peat forest (compliant)",
+        "region": "South Sumatra peat forest",
+        "province": "South Sumatra",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 2029.23,
+        "centroid_lat": -3.275825,
+        "centroid_lon": 103.069456,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                103.09945076746104,
+                -3.2875498228640065
+              ],
+              [
+                103.10662809732486,
+                -3.274618744742349
+              ],
+              [
+                103.0662920100086,
+                -3.2621429664979846
+              ],
+              [
+                103.01770806606709,
+                -3.2561900991733133
+              ],
+              [
+                103.01500340696884,
+                -3.2583208590200314
+              ],
+              [
+                103.0985477456203,
+                -3.303758258171607
+              ],
+              [
+                103.09945076746104,
+                -3.2875498228640065
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-033",
+        "legal_name": "PT Mitra Sentosa Sriwijaya",
+        "trading_name": "Mitra Sentosa Sriwijaya (SYNTH-033)",
+        "group": "Grup Andalas",
+        "nib": "2136828727384",
+        "npwp": "93.354.026.0-628.721",
+        "hgu_number": "HGU No. 286/HGU/BPN/2011",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 10985.2,
+        "province": "South Sumatra",
+        "kabupaten": "Musi Banyuasin",
+        "beneficial_owners": [
+          "Yusuf Nugroho",
+          "Adi Hidayat"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-034",
+      "supplier_id": "SUP-034",
+      "polygon": {
+        "id": "PLY-034",
+        "label": "Batch record — Central Kalimantan forest (ambiguous)",
+        "region": "Central Kalimantan forest",
+        "province": "Central Kalimantan",
+        "archetype": "ambiguous",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 183.24,
+        "centroid_lat": -1.839431,
+        "centroid_lon": 112.259228,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                112.2655434474128,
+                -1.8298646667760192
+              ],
+              [
+                112.26545283707458,
+                -1.8254916484424275
+              ],
+              [
+                112.25176910347693,
+                -1.8416156862062223
+              ],
+              [
+                112.25700040275251,
+                -1.8497634837772432
+              ],
+              [
+                112.25950224267172,
+                -1.8512957508722685
+              ],
+              [
+                112.2655434474128,
+                -1.8298646667760192
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-034",
+        "legal_name": "PT Agro Sejahtera Sriwijaya",
+        "trading_name": "Agro Sejahtera Sriwijaya (SYNTH-034)",
+        "group": "Grup Sriwijaya",
+        "nib": "6702907188902",
+        "npwp": "60.674.088.8-007.077",
+        "hgu_number": "HGU No. 558/HGU/BPN/2016",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 1136.4,
+        "province": "Central Kalimantan",
+        "kabupaten": "Katingan",
+        "beneficial_owners": [
+          "Fitri Utami",
+          "Putra Saputra"
+        ],
+        "certifications": [
+          "RSPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "ambiguous"
+    },
+    {
+      "record_id": "REC-035",
+      "supplier_id": "SUP-035",
+      "polygon": {
+        "id": "PLY-035",
+        "label": "Batch record — East Kalimantan forest (ambiguous)",
+        "region": "East Kalimantan forest",
+        "province": "East Kalimantan",
+        "archetype": "ambiguous",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 514.05,
+        "centroid_lat": -0.134333,
+        "centroid_lon": 117.267786,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                117.28171148730893,
+                -0.13784701674026442
+              ],
+              [
+                117.27797343564545,
+                -0.1204357904822978
+              ],
+              [
+                117.27347901461344,
+                -0.12138397722183589
+              ],
+              [
+                117.25250170476703,
+                -0.1369479426524712
+              ],
+              [
+                117.2531079210642,
+                -0.14655112644831145
+              ],
+              [
+                117.28171148730893,
+                -0.13784701674026442
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-035",
+        "legal_name": "PT Karya Sentosa Andalas",
+        "trading_name": "Karya Sentosa Andalas (SYNTH-035)",
+        "group": "Grup Nusantara",
+        "nib": "7465437574287",
+        "npwp": "53.310.813.7-470.244",
+        "hgu_number": "HGU No. 318/HGU/BPN/2015",
+        "pbp_number": "SK.6091/MENLHK-PKTL/PBPH/2015",
+        "permit_status": "active",
+        "concession_area_ha": 8855.9,
+        "province": "East Kalimantan",
+        "kabupaten": "Kutai Timur",
+        "beneficial_owners": [
+          "Yusuf Wijaya",
+          "Lestari Santoso"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "ambiguous"
+    },
+    {
+      "record_id": "REC-036",
+      "supplier_id": "SUP-036",
+      "polygon": {
+        "id": "PLY-036",
+        "label": "Batch record — West Kalimantan forest (compliant)",
+        "region": "West Kalimantan forest",
+        "province": "West Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 3279.41,
+        "centroid_lat": -0.156176,
+        "centroid_lon": 110.649225,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                110.6659311619546,
+                -0.12330590980171036
+              ],
+              [
+                110.6419747534191,
+                -0.13140927600428376
+              ],
+              [
+                110.62046351823929,
+                -0.13071168493628696
+              ],
+              [
+                110.61662171144118,
+                -0.13990316326858407
+              ],
+              [
+                110.63654659059236,
+                -0.1789791470311387
+              ],
+              [
+                110.63830843240915,
+                -0.1890634258694999
+              ],
+              [
+                110.6520255090941,
+                -0.19154469625048834
+              ],
+              [
+                110.67787353445732,
+                -0.173115283683594
+              ],
+              [
+                110.6659311619546,
+                -0.12330590980171036
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-036",
+        "legal_name": "PT Sawit Lestari Khatulistiwa",
+        "trading_name": "Sawit Lestari Khatulistiwa (SYNTH-036)",
+        "group": "Grup Andalas",
+        "nib": "2016516992477",
+        "npwp": "49.191.210.9-562.893",
+        "hgu_number": "HGU No. 724/HGU/BPN/2016",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 4969.5,
+        "province": "West Kalimantan",
+        "kabupaten": "Kapuas Hulu",
+        "beneficial_owners": [
+          "Dewi Hidayat",
+          "Maya Nugroho"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-037",
+      "supplier_id": "SUP-037",
+      "polygon": {
+        "id": "PLY-037",
+        "label": "Batch record — Riau peat forests (high_risk)",
+        "region": "Riau peat forests",
+        "province": "Riau",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 5801.76,
+        "centroid_lat": 0.2569,
+        "centroid_lon": 101.067307,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                101.04159425272044,
+                0.29755253555321365
+              ],
+              [
+                101.00918238355226,
+                0.2801140569030077
+              ],
+              [
+                101.02421752549878,
+                0.26983536522375784
+              ],
+              [
+                101.03060517426658,
+                0.25787373958542975
+              ],
+              [
+                101.06281051776247,
+                0.21322477827381892
+              ],
+              [
+                101.13263111850429,
+                0.25047469663273875
+              ],
+              [
+                101.04159425272044,
+                0.29755253555321365
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-037",
+        "legal_name": "PT Agro Mandiri Sriwijaya",
+        "trading_name": "Agro Mandiri Sriwijaya (SYNTH-037)",
+        "group": "Grup Sriwijaya",
+        "nib": "6890404404407",
+        "npwp": "18.861.395.4-858.470",
+        "hgu_number": null,
+        "pbp_number": "SK.4670/MENLHK-PKTL/PBPH/2011",
+        "permit_status": "suspended",
+        "concession_area_ha": 1746.3,
+        "province": "Riau",
+        "kabupaten": "Siak",
+        "beneficial_owners": [
+          "Gunawan Saputra",
+          "Citra Saputra"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2021 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-038",
+      "supplier_id": "SUP-038",
+      "polygon": {
+        "id": "PLY-038",
+        "label": "Batch record — Jambi lowland forest (compliant)",
+        "region": "Jambi lowland forest",
+        "province": "Jambi",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 1390.96,
+        "centroid_lat": -1.678862,
+        "centroid_lon": 102.01056,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.02359606215073,
+                -1.661282642788049
+              ],
+              [
+                101.98870751880928,
+                -1.664000766389838
+              ],
+              [
+                101.98476369795843,
+                -1.674099267611699
+              ],
+              [
+                102.02025335837011,
+                -1.701502752273829
+              ],
+              [
+                102.0269371452987,
+                -1.7082255414291936
+              ],
+              [
+                102.0277856782519,
+                -1.6874939832741171
+              ],
+              [
+                102.02359606215073,
+                -1.661282642788049
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-038",
+        "legal_name": "PT Sumber Makmur Borneo",
+        "trading_name": "Sumber Makmur Borneo (SYNTH-038)",
+        "group": "Grup Nusantara",
+        "nib": "9525655167154",
+        "npwp": "84.696.865.1-401.211",
+        "hgu_number": "HGU No. 478/HGU/BPN/2017",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 2567.9,
+        "province": "Jambi",
+        "kabupaten": "Tebo",
+        "beneficial_owners": [
+          "Wulan Halim",
+          "Taufik Kusuma"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-039",
+      "supplier_id": "SUP-039",
+      "polygon": {
+        "id": "PLY-039",
+        "label": "Batch record — South Sumatra peat forest (compliant)",
+        "region": "South Sumatra peat forest",
+        "province": "South Sumatra",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 3023.59,
+        "centroid_lat": -3.335803,
+        "centroid_lon": 102.983488,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                103.02726152685766,
+                -3.3385023269520824
+              ],
+              [
+                103.00418576571694,
+                -3.302554727739582
+              ],
+              [
+                102.9420552646451,
+                -3.344693191630836
+              ],
+              [
+                102.93818523469626,
+                -3.3553828899256724
+              ],
+              [
+                102.94184249879073,
+                -3.3639871286104652
+              ],
+              [
+                103.02726152685766,
+                -3.3385023269520824
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-039",
+        "legal_name": "PT Mitra Lestari Khatulistiwa",
+        "trading_name": "Mitra Lestari Khatulistiwa (SYNTH-039)",
+        "group": "Grup Andalas",
+        "nib": "6382164220003",
+        "npwp": "93.468.748.8-355.361",
+        "hgu_number": "HGU No. 378/HGU/BPN/2007",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 3989.6,
+        "province": "South Sumatra",
+        "kabupaten": "Musi Banyuasin",
+        "beneficial_owners": [
+          "Nur Kusuma",
+          "Bayu Hidayat"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-040",
+      "supplier_id": "SUP-040",
+      "polygon": {
+        "id": "PLY-040",
+        "label": "Batch record — Central Kalimantan forest (high_risk)",
+        "region": "Central Kalimantan forest",
+        "province": "Central Kalimantan",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 5262.73,
+        "centroid_lat": -2.446084,
+        "centroid_lon": 112.547457,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                112.57288760819245,
+                -2.421139004157981
+              ],
+              [
+                112.53532441479658,
+                -2.3960909905223535
+              ],
+              [
+                112.50012972827619,
+                -2.460936466427623
+              ],
+              [
+                112.52545641482027,
+                -2.4551133283212194
+              ],
+              [
+                112.54405608904332,
+                -2.4856314505169137
+              ],
+              [
+                112.55917872805028,
+                -2.4928758383004017
+              ],
+              [
+                112.58100657691617,
+                -2.4802969870790204
+              ],
+              [
+                112.57288760819245,
+                -2.421139004157981
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-040",
+        "legal_name": "PT Bumi Sentosa Khatulistiwa",
+        "trading_name": "Bumi Sentosa Khatulistiwa (SYNTH-040)",
+        "group": "Grup Nusantara",
+        "nib": "5925754514974",
+        "npwp": "99.144.098.3-193.707",
+        "hgu_number": "HGU No. 341/HGU/BPN/2012",
+        "pbp_number": null,
+        "permit_status": "suspended",
+        "concession_area_ha": 17720.8,
+        "province": "Central Kalimantan",
+        "kabupaten": "Katingan",
+        "beneficial_owners": [
+          "Gunawan Utami",
+          "Adi Wijaya"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2023 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-041",
+      "supplier_id": "SUP-041",
+      "polygon": {
+        "id": "PLY-041",
+        "label": "Batch record — East Kalimantan forest (compliant)",
+        "region": "East Kalimantan forest",
+        "province": "East Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 2633.44,
+        "centroid_lat": -0.766284,
+        "centroid_lon": 117.385766,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                117.43596521864308,
+                -0.7752224685719118
+              ],
+              [
+                117.40102520765993,
+                -0.7537255727369498
+              ],
+              [
+                117.3956335242496,
+                -0.7474790983897879
+              ],
+              [
+                117.36745328589652,
+                -0.7392405185751296
+              ],
+              [
+                117.3510668262567,
+                -0.7880261809962739
+              ],
+              [
+                117.43596521864308,
+                -0.7752224685719118
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-041",
+        "legal_name": "PT Mitra Makmur Borneo",
+        "trading_name": "Mitra Makmur Borneo (SYNTH-041)",
+        "group": "Grup Khatulistiwa",
+        "nib": "2125890192285",
+        "npwp": "24.856.229.3-197.885",
+        "hgu_number": "HGU No. 411/HGU/BPN/2017",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 8601.8,
+        "province": "East Kalimantan",
+        "kabupaten": "Kutai Timur",
+        "beneficial_owners": [
+          "Indah Kusuma",
+          "Nur Utami"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-042",
+      "supplier_id": "SUP-042",
+      "polygon": {
+        "id": "PLY-042",
+        "label": "Batch record — West Kalimantan forest (compliant)",
+        "region": "West Kalimantan forest",
+        "province": "West Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 2392.5,
+        "centroid_lat": -0.818139,
+        "centroid_lon": 112.287995,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                112.29957604788726,
+                -0.7810203658127914
+              ],
+              [
+                112.28091602952219,
+                -0.7857611348947073
+              ],
+              [
+                112.26375079198743,
+                -0.8504591223834728
+              ],
+              [
+                112.27434758622962,
+                -0.8493950102935823
+              ],
+              [
+                112.30972308228453,
+                -0.8353386871125121
+              ],
+              [
+                112.29957604788726,
+                -0.7810203658127914
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-042",
+        "legal_name": "PT Karya Mandiri Sriwijaya",
+        "trading_name": "Karya Mandiri Sriwijaya (SYNTH-042)",
+        "group": "Grup Sriwijaya",
+        "nib": "2074464286883",
+        "npwp": "43.900.997.0-646.920",
+        "hgu_number": "HGU No. 853/HGU/BPN/2005",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 14371.8,
+        "province": "West Kalimantan",
+        "kabupaten": "Kapuas Hulu",
+        "beneficial_owners": [
+          "Fitri Hartono",
+          "Wulan Kusuma"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-043",
+      "supplier_id": "SUP-043",
+      "polygon": {
+        "id": "PLY-043",
+        "label": "Batch record — Riau peat forests (high_risk)",
+        "region": "Riau peat forests",
+        "province": "Riau",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 567.61,
+        "centroid_lat": 0.629717,
+        "centroid_lon": 101.24438,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                101.23363400026886,
+                0.6448429898166328
+              ],
+              [
+                101.23296175878443,
+                0.6416360531880578
+              ],
+              [
+                101.22984612155454,
+                0.6362782520435055
+              ],
+              [
+                101.23357852365396,
+                0.6260274597631685
+              ],
+              [
+                101.22609219028888,
+                0.6222999732293089
+              ],
+              [
+                101.27012485118527,
+                0.6215139829130641
+              ],
+              [
+                101.23363400026886,
+                0.6448429898166328
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-043",
+        "legal_name": "PT Mitra Mandiri Khatulistiwa",
+        "trading_name": "Mitra Mandiri Khatulistiwa (SYNTH-043)",
+        "group": "Grup Borneo",
+        "nib": "5993008592969",
+        "npwp": "61.239.345.1-043.181",
+        "hgu_number": "HGU No. 342/HGU/BPN/2009",
+        "pbp_number": null,
+        "permit_status": "expired",
+        "concession_area_ha": 2726.5,
+        "province": "Riau",
+        "kabupaten": "Siak",
+        "beneficial_owners": [
+          "Lestari Hartono",
+          "Lestari Nugroho"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2021 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    },
+    {
+      "record_id": "REC-044",
+      "supplier_id": "SUP-044",
+      "polygon": {
+        "id": "PLY-044",
+        "label": "Batch record — Jambi lowland forest (compliant)",
+        "region": "Jambi lowland forest",
+        "province": "Jambi",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 1394.03,
+        "centroid_lat": -2.206986,
+        "centroid_lon": 101.784305,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                101.8015854679995,
+                -2.1775695302612696
+              ],
+              [
+                101.78135181226921,
+                -2.183027473333854
+              ],
+              [
+                101.7625576715368,
+                -2.238378611707427
+              ],
+              [
+                101.77146749691795,
+                -2.228957045779247
+              ],
+              [
+                101.7725812023659,
+                -2.22787036438649
+              ],
+              [
+                101.78405886294809,
+                -2.2366988735217643
+              ],
+              [
+                101.79633997168767,
+                -2.2076656486428248
+              ],
+              [
+                101.8015854679995,
+                -2.1775695302612696
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-044",
+        "legal_name": "PT Hutan Makmur Borneo",
+        "trading_name": "Hutan Makmur Borneo (SYNTH-044)",
+        "group": "Grup Khatulistiwa",
+        "nib": "7210582938523",
+        "npwp": "39.854.306.5-161.305",
+        "hgu_number": "HGU No. 560/HGU/BPN/2005",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 11526.3,
+        "province": "Jambi",
+        "kabupaten": "Tebo",
+        "beneficial_owners": [
+          "Adi Hartono",
+          "Maya Nugroho"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-045",
+      "supplier_id": "SUP-045",
+      "polygon": {
+        "id": "PLY-045",
+        "label": "Batch record — South Sumatra peat forest (ambiguous)",
+        "region": "South Sumatra peat forest",
+        "province": "South Sumatra",
+        "archetype": "ambiguous",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 1358.82,
+        "centroid_lat": -3.843635,
+        "centroid_lon": 103.345092,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                103.35865487315142,
+                -3.8300021318609607
+              ],
+              [
+                103.32710005486854,
+                -3.8269958812913822
+              ],
+              [
+                103.32309042412005,
+                -3.8480960746055124
+              ],
+              [
+                103.34276020807746,
+                -3.8585851191908267
+              ],
+              [
+                103.35221031245719,
+                -3.8648596763843464
+              ],
+              [
+                103.36794983768972,
+                -3.8473861488231402
+              ],
+              [
+                103.35865487315142,
+                -3.8300021318609607
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-045",
+        "legal_name": "PT Sumber Lestari Borneo",
+        "trading_name": "Sumber Lestari Borneo (SYNTH-045)",
+        "group": "Grup Andalas",
+        "nib": "6163673270300",
+        "npwp": "81.808.974.4-040.209",
+        "hgu_number": "HGU No. 391/HGU/BPN/2016",
+        "pbp_number": "SK.3679/MENLHK-PKTL/PBPH/2016",
+        "permit_status": "active",
+        "concession_area_ha": 14828.9,
+        "province": "South Sumatra",
+        "kabupaten": "Musi Banyuasin",
+        "beneficial_owners": [
+          "Kartika Halim",
+          "Wulan Wijaya"
+        ],
+        "certifications": [
+          "RSPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "ambiguous"
+    },
+    {
+      "record_id": "REC-046",
+      "supplier_id": "SUP-046",
+      "polygon": {
+        "id": "PLY-046",
+        "label": "Batch record — Central Kalimantan forest (compliant)",
+        "region": "Central Kalimantan forest",
+        "province": "Central Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 3002.57,
+        "centroid_lat": -1.152177,
+        "centroid_lon": 113.729346,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                113.74370650267295,
+                -1.1306342339166595
+              ],
+              [
+                113.74796792133027,
+                -1.1164726693032105
+              ],
+              [
+                113.6970119538611,
+                -1.1382831126492403
+              ],
+              [
+                113.71264093822475,
+                -1.1775491093206527
+              ],
+              [
+                113.75430338279057,
+                -1.1779183291223678
+              ],
+              [
+                113.7588689985309,
+                -1.1659783817533662
+              ],
+              [
+                113.75296481488263,
+                -1.1529144993154834
+              ],
+              [
+                113.74370650267295,
+                -1.1306342339166595
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-046",
+        "legal_name": "PT Sumber Mandiri Sriwijaya",
+        "trading_name": "Sumber Mandiri Sriwijaya (SYNTH-046)",
+        "group": "Grup Andalas",
+        "nib": "3411057119803",
+        "npwp": "75.651.570.8-218.694",
+        "hgu_number": "HGU No. 774/HGU/BPN/2020",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 9338.9,
+        "province": "Central Kalimantan",
+        "kabupaten": "Katingan",
+        "beneficial_owners": [
+          "Wulan Utami",
+          "Lestari Kusuma"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-047",
+      "supplier_id": "SUP-047",
+      "polygon": {
+        "id": "PLY-047",
+        "label": "Batch record — East Kalimantan forest (compliant)",
+        "region": "East Kalimantan forest",
+        "province": "East Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 3885.2,
+        "centroid_lat": 0.218518,
+        "centroid_lon": 117.441917,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                117.54148579743031,
+                0.23885202876857942
+              ],
+              [
+                117.40519190480921,
+                0.23207437832656447
+              ],
+              [
+                117.39793552315643,
+                0.21958901281832882
+              ],
+              [
+                117.38196969190369,
+                0.18950691954558907
+              ],
+              [
+                117.38122853809267,
+                0.18520548996174013
+              ],
+              [
+                117.54148579743031,
+                0.23885202876857942
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-047",
+        "legal_name": "PT Anugerah Jaya Khatulistiwa",
+        "trading_name": "Anugerah Jaya Khatulistiwa (SYNTH-047)",
+        "group": "Grup Nusantara",
+        "nib": "1108932446511",
+        "npwp": "33.770.947.4-743.718",
+        "hgu_number": "HGU No. 757/HGU/BPN/2013",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 11747.5,
+        "province": "East Kalimantan",
+        "kabupaten": "Kutai Timur",
+        "beneficial_owners": [
+          "Kartika Hidayat",
+          "Nur Utami"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-048",
+      "supplier_id": "SUP-048",
+      "polygon": {
+        "id": "PLY-048",
+        "label": "Batch record — West Kalimantan forest (compliant)",
+        "region": "West Kalimantan forest",
+        "province": "West Kalimantan",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 3445.98,
+        "centroid_lat": 0.680186,
+        "centroid_lon": 110.124624,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                110.1246176960639,
+                0.7440727743693771
+              ],
+              [
+                110.11962061339736,
+                0.7580276815912141
+              ],
+              [
+                110.10570001927991,
+                0.6499670797906199
+              ],
+              [
+                110.13077823501092,
+                0.6237336618839153
+              ],
+              [
+                110.14539098041021,
+                0.6643873319648967
+              ],
+              [
+                110.1246176960639,
+                0.7440727743693771
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-048",
+        "legal_name": "PT Agro Makmur Sriwijaya",
+        "trading_name": "Agro Makmur Sriwijaya (SYNTH-048)",
+        "group": "Grup Borneo",
+        "nib": "6823756520771",
+        "npwp": "71.313.701.8-919.108",
+        "hgu_number": "HGU No. 101/HGU/BPN/2013",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 1554.7,
+        "province": "West Kalimantan",
+        "kabupaten": "Kapuas Hulu",
+        "beneficial_owners": [
+          "Gunawan Utami",
+          "Taufik Wijaya"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-049",
+      "supplier_id": "SUP-049",
+      "polygon": {
+        "id": "PLY-049",
+        "label": "Batch record — Riau peat forests (compliant)",
+        "region": "Riau peat forests",
+        "province": "Riau",
+        "archetype": "compliant",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 2966.75,
+        "centroid_lat": -0.637189,
+        "centroid_lon": 101.278848,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                101.30731307677775,
+                -0.608372451089819
+              ],
+              [
+                101.2654177137473,
+                -0.6099250555585742
+              ],
+              [
+                101.25421796029451,
+                -0.6133665993496862
+              ],
+              [
+                101.25642292389773,
+                -0.6412821697097304
+              ],
+              [
+                101.2818611751639,
+                -0.687726459548972
+              ],
+              [
+                101.30731307677775,
+                -0.608372451089819
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-049",
+        "legal_name": "PT Agro Jaya Khatulistiwa",
+        "trading_name": "Agro Jaya Khatulistiwa (SYNTH-049)",
+        "group": "Grup Andalas",
+        "nib": "2699037137375",
+        "npwp": "75.795.488.2-339.998",
+        "hgu_number": "HGU No. 212/HGU/BPN/2015",
+        "pbp_number": null,
+        "permit_status": "active",
+        "concession_area_ha": 7252.7,
+        "province": "Riau",
+        "kabupaten": "Siak",
+        "beneficial_owners": [
+          "Adi Nugroho",
+          "Maya Hidayat"
+        ],
+        "certifications": [
+          "ISPO"
+        ],
+        "sanctions": [],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "compliant"
+    },
+    {
+      "record_id": "REC-050",
+      "supplier_id": "SUP-050",
+      "polygon": {
+        "id": "PLY-050",
+        "label": "Batch record — Jambi lowland forest (high_risk)",
+        "region": "Jambi lowland forest",
+        "province": "Jambi",
+        "archetype": "high_risk",
+        "scenario": null,
+        "is_demo": false,
+        "area_ha": 3569.23,
+        "centroid_lat": -0.931,
+        "centroid_lon": 102.899436,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                102.90329840829935,
+                -0.8950288999840617
+              ],
+              [
+                102.8612347411767,
+                -0.9283272535720637
+              ],
+              [
+                102.86975068324912,
+                -0.9533899989631895
+              ],
+              [
+                102.93444557229097,
+                -0.953055287318183
+              ],
+              [
+                102.93565640841686,
+                -0.9525650647755517
+              ],
+              [
+                102.93275685896643,
+                -0.929968673457306
+              ],
+              [
+                102.9294196981491,
+                -0.9243815023914517
+              ],
+              [
+                102.90329840829935,
+                -0.8950288999840617
+              ]
+            ]
+          ]
+        }
+      },
+      "legality": {
+        "supplier_id": "SUP-050",
+        "legal_name": "PT Sumber Makmur Borneo",
+        "trading_name": "Sumber Makmur Borneo (SYNTH-050)",
+        "group": "Grup Andalas",
+        "nib": "1518598245079",
+        "npwp": "35.714.244.8-425.782",
+        "hgu_number": null,
+        "pbp_number": "SK.5256/MENLHK-PKTL/PBPH/2019",
+        "permit_status": "suspended",
+        "concession_area_ha": 5555.2,
+        "province": "Jambi",
+        "kabupaten": "Tebo",
+        "beneficial_owners": [
+          "Kartika Saputra",
+          "Rahmat Halim"
+        ],
+        "certifications": [],
+        "sanctions": [
+          "2018 permit suspension (synthetic)"
+        ],
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+      },
+      "expected_archetype": "high_risk"
+    }
+  ]
+}

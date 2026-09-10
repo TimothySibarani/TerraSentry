@@ -17,6 +17,17 @@ class Settings(BaseSettings):
     bedrock_model_orchestrator: str = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
     bedrock_model_extraction: str = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 
+    gfw_api_key: str = ""
+    gfw_api_base_url: str = "https://data-api.globalforestwatch.org"
+    gfw_api_origin: str = "http://localhost"
+    gfw_tcl_version: str = "v1.13"
+    firms_map_key: str = ""
+    firms_source: str = "VIIRS_SNPP_NRT"
+
+    cache_backend: str = "redis"
+    redis_url: str = "redis://localhost:6379/0"
+    cache_ttl_seconds: int = 7_776_000
+
     sap_mode: str = "stub"
     sap_base_url: str = ""
 

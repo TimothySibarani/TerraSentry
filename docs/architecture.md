@@ -52,6 +52,7 @@ the UI as a cockpit over a Python-owned API.
 | Backend | FastAPI + Uvicorn, SSE for live traces | `fastapi[standard]`, `sse-starlette` |
 | ORM / migrations | SQLAlchemy 2.0 async + Alembic | `sqlalchemy[asyncio]`, `asyncpg`, `alembic` |
 | Database | PostgreSQL 16+ (Neon for dev, RDS/Aurora Serverless v2 for AWS) | `postgresql+asyncpg://` |
+| Source response cache | Redis with per-entry TTL (in-memory backend for tests) | `redis` (M1), facade in `python/integrations/.../cache.py` |
 | Agent framework | Strands Agents SDK on Bedrock; multi-agent graph | `strands-agents`, `boto3` |
 | Models | Claude Sonnet 4.5 (orchestrator/verifier), Claude Haiku 4.5 (extraction) | `BedrockModel(model_id=...)` |
 | Geo / math | Shapely, pyproj | `shapely`, `pyproj` |
@@ -97,15 +98,19 @@ TerraSentry/
 │   │   └── src/terrasentry_core/
 │   │       ├── agents/               supervisor, specialists, verifier
 │   │       ├── domain/               models, enums, verdict types
+│   │       ├── seed/                 (M1) deterministic synthetic seed generator
+│   │       ├── reference/            (M1) parity baseline over the same GFW/FIRMS tools
 │   │       ├── tools/                (planned) tool functions exposed to Strands
 │   │       ├── evidence.py           (planned) citation ledger
 │   │       ├── scoring.py            (planned) deterministic rubric
 │   │       └── dds.py                (planned) TRACES-aligned payload builder
 │   └── integrations/                 terrasentry-integrations (uv member)
 │       └── src/terrasentry_integrations/
-│           ├── sources/              GFW/Hansen, NASA FIRMS clients
+│           ├── sources/              GFW/Hansen, NASA FIRMS clients (+ shared http.py)
 │           ├── sap/                  SapGateway protocol + sandbox/stub clients
-│           └── cache.py              (planned) source response cache
+│           ├── cache.py              Redis/memory cache keyed by source + geometry + window
+│           ├── preflight.py          live credential/latency/quota probe
+│           └── settings.py           pydantic-settings for sources and cache
 ├── packages/
 │   ├── api-client/                   @terrasentry/api-client
 │   │   └── src/
@@ -380,10 +385,14 @@ PRD section 5 makes this a build-blocking concern, so it is designed in from the
 
 - `httpx.AsyncClient` with `tenacity` exponential backoff + jitter and an `aiolimiter` per-source
   concurrency cap.
-- Persistent cache keyed by `(source, geometry_hash, date_window)` in Postgres, with raw payloads in
-  `data/fixtures` (dev) or S3 (AWS). Rehearsals and the live demo hit the cache.
+- Persistent Redis cache keyed by `(source, geometry_hash, date_window)` with a per-entry TTL
+  (`ts:cache:v1:*`). Each entry stores the request description plus a normalized snapshot of the
+  source-derived result (including `fetched_at`), so cached re-runs make zero external calls and
+  remain auditable. Postgres stays the audit/evidence store; Redis is only the hot response cache.
+  An in-memory backend serves tests and no-Docker smoke runs. Fixtures are deliberately not
+  committed — warm the cache with a live run, then use `--offline` for rehearsals.
 - A preflight script runs 5-10 dummy lookups before committing engineering time to the 50-record
-  batch, per the PRD action item.
+  batch, per the PRD action item, and reports observed latency and quota behaviour.
 
 ### 5.11 Testing and quality
 
@@ -550,8 +559,10 @@ web app only receives `VITE_*` values at build time.
 
 ## 10. Getting started
 
-Prerequisites: Node >= 22 (corepack enabled), pnpm via corepack, `uv`, and a Postgres connection
-string (Neon free tier is the zero-install option; Docker/apt Postgres also works).
+Prerequisites: Node >= 22 (corepack enabled), pnpm via corepack, `uv`, a Postgres connection
+string (Neon free tier is the zero-install option; Docker/apt Postgres also works), and Redis for
+the response cache (`docker compose up -d redis`, or `CACHE_BACKEND=memory` for a no-Docker smoke
+run).
 
 ```bash
 corepack enable
@@ -559,10 +570,15 @@ pnpm install
 uv sync
 cp .env.example .env
 
+docker compose up -d redis   # response cache
 pnpm dev        # web on :3000 and API on :8000
 pnpm check      # Biome + Ruff + tsc + Pyright
 pnpm test       # Vitest + @effect/vitest (api-client) + pytest
 pnpm gen:api    # regenerate packages/api-client from the FastAPI schema
+
+uv run python -m terrasentry_integrations.preflight   # live source probe (needs API keys)
+uv run python -m terrasentry_core.reference            # live run, then cached
+uv run python -m terrasentry_core.reference --offline  # zero external calls
 ```
 
 Before writing Effect code, read `node_modules/effect/AGENTS.md` (required by the repo `AGENTS.md`).
@@ -606,6 +622,12 @@ Pending (needs credentials, Docker egress, or later workstreams):
 - Database creation and Alembic migrations.
 - Component tests in the web app; MapLibre/Amazon Location map addition.
 - CDK stacks beyond the empty app shell.
+
+M1 landed (2026-09-11): GFW/Hansen and NASA FIRMS clients with per-source retry, rate limiting, and
+a Redis response cache; the GFW async batch path; deterministic seed data (8 demo polygons plus the
+30/12/8 batch with synthetic legality); the reference pipeline (`python -m terrasentry_core.reference`);
+the preflight probe (`python -m terrasentry_integrations.preflight`); and the setup runbooks under
+`docs/setup/`. The live probe and reference run are pending API keys (see `docs/milestones.md` §3).
 
 ---
 

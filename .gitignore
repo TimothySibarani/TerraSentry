@@ -32,6 +32,12 @@ cdk.out/
 
 # Data too large or too derived to track
 data/rasters/
+data/fixtures/**
+!data/fixtures/.gitkeep
+data/runs/**
+!data/runs/.gitkeep
+data/preflight/**
+!data/preflight/.gitkeep
 *.tif
 *.tiff
 *.zip

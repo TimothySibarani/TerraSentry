@@ -1,6 +1,12 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["pnpm-lock.yaml", "pyproject.toml", "**/pyproject.toml", "uv.lock"],
+  "globalDependencies": [
+    "pnpm-lock.yaml",
+    "pyproject.toml",
+    "**/pyproject.toml",
+    "uv.lock",
+    "python/**"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

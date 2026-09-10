@@ -5,7 +5,8 @@ parcels against real satellite and geospatial sources (Hansen GFC, NASA FIRMS), 
 deterministic rubric, and produces explainable, audit-ready due-diligence verdicts with a full agent
 trace.
 
-**Status:** M0 scaffold — see [docs/milestones.md](./docs/milestones.md) for progress.
+**Status:** M1 integrations + cache complete; live source probe gated on Day-1 API keys — see
+[docs/milestones.md](./docs/milestones.md) for progress.
 
 ## Stack
 
@@ -32,16 +33,27 @@ data/                seed batch and cached fixtures
 
 ## Getting started
 
-Prerequisites: Node >= 22 with corepack, [uv](https://docs.astral.sh/uv/), and a Postgres
-connection string (Neon free tier, Docker, or a local install all work).
+Prerequisites: Node >= 22 with corepack, [uv](https://docs.astral.sh/uv/), a Postgres
+connection string (Neon free tier, Docker, or a local install all work), and Redis for the
+response cache (`docker compose up -d redis`).
 
 ```bash
 corepack enable
 pnpm install
 uv sync --all-packages
 cp .env.example .env
+docker compose up -d redis
 
 pnpm dev        # web on :3000 and API on :8000
+```
+
+Data-source keys (GFW, FIRMS) and cloud access are covered in
+[docs/setup/README.md](./docs/setup/README.md). Once keys are in `.env`:
+
+```bash
+uv run python -m terrasentry_integrations.preflight   # live credential/latency/quota probe
+uv run python -m terrasentry_core.reference            # live run, then cached
+uv run python -m terrasentry_core.reference --offline  # zero external calls
 ```
 
 Quality gates:
@@ -64,5 +76,6 @@ docker compose up --build   # Postgres + API + web
 - [docs/architecture.md](./docs/architecture.md) — decisions, runtime architecture, stack rationale
 - [docs/prd.md](./docs/prd.md) — MVP scope and acceptance criteria
 - [docs/milestones.md](./docs/milestones.md) — milestone tracker and gates
+- [docs/setup/README.md](./docs/setup/README.md) — API keys, AWS free tier/Bedrock, SAP trial/sandbox
 - [DESIGN.md](./DESIGN.md) — design tokens and visual language
 - [AGENTS.md](./AGENTS.md) — coding standards and agent instructions

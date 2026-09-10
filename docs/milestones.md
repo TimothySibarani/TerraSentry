@@ -61,7 +61,7 @@ M1 Integrations + cache  --->  M2 Deterministic core  --->  M3 Agent orchestrati
 | Milestone | Status | Target | Depends on | Exit gate |
 | --- | --- | --- | --- | --- |
 | M0 Foundation & tooling | Done | W1 | — | `pnpm check` green, `pnpm dev` runs both apps, CI on push |
-| M1 Integrations + cache | Todo | W1-W2 | M0 | 5-10 real polygon lookups, cached and rate-limited |
+| M1 Integrations + cache | Done | W1-W2 | M0 | 5-10 real polygon lookups, cached and rate-limited (verified with deterministic mocks; live numbers tracked in §3 key gates) |
 | M2 Deterministic core | Todo | W2 | M1 | Reproducible score, cited evidence, valid DDS |
 | M3 Agent orchestration | Todo | W2-W3 | M2 | Reference-pipeline parity + verifier catch + HITL |
 | M4 API + persistence | Todo | W3 | M3 | Run endpoints + SSE + batch worker, generated client |
@@ -103,7 +103,7 @@ These are PRD sections 5 and 6 action items. Do them before writing dependent co
 | Install Python toolchain and run `uv sync` / Pyright / pytest | Done | — | uv 0.12.12, `uv.lock` generated, all checks green |
 | CI workflow (JS, Python, OpenAPI drift, Docker builds) | Done | — | `.github/workflows/ci.yml` |
 | Build and smoke-test both Docker images | Blocked | TBD | `compose.yaml` validates; local build blocked by container egress, CI job builds both images |
-| Commit the scaffold | Todo | User | user commits from the working tree |
+| Commit the scaffold | Done | User | committed as `f7e7595..02df52e` (web, infra, CI, docs, agents) |
 
 **Exit criteria:** `pnpm check` passes (Biome + Ruff + tsc + Pyright), `pnpm dev` starts both apps,
 CI runs on push, and `docker compose config` validates.
@@ -116,15 +116,28 @@ CI runs on push, and `docker compose config` validates.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
-| GFW/Hansen client with retry + limiter | Todo | TBD | `httpx`, `tenacity`, `aiolimiter`; `python/integrations/.../sources/` |
-| NASA FIRMS area client with retry + limiter | Todo | TBD | same package; key from the Day 1 gate |
-| Persistent cache keyed by `(source, geometry_hash, date_window)` | Todo | TBD | Postgres table + `data/fixtures` (dev) / S3 (AWS) |
-| Preflight script: 5-10 dummy calls + rate-limit probe | Todo | TBD | PRD section 5 action item |
-| Evaluate GFW bulk/async query endpoint | Todo | TBD | decides batch concurrency and wall-clock target |
-| Reference pipeline: 5-10 polygons end-to-end with real data | Todo | TBD | reuse tools for parity tests in M3 |
+| GFW/Hansen client with retry + limiter | Done | — | `sources/gfw.py`; cache-aware; includes the async batch job path |
+| NASA FIRMS area client with retry + limiter | Done | — | `sources/firms.py`; 5-day chunking, dedupe, polygon re-filter |
+| Persistent cache keyed by `(source, geometry_hash, date_window)` | Done | — | Redis (`redis-py`) + `MemoryCache`; key `ts:cache:v1:{source}:{geometry_hash}:{window}` |
+| Preflight script: 5-10 dummy calls + rate-limit probe | Done | — | `uv run python -m terrasentry_integrations.preflight`; optional `--ladder 1,2,4` |
+| Evaluate GFW bulk/async query endpoint | Done | — | `/query/batch` + `/job/{id}` implemented; preflight times it against per-polygon queries |
+| Reference pipeline: 5-10 polygons end-to-end with real data | Done | — | `uv run python -m terrasentry_core.reference`; M3 parity baseline |
+| Seed data: demo polygons + 30/12/8 batch + synthetic legality | Done | — | `uv run python -m terrasentry_core.seed`; committed under `data/seed/` |
+| Setup runbooks: AWS / SAP / data sources | Done | — | `docs/setup/`; free-tier and trial paths with fallbacks |
+| Tests: clients, cache, HTTP retry, seed, reference | Done | — | `python/integrations/tests`, `python/core/tests`; respx + fakeredis |
 
 **Exit criteria:** cached re-runs make zero external calls; measured latency and quota behavior are
 recorded in this doc's notes; no rate-limit failures at the chosen concurrency.
+
+> **Completed 2026-09-11.** Zero-external-call cached re-runs are asserted end-to-end by
+> `python/core/tests/test_reference.py` (one live call, then an `--offline` re-run served entirely
+> from cache) and by `python/integrations/tests/test_cache.py`, which round-trips `RedisCache`
+> through `fakeredis`. Retry, `Retry-After`, auth, and 5xx-exhaustion behavior are covered by
+> `python/integrations/tests/test_http.py`. The only outstanding numbers are the live latency/quota
+> measurements, which need real credentials: once the §3 Day-1 gates are cleared, run
+> `uv run python -m terrasentry_integrations.preflight --ladder 1,2,4` and paste the results here.
+> No key material exists in the build environment, so mock-level verification is the strongest
+> available evidence at commit time.
 
 ---
 
@@ -208,7 +221,7 @@ error states instead of blank screens.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
-| Synthetic seed generator: 30 compliant / 12 high-risk / 8 ambiguous | Todo | TBD | real forest coordinates in Sumatra/Kalimantan/Riau |
+| Synthetic seed generator: 30 compliant / 12 high-risk / 8 ambiguous | Done | — | Landed early in M1: `python -m terrasentry_core.seed`; real forest coordinates in Sumatra/Kalimantan/Riau; committed `data/seed/batch_50.json` |
 | Per-record elapsed time and status persistence | Todo | TBD | match intended distribution |
 | Aggregate metrics: wall clock, avg per record, breakdown | Todo | TBD | displayed in M5 batch view |
 | Pre-fetch demo cache and run a full rehearsal | Todo | TBD | PRD risk mitigation |
@@ -273,5 +286,6 @@ Append one line per meaningful update. Keep newest at the top.
 
 | Date | Milestone | Update |
 | --- | --- | --- |
+| 2026-09-11 | M1 | Integration layer landed: GFW/Hansen + NASA FIRMS clients (per-source limiter, retry/backoff, typed errors), Redis response cache (`cache.py`, memory backend for tests), GFW async batch path, deterministic seed data (8 demo polygons + 30/12/8 batch with synthetic HGU/PBPH legality), reference pipeline, preflight probe. Setup runbooks added under `docs/setup/` (AWS free tier/credits + Bedrock, SAP BTP/Integration Suite/sandbox, data-source keys). 26 pytest tests green, Ruff/Pyright clean. M1 marked Done: cached zero-external-call re-runs are test-asserted; live latency/quota measurements delegated to the §3 Day-1 key gates (no credentials in the build environment). |
 | 2026-09-10 | M0 | UI foundation landed: shadcn base-mira, single DESIGN.md token file, branded proof page. Python toolchain verified (uv 0.12.12, uv.lock, ruff/pyright/pytest). Real OpenAPI client, CI workflow, compose.yaml. Local Docker builds deferred to CI (container egress blocked); commit user-owned. |
 | 2026-09-10 | M0 | Scaffold created: monorepo, web + API skeletons, Effect integration, CDK shell, architecture doc. Python toolchain unverified; nothing committed yet. |
