@@ -8,10 +8,20 @@
       "registration_number": "AHU-0012345.AH.01.01.TAHUN 2019",
       "registered_address": "Jl. Ahmad Yani No. 88, Lantai 4, Pontianak, Kalimantan Barat",
       "incorporated_on": "2019-03-14",
-      "directors": ["Budi Hartono", "Siti Rahmawati"],
-      "shareholders": ["PT Lestari Holding", "Budi Hartono"],
-      "permit_numbers": ["IUPHHK-HT/512/2019"],
-      "parcels": ["PARCEL-SUP-001"]
+      "directors": [
+        "Budi Hartono",
+        "Siti Rahmawati"
+      ],
+      "shareholders": [
+        "PT Lestari Holding",
+        "Budi Hartono"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/512/2019"
+      ],
+      "parcels": [
+        "PARCEL-SUP-001"
+      ]
     },
     {
       "entity_id": "ENT-002",
@@ -19,10 +29,19 @@
       "registration_number": "AHU-0078910.AH.01.01.TAHUN 2025",
       "registered_address": "Jl. Ahmad Yani No. 88, Lantai 4, Pontianak, Kalimantan Barat",
       "incorporated_on": "2025-04-02",
-      "directors": ["Siti Rahmawati", "Andi Prasetyo"],
-      "shareholders": ["PT Lestari Holding"],
-      "permit_numbers": ["IUPHHK-HT/733/2025"],
-      "parcels": ["PARCEL-N-114"]
+      "directors": [
+        "Siti Rahmawati",
+        "Andi Prasetyo"
+      ],
+      "shareholders": [
+        "PT Lestari Holding"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/733/2025"
+      ],
+      "parcels": [
+        "PARCEL-N-114"
+      ]
     },
     {
       "entity_id": "ENT-003",
@@ -30,10 +49,18 @@
       "registration_number": "AHU-0033221.AH.01.01.TAHUN 2016",
       "registered_address": "Jl. Gajah Mada No. 12, Sintang, Kalimantan Barat",
       "incorporated_on": "2016-08-21",
-      "directors": ["Yohanes Tarigan"],
-      "shareholders": ["Koperasi Hijau Nusantara"],
-      "permit_numbers": ["IUPHHK-HT/201/2016"],
-      "parcels": ["PARCEL-SUP-002"]
+      "directors": [
+        "Yohanes Tarigan"
+      ],
+      "shareholders": [
+        "Koperasi Hijau Nusantara"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/201/2016"
+      ],
+      "parcels": [
+        "PARCEL-SUP-002"
+      ]
     },
     {
       "entity_id": "ENT-004",
@@ -41,10 +68,418 @@
       "registration_number": "AHU-0045678.AH.01.01.TAHUN 2014",
       "registered_address": "Jl. Diponegoro No. 45, Palembang, Sumatera Selatan",
       "incorporated_on": "2014-11-05",
-      "directors": ["Rina Kusuma", "Hendra Wijaya"],
-      "shareholders": ["PT Abadi Group"],
-      "permit_numbers": ["IUPHHK-HT/119/2014"],
-      "parcels": ["PARCEL-SUP-003"]
+      "directors": [
+        "Rina Kusuma",
+        "Hendra Wijaya"
+      ],
+      "shareholders": [
+        "PT Abadi Group"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/119/2014"
+      ],
+      "parcels": [
+        "PARCEL-SUP-003"
+      ]
+    },
+    {
+      "entity_id": "ENT-101",
+      "legal_name": "PT Bumi Sejahtera Borneo",
+      "registration_number": "AHU-2810242.AH.01.01.TAHUN 2024",
+      "registered_address": "Jl. Merdeka No. 70, Sintang, Kalimantan Barat",
+      "incorporated_on": "2013-04-19",
+      "directors": [
+        "Maria Halim"
+      ],
+      "shareholders": [
+        "Maria Halim"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/746/2014"
+      ],
+      "parcels": [
+        "PARCEL-SUP-003"
+      ]
+    },
+    {
+      "entity_id": "ENT-102",
+      "legal_name": "PT Bumi Makmur Nusantara",
+      "registration_number": "AHU-9208563.AH.01.01.TAHUN 2020",
+      "registered_address": "Jl. Diponegoro No. 117, Pontianak, Kalimantan Barat",
+      "incorporated_on": "2018-06-21",
+      "directors": [
+        "Siti Simanjuntak"
+      ],
+      "shareholders": [
+        "Siti Simanjuntak"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/747/2018"
+      ],
+      "parcels": [
+        "PARCEL-SUP-004"
+      ]
+    },
+    {
+      "entity_id": "ENT-103",
+      "legal_name": "PT Wana Sejahtera Kapuas",
+      "registration_number": "AHU-4276581.AH.01.01.TAHUN 2014",
+      "registered_address": "Jl. Merdeka No. 142, Sintang, Kalimantan Barat",
+      "incorporated_on": "2013-03-17",
+      "directors": [
+        "Joko Gunawan"
+      ],
+      "shareholders": [
+        "Joko Gunawan"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/725/2015"
+      ],
+      "parcels": [
+        "PARCEL-SUP-005"
+      ]
+    },
+    {
+      "entity_id": "ENT-104",
+      "legal_name": "PT Kayu Lestari Kapuas",
+      "registration_number": "AHU-2607885.AH.01.01.TAHUN 2017",
+      "registered_address": "Jl. Sudirman No. 111, Sanggau, Kalimantan Barat",
+      "incorporated_on": "2022-10-10",
+      "directors": [
+        "Sri Prasetyo"
+      ],
+      "shareholders": [
+        "Sri Prasetyo"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/736/2017"
+      ],
+      "parcels": [
+        "PARCEL-SUP-006"
+      ]
+    },
+    {
+      "entity_id": "ENT-105",
+      "legal_name": "Kebun Rakyat Iwan Permana",
+      "registration_number": "AHU-4893263.AH.01.01.TAHUN 2016",
+      "registered_address": "Jl. Gajah Mada No. 91, Sintang, Kalimantan Barat",
+      "incorporated_on": "2021-10-12",
+      "directors": [
+        "Iwan Permana"
+      ],
+      "shareholders": [
+        "Iwan Permana"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/807/2018"
+      ],
+      "parcels": [
+        "PARCEL-SUP-007"
+      ]
+    },
+    {
+      "entity_id": "ENT-106",
+      "legal_name": "Kebun Rakyat Lestari Nugroho",
+      "registration_number": "AHU-6149397.AH.01.01.TAHUN 2024",
+      "registered_address": "Jl. Diponegoro No. 192, Sanggau, Kalimantan Barat",
+      "incorporated_on": "2023-07-13",
+      "directors": [
+        "Lestari Nugroho"
+      ],
+      "shareholders": [
+        "Lestari Nugroho"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/152/2020"
+      ],
+      "parcels": [
+        "PARCEL-SUP-008"
+      ]
+    },
+    {
+      "entity_id": "ENT-107",
+      "legal_name": "Kebun Rakyat Joko Santoso",
+      "registration_number": "AHU-5462767.AH.01.01.TAHUN 2013",
+      "registered_address": "Jl. Diponegoro No. 171, Pontianak, Kalimantan Barat",
+      "incorporated_on": "2012-11-25",
+      "directors": [
+        "Joko Santoso"
+      ],
+      "shareholders": [
+        "Joko Santoso"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/849/2019"
+      ],
+      "parcels": [
+        "PARCEL-SUP-009"
+      ]
+    },
+    {
+      "entity_id": "ENT-108",
+      "legal_name": "Kebun Rakyat Dewi Tarigan",
+      "registration_number": "AHU-3497919.AH.01.01.TAHUN 2019",
+      "registered_address": "Jl. Gajah Mada No. 150, Pontianak, Kalimantan Barat",
+      "incorporated_on": "2012-02-19",
+      "directors": [
+        "Dewi Tarigan"
+      ],
+      "shareholders": [
+        "Dewi Tarigan"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/542/2013"
+      ],
+      "parcels": [
+        "PARCEL-SUP-010"
+      ]
+    },
+    {
+      "entity_id": "ENT-109",
+      "legal_name": "Kebun Rakyat Iwan Santoso",
+      "registration_number": "AHU-8000134.AH.01.01.TAHUN 2021",
+      "registered_address": "Jl. Diponegoro No. 66, Kapuas Hulu, Kalimantan Barat",
+      "incorporated_on": "2018-12-01",
+      "directors": [
+        "Iwan Santoso"
+      ],
+      "shareholders": [
+        "Iwan Santoso"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/395/2023"
+      ],
+      "parcels": [
+        "PARCEL-SUP-011"
+      ]
+    },
+    {
+      "entity_id": "ENT-110",
+      "legal_name": "Kebun Rakyat Yohanes Siregar",
+      "registration_number": "AHU-1723087.AH.01.01.TAHUN 2022",
+      "registered_address": "Jl. Merdeka No. 86, Sintang, Kalimantan Barat",
+      "incorporated_on": "2012-08-10",
+      "directors": [
+        "Yohanes Siregar"
+      ],
+      "shareholders": [
+        "Yohanes Siregar"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/615/2019"
+      ],
+      "parcels": [
+        "PARCEL-SUP-012"
+      ]
+    },
+    {
+      "entity_id": "ENT-111",
+      "legal_name": "Kebun Rakyat Yohanes Hartono",
+      "registration_number": "AHU-8718754.AH.01.01.TAHUN 2012",
+      "registered_address": "Jl. Gajah Mada No. 168, Sintang, Kalimantan Barat",
+      "incorporated_on": "2014-12-12",
+      "directors": [
+        "Yohanes Hartono"
+      ],
+      "shareholders": [
+        "Yohanes Hartono"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/152/2020"
+      ],
+      "parcels": [
+        "PARCEL-SUP-013"
+      ]
+    },
+    {
+      "entity_id": "ENT-112",
+      "legal_name": "Kebun Rakyat Maria Rahmawati",
+      "registration_number": "AHU-9256283.AH.01.01.TAHUN 2018",
+      "registered_address": "Jl. Gajah Mada No. 96, Kapuas Hulu, Kalimantan Barat",
+      "incorporated_on": "2016-07-04",
+      "directors": [
+        "Maria Rahmawati"
+      ],
+      "shareholders": [
+        "Maria Rahmawati"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/559/2013"
+      ],
+      "parcels": [
+        "PARCEL-SUP-014"
+      ]
+    },
+    {
+      "entity_id": "ENT-113",
+      "legal_name": "Kebun Rakyat Budi Halim",
+      "registration_number": "AHU-8781477.AH.01.01.TAHUN 2019",
+      "registered_address": "Jl. Diponegoro No. 39, Sintang, Kalimantan Barat",
+      "incorporated_on": "2023-11-14",
+      "directors": [
+        "Budi Halim"
+      ],
+      "shareholders": [
+        "Budi Halim"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/370/2018"
+      ],
+      "parcels": [
+        "PARCEL-SUP-015"
+      ]
+    },
+    {
+      "entity_id": "ENT-114",
+      "legal_name": "Kebun Rakyat Andi Wijaya",
+      "registration_number": "AHU-3747520.AH.01.01.TAHUN 2017",
+      "registered_address": "Jl. Diponegoro No. 88, Sintang, Kalimantan Barat",
+      "incorporated_on": "2018-12-18",
+      "directors": [
+        "Andi Wijaya"
+      ],
+      "shareholders": [
+        "Andi Wijaya"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/449/2019"
+      ],
+      "parcels": [
+        "PARCEL-SUP-016"
+      ]
+    },
+    {
+      "entity_id": "ENT-115",
+      "legal_name": "Kebun Rakyat Siti Situmorang",
+      "registration_number": "AHU-5658629.AH.01.01.TAHUN 2014",
+      "registered_address": "Jl. Gajah Mada No. 81, Sanggau, Kalimantan Barat",
+      "incorporated_on": "2017-03-21",
+      "directors": [
+        "Siti Situmorang"
+      ],
+      "shareholders": [
+        "Siti Situmorang"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/625/2021"
+      ],
+      "parcels": [
+        "PARCEL-SUP-017"
+      ]
+    },
+    {
+      "entity_id": "ENT-116",
+      "legal_name": "Kebun Rakyat Bambang Nugroho",
+      "registration_number": "AHU-8004315.AH.01.01.TAHUN 2014",
+      "registered_address": "Jl. Sudirman No. 105, Pontianak, Kalimantan Barat",
+      "incorporated_on": "2018-08-20",
+      "directors": [
+        "Bambang Nugroho"
+      ],
+      "shareholders": [
+        "Bambang Nugroho"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/748/2016"
+      ],
+      "parcels": [
+        "PARCEL-SUP-018"
+      ]
+    },
+    {
+      "entity_id": "ENT-117",
+      "legal_name": "Kebun Rakyat Ani Tarigan",
+      "registration_number": "AHU-3837565.AH.01.01.TAHUN 2013",
+      "registered_address": "Jl. Diponegoro No. 6, Pontianak, Kalimantan Barat",
+      "incorporated_on": "2023-06-02",
+      "directors": [
+        "Ani Tarigan"
+      ],
+      "shareholders": [
+        "Ani Tarigan"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/218/2023"
+      ],
+      "parcels": [
+        "PARCEL-SUP-019"
+      ]
+    },
+    {
+      "entity_id": "ENT-118",
+      "legal_name": "Kebun Rakyat Wayan Wijaya",
+      "registration_number": "AHU-2198052.AH.01.01.TAHUN 2024",
+      "registered_address": "Jl. Gajah Mada No. 14, Pontianak, Kalimantan Barat",
+      "incorporated_on": "2016-05-07",
+      "directors": [
+        "Wayan Wijaya"
+      ],
+      "shareholders": [
+        "Wayan Wijaya"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/360/2015"
+      ],
+      "parcels": [
+        "PARCEL-SUP-020"
+      ]
+    },
+    {
+      "entity_id": "ENT-119",
+      "legal_name": "Kebun Rakyat Agus Nugroho",
+      "registration_number": "AHU-2510199.AH.01.01.TAHUN 2019",
+      "registered_address": "Jl. Gajah Mada No. 50, Kapuas Hulu, Kalimantan Barat",
+      "incorporated_on": "2022-05-09",
+      "directors": [
+        "Agus Nugroho"
+      ],
+      "shareholders": [
+        "Agus Nugroho"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/227/2023"
+      ],
+      "parcels": [
+        "PARCEL-SUP-021"
+      ]
+    },
+    {
+      "entity_id": "ENT-120",
+      "legal_name": "Kebun Rakyat Joko Simanjuntak",
+      "registration_number": "AHU-6751003.AH.01.01.TAHUN 2019",
+      "registered_address": "Jl. Merdeka No. 151, Sanggau, Kalimantan Barat",
+      "incorporated_on": "2016-10-01",
+      "directors": [
+        "Joko Simanjuntak"
+      ],
+      "shareholders": [
+        "Joko Simanjuntak"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/767/2013"
+      ],
+      "parcels": [
+        "PARCEL-SUP-022"
+      ]
+    },
+    {
+      "entity_id": "ENT-121",
+      "legal_name": "Kebun Rakyat Rina Simanjuntak",
+      "registration_number": "AHU-6948958.AH.01.01.TAHUN 2018",
+      "registered_address": "Jl. Diponegoro No. 150, Kapuas Hulu, Kalimantan Barat",
+      "incorporated_on": "2015-03-12",
+      "directors": [
+        "Rina Simanjuntak"
+      ],
+      "shareholders": [
+        "Rina Simanjuntak"
+      ],
+      "permit_numbers": [
+        "IUPHHK-HT/607/2022"
+      ],
+      "parcels": [
+        "PARCEL-SUP-023"
+      ]
     }
   ],
   "suppliers": [
@@ -56,8 +491,13 @@
       "country_of_production": "ID",
       "polygon": "data/polygons/SUP-001.geojson",
       "parcel_id": "PARCEL-SUP-001",
-      "adjacent_parcels": ["PARCEL-N-114"],
-      "permit_number": "IUPHHK-HT/512/2019"
+      "adjacent_parcels": [
+        "PARCEL-N-114"
+      ],
+      "permit_number": "IUPHHK-HT/512/2019",
+      "aggregator": null,
+      "tier": "concession",
+      "volume_m3_month": 4200
     },
     {
       "supplier_id": "SUP-002",
@@ -68,12 +508,505 @@
       "polygon": "data/polygons/SUP-002.geojson",
       "parcel_id": "PARCEL-SUP-002",
       "adjacent_parcels": [],
-      "permit_number": "IUPHHK-HT/201/2016"
+      "permit_number": "IUPHHK-HT/201/2016",
+      "aggregator": null,
+      "tier": "concession",
+      "volume_m3_month": 2600
+    },
+    {
+      "supplier_id": "SUP-003",
+      "entity_id": "ENT-101",
+      "legal_name": "PT Bumi Sejahtera Borneo",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-003.geojson",
+      "parcel_id": "PARCEL-SUP-003",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/746/2014",
+      "aggregator": null,
+      "tier": "concession",
+      "volume_m3_month": 2611
+    },
+    {
+      "supplier_id": "SUP-004",
+      "entity_id": "ENT-102",
+      "legal_name": "PT Bumi Makmur Nusantara",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-004.geojson",
+      "parcel_id": "PARCEL-SUP-004",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/747/2018",
+      "aggregator": null,
+      "tier": "concession",
+      "volume_m3_month": 2105
+    },
+    {
+      "supplier_id": "SUP-005",
+      "entity_id": "ENT-103",
+      "legal_name": "PT Wana Sejahtera Kapuas",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-005.geojson",
+      "parcel_id": "PARCEL-SUP-005",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/725/2015",
+      "aggregator": null,
+      "tier": "concession",
+      "volume_m3_month": 1748
+    },
+    {
+      "supplier_id": "SUP-006",
+      "entity_id": "ENT-104",
+      "legal_name": "PT Kayu Lestari Kapuas",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-006.geojson",
+      "parcel_id": "PARCEL-SUP-006",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/736/2017",
+      "aggregator": null,
+      "tier": "concession",
+      "volume_m3_month": 3827
+    },
+    {
+      "supplier_id": "SUP-007",
+      "entity_id": "ENT-105",
+      "legal_name": "Kebun Rakyat Iwan Permana",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-007.geojson",
+      "parcel_id": "PARCEL-SUP-007",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/807/2018",
+      "aggregator": "AGG-01",
+      "tier": "smallholder",
+      "volume_m3_month": 50
+    },
+    {
+      "supplier_id": "SUP-008",
+      "entity_id": "ENT-106",
+      "legal_name": "Kebun Rakyat Lestari Nugroho",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-008.geojson",
+      "parcel_id": "PARCEL-SUP-008",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/152/2020",
+      "aggregator": "AGG-02",
+      "tier": "smallholder",
+      "volume_m3_month": 48
+    },
+    {
+      "supplier_id": "SUP-009",
+      "entity_id": "ENT-107",
+      "legal_name": "Kebun Rakyat Joko Santoso",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-009.geojson",
+      "parcel_id": "PARCEL-SUP-009",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/849/2019",
+      "aggregator": "AGG-02",
+      "tier": "smallholder",
+      "volume_m3_month": 9
+    },
+    {
+      "supplier_id": "SUP-010",
+      "entity_id": "ENT-108",
+      "legal_name": "Kebun Rakyat Dewi Tarigan",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-010.geojson",
+      "parcel_id": "PARCEL-SUP-010",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/542/2013",
+      "aggregator": "AGG-03",
+      "tier": "smallholder",
+      "volume_m3_month": 16
+    },
+    {
+      "supplier_id": "SUP-011",
+      "entity_id": "ENT-109",
+      "legal_name": "Kebun Rakyat Iwan Santoso",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-011.geojson",
+      "parcel_id": "PARCEL-SUP-011",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/395/2023",
+      "aggregator": "AGG-03",
+      "tier": "smallholder",
+      "volume_m3_month": 54
+    },
+    {
+      "supplier_id": "SUP-012",
+      "entity_id": "ENT-110",
+      "legal_name": "Kebun Rakyat Yohanes Siregar",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-012.geojson",
+      "parcel_id": "PARCEL-SUP-012",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/615/2019",
+      "aggregator": "AGG-02",
+      "tier": "smallholder",
+      "volume_m3_month": 53
+    },
+    {
+      "supplier_id": "SUP-013",
+      "entity_id": "ENT-111",
+      "legal_name": "Kebun Rakyat Yohanes Hartono",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-013.geojson",
+      "parcel_id": "PARCEL-SUP-013",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/152/2020",
+      "aggregator": "AGG-02",
+      "tier": "smallholder",
+      "volume_m3_month": 44
+    },
+    {
+      "supplier_id": "SUP-014",
+      "entity_id": "ENT-112",
+      "legal_name": "Kebun Rakyat Maria Rahmawati",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-014.geojson",
+      "parcel_id": "PARCEL-SUP-014",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/559/2013",
+      "aggregator": "AGG-02",
+      "tier": "smallholder",
+      "volume_m3_month": 48
+    },
+    {
+      "supplier_id": "SUP-015",
+      "entity_id": "ENT-113",
+      "legal_name": "Kebun Rakyat Budi Halim",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-015.geojson",
+      "parcel_id": "PARCEL-SUP-015",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/370/2018",
+      "aggregator": "AGG-03",
+      "tier": "smallholder",
+      "volume_m3_month": 27
+    },
+    {
+      "supplier_id": "SUP-016",
+      "entity_id": "ENT-114",
+      "legal_name": "Kebun Rakyat Andi Wijaya",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-016.geojson",
+      "parcel_id": "PARCEL-SUP-016",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/449/2019",
+      "aggregator": "AGG-03",
+      "tier": "smallholder",
+      "volume_m3_month": 29
+    },
+    {
+      "supplier_id": "SUP-017",
+      "entity_id": "ENT-115",
+      "legal_name": "Kebun Rakyat Siti Situmorang",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-017.geojson",
+      "parcel_id": "PARCEL-SUP-017",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/625/2021",
+      "aggregator": "AGG-03",
+      "tier": "smallholder",
+      "volume_m3_month": 26
+    },
+    {
+      "supplier_id": "SUP-018",
+      "entity_id": "ENT-116",
+      "legal_name": "Kebun Rakyat Bambang Nugroho",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-018.geojson",
+      "parcel_id": "PARCEL-SUP-018",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/748/2016",
+      "aggregator": "AGG-01",
+      "tier": "smallholder",
+      "volume_m3_month": 15
+    },
+    {
+      "supplier_id": "SUP-019",
+      "entity_id": "ENT-117",
+      "legal_name": "Kebun Rakyat Ani Tarigan",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-019.geojson",
+      "parcel_id": "PARCEL-SUP-019",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/218/2023",
+      "aggregator": "AGG-02",
+      "tier": "smallholder",
+      "volume_m3_month": 27
+    },
+    {
+      "supplier_id": "SUP-020",
+      "entity_id": "ENT-118",
+      "legal_name": "Kebun Rakyat Wayan Wijaya",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-020.geojson",
+      "parcel_id": "PARCEL-SUP-020",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/360/2015",
+      "aggregator": "AGG-02",
+      "tier": "smallholder",
+      "volume_m3_month": 17
+    },
+    {
+      "supplier_id": "SUP-021",
+      "entity_id": "ENT-119",
+      "legal_name": "Kebun Rakyat Agus Nugroho",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-021.geojson",
+      "parcel_id": "PARCEL-SUP-021",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/227/2023",
+      "aggregator": "AGG-03",
+      "tier": "smallholder",
+      "volume_m3_month": 40
+    },
+    {
+      "supplier_id": "SUP-022",
+      "entity_id": "ENT-120",
+      "legal_name": "Kebun Rakyat Joko Simanjuntak",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-022.geojson",
+      "parcel_id": "PARCEL-SUP-022",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/767/2013",
+      "aggregator": "AGG-01",
+      "tier": "smallholder",
+      "volume_m3_month": 17
+    },
+    {
+      "supplier_id": "SUP-023",
+      "entity_id": "ENT-121",
+      "legal_name": "Kebun Rakyat Rina Simanjuntak",
+      "commodity": "timber",
+      "country_of_production": "ID",
+      "polygon": "data/polygons/SUP-023.geojson",
+      "parcel_id": "PARCEL-SUP-023",
+      "adjacent_parcels": [],
+      "permit_number": "IUPHHK-HT/607/2022",
+      "aggregator": "AGG-01",
+      "tier": "smallholder",
+      "volume_m3_month": 60
     }
   ],
   "permits": {
-    "IUPHHK-HT/512/2019": {"holder": "PT Rimba Lestari Jaya", "valid_from": "2019-05-01", "valid_to": "2054-04-30", "status": "active"},
-    "IUPHHK-HT/733/2025": {"holder": "PT Karya Bumi Sejahtera", "valid_from": "2025-06-01", "valid_to": "2060-05-31", "status": "active"},
-    "IUPHHK-HT/201/2016": {"holder": "PT Hijau Nusantara Mandiri", "valid_from": "2016-09-01", "valid_to": "2051-08-31", "status": "active"}
+    "IUPHHK-HT/512/2019": {
+      "holder": "PT Rimba Lestari Jaya",
+      "valid_from": "2019-05-01",
+      "valid_to": "2054-04-30",
+      "status": "active"
+    },
+    "IUPHHK-HT/733/2025": {
+      "holder": "PT Karya Bumi Sejahtera",
+      "valid_from": "2025-06-01",
+      "valid_to": "2060-05-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/201/2016": {
+      "holder": "PT Hijau Nusantara Mandiri",
+      "valid_from": "2016-09-01",
+      "valid_to": "2051-08-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/746/2014": {
+      "holder": "PT Bumi Sejahtera Borneo",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/747/2018": {
+      "holder": "PT Bumi Makmur Nusantara",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/663/2021": {
+      "holder": "PT Bumi Abadi Kapuas",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/263/2021": {
+      "holder": "Kebun Rakyat Budi Santoso",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/806/2023": {
+      "holder": "Kebun Rakyat Sri Prasetyo",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/895/2021": {
+      "holder": "Kebun Rakyat Siti Situmorang",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/402/2022": {
+      "holder": "Kebun Rakyat Sri Santoso",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/378/2013": {
+      "holder": "Kebun Rakyat Ratna Gunawan",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/538/2017": {
+      "holder": "Kebun Rakyat Maria Kusuma",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/442/2023": {
+      "holder": "Kebun Rakyat Teguh Gunawan",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/185/2017": {
+      "holder": "Kebun Rakyat Wayan Siregar",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/595/2021": {
+      "holder": "Kebun Rakyat Yohanes Halim",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/830/2022": {
+      "holder": "Kebun Rakyat Rudi Siregar",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/532/2013": {
+      "holder": "Kebun Rakyat Agus Santoso",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/789/2022": {
+      "holder": "Kebun Rakyat Wayan Nugroho",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "revoked"
+    },
+    "IUPHHK-HT/131/2014": {
+      "holder": "Kebun Rakyat Yohanes Simanjuntak",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/736/2017": {
+      "holder": "PT Kayu Lestari Kapuas",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/807/2018": {
+      "holder": "Kebun Rakyat Iwan Permana",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/152/2020": {
+      "holder": "Kebun Rakyat Yohanes Hartono",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/849/2019": {
+      "holder": "Kebun Rakyat Joko Santoso",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/542/2013": {
+      "holder": "Kebun Rakyat Dewi Tarigan",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/395/2023": {
+      "holder": "Kebun Rakyat Iwan Santoso",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/615/2019": {
+      "holder": "Kebun Rakyat Yohanes Siregar",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/559/2013": {
+      "holder": "Kebun Rakyat Maria Rahmawati",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    },
+    "IUPHHK-HT/767/2013": {
+      "holder": "Kebun Rakyat Joko Simanjuntak",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "revoked"
+    },
+    "IUPHHK-HT/607/2022": {
+      "holder": "Kebun Rakyat Rina Simanjuntak",
+      "valid_from": "2019-01-01",
+      "valid_to": "2049-12-31",
+      "status": "active"
+    }
+  },
+  "aggregators": [
+    {
+      "id": "AGG-01",
+      "name": "Koperasi Tani Hutan Sanggau",
+      "type": "cooperative",
+      "region": "Kalimantan Barat"
+    },
+    {
+      "id": "AGG-02",
+      "name": "UD Sumber Rimba Kapuas",
+      "type": "collector",
+      "region": "Kalimantan Barat"
+    },
+    {
+      "id": "AGG-03",
+      "name": "Koperasi Rimba Jaya Sintang",
+      "type": "cooperative",
+      "region": "Kalimantan Barat"
+    }
+  ],
+  "mill": {
+    "id": "MILL-01",
+    "name": "Pabrik Pulp Kapuas Hilir",
+    "commodity": "timber"
   }
 }

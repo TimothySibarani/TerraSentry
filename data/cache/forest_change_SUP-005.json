@@ -1,0 +1,13 @@
+{
+  "_note": "SYNTHETIC pre-computed result for the portfolio demo.",
+  "supplier_id": "SUP-005",
+  "polygon_area_ha": 705.29,
+  "tree_cover_2020_ha": 656.66,
+  "loss_since_cutoff_ha": 0.0,
+  "interior_loss_ha": 0.0,
+  "boundary_loss_ha": 0.0,
+  "loss_by_year": {},
+  "canopy_threshold_pct": 30,
+  "dataset": "Hansen Global Forest Change (SYNTHETIC)",
+  "notes": []
+}

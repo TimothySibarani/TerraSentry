@@ -23,6 +23,7 @@ from typing import Any, Callable
 from ..dds import build as build_dds
 from ..evidence import EvidenceLedger
 from ..pipeline import (
+    _permit_state,
     DATA,
     find_supplier,
     load_cached_forest_change,
@@ -136,7 +137,7 @@ class ScreeningSession:
 
     def verify_permit(self, permit_number: str, entity_name: str | None = None) -> dict[str, Any]:
         record = self.payload.get("permits", {}).get(permit_number)
-        self.permit_valid = bool(record and record.get("status") == "active")
+        self.permit_valid = _permit_state(permit_number, record)
         if record:
             self.ledger.add(
                 claim=(
@@ -148,7 +149,8 @@ class ScreeningSession:
             )
         return {
             "permit_number": permit_number,
-            "status": "valid" if self.permit_valid else ("invalid" if record else "unverified"),
+            "status": ("valid" if self.permit_valid else
+                       "invalid" if self.permit_valid is False else "unverified"),
             "record": record,
         }
 

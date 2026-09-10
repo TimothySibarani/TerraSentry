@@ -157,6 +157,20 @@ def boundary_loss_ha(forest: ForestChangeResult) -> float:
     return forest.boundary_loss_ha
 
 
+def _permit_state(permit_number: str, record: dict[str, Any] | None) -> bool | None:
+    """Tri-state permit status.
+
+    None means "could not verify", which is NOT the same as "verified invalid" and the
+    rubric scores them differently -- an unverifiable permit is a gap to chase, a revoked
+    one is a hard gate. Collapsing both to False (the old behaviour) made every supplier
+    without a permit record look like a violation, and made "not checked yet" impossible
+    to represent at all.
+    """
+    if not permit_number or record is None:
+        return None
+    return record.get("status") == "active"
+
+
 def build_map_layers(supplier: dict[str, Any], geom, hotspots: dict[str, Any]) -> dict[str, Any]:
     """Assemble everything the map panel needs to draw the evidence.
 
@@ -233,11 +247,30 @@ def run(supplier_id: str, on_step: StepFn | None = None) -> dict[str, Any]:
             status="blocked",
             **report.to_dict(),
         )
+        # Return the SAME keys as a completed run, with explicit nulls. A caller that
+        # has to guess which keys exist will guess wrong -- the panel did exactly that
+        # and left its placeholders up, so a blocked supplier looked like a hung request.
         return {
             "blocked": True,
             "supplier": supplier["legal_name"],
             "supplier_id": sid,
             "problems": report.problems,
+            "geometry": report.to_dict(),
+            "geojson": None,
+            "map": None,
+            "forest_change": None,
+            "hotspots": None,
+            "adjacent_parcel_branch_taken": False,
+            "assessment": None,
+            "assessment_explained": "BLOCKED -- geometry unusable, no score computed.",
+            "dds": None,
+            "required_action": (
+                "Request a valid WGS84 GeoJSON polygon from the supplier before any "
+                "further assessment. Coordinates are commonly transposed (GeoJSON is "
+                "lon,lat, not lat,lon)."
+            ),
+            "evidence": ledger.to_dict(),
+            "evidence_count": len(ledger),
             "steps": [s.to_dict() for s in emitter.steps],
         }
 
@@ -350,7 +383,7 @@ def run(supplier_id: str, on_step: StepFn | None = None) -> dict[str, Any]:
     # -- 6. permit --------------------------------------------------------
     permit_number = supplier.get("permit_number", "")
     permit_record = payload.get("permits", {}).get(permit_number)
-    permit_valid = bool(permit_record and permit_record.get("status") == "active")
+    permit_valid = _permit_state(permit_number, permit_record)
     if permit_record:
         ledger.add(
             claim=f"Permit {permit_number} is recorded as {permit_record['status']}, valid to {permit_record['valid_to']}.",
@@ -359,7 +392,8 @@ def run(supplier_id: str, on_step: StepFn | None = None) -> dict[str, Any]:
         )
     emitter.emit(
         "permit",
-        f"Permit {permit_number or 'not supplied'}: {'valid' if permit_valid else 'not verified'}",
+        f"Permit {permit_number or 'not supplied'}: "
+        f"{'valid' if permit_valid else ('invalid' if permit_valid is False else 'not verified')}",
         (
             f"Holder {permit_record['holder']}, valid to {permit_record['valid_to']}."
             if permit_record

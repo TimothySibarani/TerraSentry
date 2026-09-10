@@ -1,0 +1,176 @@
+{
+  "_note": "SYNTHETIC hotspots for the portfolio demo.",
+  "supplier_id": "SUP-018",
+  "inside": {
+    "total": 19,
+    "high_confidence": 11,
+    "by_year": {
+      "2023": 19
+    },
+    "peak_month": {
+      "month": "2023-08",
+      "count": 19
+    },
+    "points": [
+      {
+        "lon": 111.00611,
+        "lat": -0.182,
+        "acq_date": "2023-08-07",
+        "confidence": "h",
+        "frp": 8.9,
+        "id": "SYNTH:SUP-018:0"
+      },
+      {
+        "lon": 111.00846,
+        "lat": -0.18207,
+        "acq_date": "2023-07-20",
+        "confidence": "h",
+        "frp": 9.4,
+        "id": "SYNTH:SUP-018:1"
+      },
+      {
+        "lon": 111.00365,
+        "lat": -0.18746,
+        "acq_date": "2023-09-15",
+        "confidence": "h",
+        "frp": 8.4,
+        "id": "SYNTH:SUP-018:2"
+      },
+      {
+        "lon": 111.00932,
+        "lat": -0.18535,
+        "acq_date": "2023-08-21",
+        "confidence": "h",
+        "frp": 10.9,
+        "id": "SYNTH:SUP-018:3"
+      },
+      {
+        "lon": 111.00532,
+        "lat": -0.18669,
+        "acq_date": "2023-07-04",
+        "confidence": "h",
+        "frp": 17.4,
+        "id": "SYNTH:SUP-018:4"
+      },
+      {
+        "lon": 111.00756,
+        "lat": -0.18391,
+        "acq_date": "2023-09-24",
+        "confidence": "h",
+        "frp": 12.7,
+        "id": "SYNTH:SUP-018:5"
+      },
+      {
+        "lon": 111.00692,
+        "lat": -0.18545,
+        "acq_date": "2023-07-07",
+        "confidence": "h",
+        "frp": 4.9,
+        "id": "SYNTH:SUP-018:6"
+      },
+      {
+        "lon": 111.0094,
+        "lat": -0.18872,
+        "acq_date": "2023-07-02",
+        "confidence": "h",
+        "frp": 25.9,
+        "id": "SYNTH:SUP-018:7"
+      },
+      {
+        "lon": 111.00692,
+        "lat": -0.1868,
+        "acq_date": "2023-07-26",
+        "confidence": "h",
+        "frp": 20.9,
+        "id": "SYNTH:SUP-018:8"
+      },
+      {
+        "lon": 111.00691,
+        "lat": -0.18829,
+        "acq_date": "2023-07-23",
+        "confidence": "h",
+        "frp": 14.3,
+        "id": "SYNTH:SUP-018:9"
+      },
+      {
+        "lon": 111.00792,
+        "lat": -0.18645,
+        "acq_date": "2023-09-16",
+        "confidence": "h",
+        "frp": 20.1,
+        "id": "SYNTH:SUP-018:10"
+      },
+      {
+        "lon": 111.01112,
+        "lat": -0.18467,
+        "acq_date": "2023-08-14",
+        "confidence": "n",
+        "frp": 28.8,
+        "id": "SYNTH:SUP-018:11"
+      },
+      {
+        "lon": 111.00726,
+        "lat": -0.18405,
+        "acq_date": "2023-09-08",
+        "confidence": "n",
+        "frp": 19.3,
+        "id": "SYNTH:SUP-018:12"
+      },
+      {
+        "lon": 111.00607,
+        "lat": -0.18887,
+        "acq_date": "2023-09-12",
+        "confidence": "n",
+        "frp": 8.9,
+        "id": "SYNTH:SUP-018:13"
+      },
+      {
+        "lon": 111.00832,
+        "lat": -0.18864,
+        "acq_date": "2023-07-02",
+        "confidence": "n",
+        "frp": 19.6,
+        "id": "SYNTH:SUP-018:14"
+      },
+      {
+        "lon": 111.01079,
+        "lat": -0.18279,
+        "acq_date": "2023-08-11",
+        "confidence": "n",
+        "frp": 23.9,
+        "id": "SYNTH:SUP-018:15"
+      },
+      {
+        "lon": 111.00653,
+        "lat": -0.18604,
+        "acq_date": "2023-08-15",
+        "confidence": "n",
+        "frp": 22.3,
+        "id": "SYNTH:SUP-018:16"
+      },
+      {
+        "lon": 111.00366,
+        "lat": -0.1867,
+        "acq_date": "2023-07-04",
+        "confidence": "n",
+        "frp": 18.2,
+        "id": "SYNTH:SUP-018:17"
+      },
+      {
+        "lon": 111.00436,
+        "lat": -0.18741,
+        "acq_date": "2023-07-27",
+        "confidence": "n",
+        "frp": 7.5,
+        "id": "SYNTH:SUP-018:18"
+      }
+    ]
+  },
+  "buffer_only": {
+    "total": 0,
+    "high_confidence": 0,
+    "by_year": {},
+    "peak_month": null,
+    "points": []
+  }
+}

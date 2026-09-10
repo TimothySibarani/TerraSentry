@@ -6,17 +6,9 @@
 <title>RIMBA — Supplier Due Diligence Panel</title>
 <style>
   :root {
-    --bg: #0e1512;
-    --panel: #16201c;
-    --panel-2: #1c2823;
-    --line: #2a3a33;
-    --text: #e8f0ec;
-    --muted: #8ba396;
-    --accent: #3ddc97;
-    --flag: #f0b429;
-    --bad: #e5484d;
-    --info: #6ba7d8;
-    --radius: 10px;
+    --bg: #0e1512; --panel: #16201c; --panel-2: #1c2823; --line: #2a3a33;
+    --text: #e8f0ec; --muted: #8ba396; --accent: #3ddc97; --flag: #f0b429;
+    --bad: #e5484d; --info: #6ba7d8; --radius: 10px;
   }
   * { box-sizing: border-box; }
   body {
@@ -26,37 +18,81 @@
   }
   header {
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-    padding: 14px 22px; border-bottom: 1px solid var(--line); background: var(--panel);
-    position: sticky; top: 0; z-index: 10;
+    padding: 13px 22px; border-bottom: 1px solid var(--line); background: var(--panel);
+    position: sticky; top: 0; z-index: 20;
   }
   .brand { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; color: var(--accent); }
-  .tagline { font-size: 12.5px; color: var(--muted); max-width: 420px; line-height: 1.35; }
+  .tagline { font-size: 12.5px; color: var(--muted); }
   .spacer { flex: 1; }
   select, button {
     font: inherit; font-size: 14px; border-radius: 8px; border: 1px solid var(--line);
     background: var(--panel-2); color: var(--text); padding: 9px 13px;
   }
-  button {
-    background: var(--accent); color: #06170f; font-weight: 700; border: none;
-    cursor: pointer; padding: 10px 20px;
-  }
+  button { background: var(--accent); color: #06170f; font-weight: 700; border: none; cursor: pointer; padding: 10px 20px; }
   button:disabled { opacity: 0.45; cursor: default; }
   button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 500; }
 
-  main { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; padding: 18px 22px 60px; }
-  @media (max-width: 1080px) { main { grid-template-columns: 1fr; } }
-
   section { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
   section > h2 {
-    margin: 0; padding: 12px 16px; font-size: 12px; text-transform: uppercase;
-    letter-spacing: 1.4px; color: var(--muted); border-bottom: 1px solid var(--line);
-    background: var(--panel-2); font-weight: 700;
+    margin: 0; padding: 12px 16px; font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+    color: var(--muted); border-bottom: 1px solid var(--line); background: var(--panel-2); font-weight: 700;
+    display: flex; justify-content: space-between; align-items: center;
   }
+  section > h2 small { font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 11.5px; }
   .body { padding: 14px 16px; }
   .empty { color: var(--muted); font-size: 14px; padding: 26px 16px; text-align: center; }
+  [hidden] { display: none !important; }
 
+  /* ---------- portfolio ---------- */
+  .wrap { padding: 18px 22px 60px; display: flex; flex-direction: column; gap: 18px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 12px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--line); border-radius: var(--radius); padding: 13px 15px; }
+  .kpi.good { border-top-color: var(--accent); }
+  .kpi.warn { border-top-color: var(--flag); }
+  .kpi.bad  { border-top-color: var(--bad); }
+  .kpi .n { font-size: 30px; font-weight: 800; line-height: 1.05; }
+  .kpi .l { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.35; }
 
-  /* --- evidence map --- */
+  .dist { display: flex; height: 30px; border-radius: 6px; overflow: hidden; margin-bottom: 10px; }
+  .dist div { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #06170f; }
+  .dist .GO { background: var(--accent); }
+  .dist .CONDITIONAL { background: var(--info); }
+  .dist .ESCALATE { background: var(--flag); }
+  .dist .NO_GO { background: var(--bad); }
+  .dist .BLOCKED { background: #7a2b2e; color: #f5d6d7; }
+  .distkey { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+  .distkey i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; margin-right: 5px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; padding: 9px 16px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+       color: var(--muted); border-bottom: 1px solid var(--line); background: var(--panel-2); font-weight: 700; }
+  td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr.row { cursor: pointer; }
+  tr.row:hover td { background: var(--panel-2); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sid { color: var(--muted); font-size: 12px; }
+  .reason { color: var(--muted); font-size: 12.5px; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  .pill.GO { background: rgba(61,220,151,0.18); color: var(--accent); }
+  .pill.CONDITIONAL { background: rgba(107,167,216,0.18); color: var(--info); }
+  .pill.ESCALATE { background: rgba(240,180,41,0.18); color: var(--flag); }
+  .pill.NO_GO, .pill.BLOCKED { background: rgba(229,72,77,0.18); color: var(--bad); }
+  .tag { font-size: 10.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; margin-left: 6px; }
+
+  .grp { border-bottom: 1px solid var(--line); }
+  .grp:last-child { border-bottom: none; }
+  .grp > summary { cursor: pointer; padding: 11px 16px; list-style: none; display: flex; align-items: center; gap: 12px; }
+  .grp > summary::-webkit-details-marker { display: none; }
+  .grp > summary::before { content: "▸"; color: var(--muted); width: 12px; }
+  .grp[open] > summary::before { content: "▾"; }
+  .grp .gname { font-weight: 650; }
+  .grp .gmeta { color: var(--muted); font-size: 12px; }
+
+  /* ---------- detail ---------- */
+  main { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; padding: 18px 22px 60px; }
+  @media (max-width: 1080px) { main { grid-template-columns: 1fr; } }
+  .col { display: flex; flex-direction: column; gap: 18px; }
+
   .map-frame { background: #0b1a14; border-bottom: 1px solid var(--line); }
   .map-svg { display: block; width: 100%; height: auto; }
   .map-empty, .map-hint { color: var(--muted); font-size: 13px; padding: 20px 16px; }
@@ -67,10 +103,7 @@
   .map-hs { fill: rgba(240,180,41,0.75); stroke: #7a5a10; stroke-width: 0.8; }
   .map-hs-high { fill: rgba(229,72,77,0.85); stroke: #5e1416; stroke-width: 0.8; }
   .map-hs-buffer { fill: none; stroke: rgba(139,163,150,0.85); stroke-width: 1.6; }
-  .map-controls {
-    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
-    padding: 10px 16px; font-size: 12.5px; color: var(--muted); border-bottom: 1px solid var(--line);
-  }
+  .map-controls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 10px 16px; font-size: 12.5px; color: var(--muted); border-bottom: 1px solid var(--line); }
   .map-controls label { display: flex; align-items: center; gap: 6px; }
   .map-swipe { flex: 1; min-width: 240px; }
   .map-swipe input { flex: 1; accent-color: var(--accent); }
@@ -83,11 +116,7 @@
   .k-hs { background: rgba(240,180,41,0.75); border-radius: 50%!important; }
   .k-hs-buf { border: 2px solid rgba(139,163,150,0.9); border-radius: 50%!important; }
 
-  /* --- reasoning stream --- */
-  .step {
-    display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line);
-    animation: slide 0.28s ease-out;
-  }
+  .step { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); animation: slide 0.28s ease-out; }
   @keyframes slide { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
   .step:last-child { border-bottom: none; }
   .dot { flex: 0 0 10px; height: 10px; border-radius: 50%; margin-top: 7px; background: var(--accent); }
@@ -97,22 +126,11 @@
   .step .title { font-weight: 650; font-size: 15px; }
   .step .detail { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
   .step .meta { color: #5f7a6e; font-size: 11.5px; margin-top: 5px; letter-spacing: 0.4px; text-transform: uppercase; }
-
-  .step.branch {
-    background: linear-gradient(90deg, rgba(240,180,41,0.13), transparent);
-    border-left: 3px solid var(--flag);
-  }
+  .step.branch { background: linear-gradient(90deg, rgba(240,180,41,0.13), transparent); border-left: 3px solid var(--flag); }
   .step.branch .title::before { content: "UNPLANNED  "; color: var(--flag); font-size: 11px; letter-spacing: 1.5px; }
 
-  /* --- score --- */
   .scorewrap { display: flex; align-items: center; gap: 18px; }
   .score { font-size: 46px; font-weight: 800; line-height: 1; }
-  .band { font-size: 13px; font-weight: 800; letter-spacing: 1.4px; padding: 5px 12px; border-radius: 20px; }
-  .band.GO { background: rgba(61,220,151,0.18); color: var(--accent); }
-  .band.CONDITIONAL { background: rgba(107,167,216,0.18); color: var(--info); }
-  .band.ESCALATE { background: rgba(240,180,41,0.18); color: var(--flag); }
-  .band.NO_GO, .band.BLOCKED { background: rgba(229,72,77,0.18); color: var(--bad); }
-
   .comp { margin-top: 12px; }
   .comp-row { margin-bottom: 11px; }
   .comp-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
@@ -121,38 +139,24 @@
   .bar { height: 6px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
   .bar > span { display: block; height: 100%; background: var(--flag); transition: width 0.5s ease; }
   .reasons { margin: 5px 0 0; padding-left: 16px; font-size: 12.5px; color: var(--muted); }
-  .reasons li { margin-bottom: 2px; }
-
-  .gate {
-    margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 13px;
-    background: rgba(229,72,77,0.10); border-left: 3px solid var(--bad);
-  }
+  .gate { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 13px; background: rgba(229,72,77,0.10); border-left: 3px solid var(--bad); }
   .gate b { color: var(--bad); display: block; margin-bottom: 4px; font-size: 11.5px; letter-spacing: 1.2px; }
 
-  /* --- evidence / gaps --- */
-  details { border-bottom: 1px solid var(--line); }
-  details:last-child { border-bottom: none; }
-  summary { cursor: pointer; padding: 10px 16px; font-size: 13.5px; list-style: none; }
-  summary::-webkit-details-marker { display: none; }
-  summary::before { content: "▸ "; color: var(--muted); }
-  details[open] summary::before { content: "▾ "; }
-  details[open] summary { color: var(--accent); }
+  details.ev { border-bottom: 1px solid var(--line); }
+  details.ev:last-child { border-bottom: none; }
+  details.ev summary { cursor: pointer; padding: 10px 16px; font-size: 13.5px; list-style: none; }
+  details.ev summary::-webkit-details-marker { display: none; }
+  details.ev summary::before { content: "▸ "; color: var(--muted); }
+  details.ev[open] summary::before { content: "▾ "; }
+  details.ev[open] summary { color: var(--accent); }
   .src { color: var(--muted); font-size: 11.5px; display: block; margin-top: 2px; }
-  pre {
-    margin: 0; padding: 12px 16px; background: #0a100d; font-size: 11.5px;
-    overflow-x: auto; color: #b8ccc2; line-height: 1.45;
-  }
+  pre { margin: 0; padding: 12px 16px; background: #0a100d; font-size: 11.5px; overflow-x: auto; color: #b8ccc2; line-height: 1.45; }
   .gap { padding: 12px 16px; border-bottom: 1px solid var(--line); }
   .gap:last-child { border-bottom: none; }
   .gap code { color: var(--flag); font-size: 11.5px; letter-spacing: 0.6px; }
   .gap .req { margin-top: 4px; font-size: 14px; }
   .gap .why { margin-top: 4px; font-size: 12.5px; color: var(--muted); }
-
-  .note {
-    font-size: 12px; color: var(--muted); padding: 10px 16px;
-    border-top: 1px solid var(--line); background: var(--panel-2);
-  }
-  .synthetic { color: var(--flag); }
+  .note { font-size: 12px; color: var(--muted); padding: 10px 16px; border-top: 1px solid var(--line); background: var(--panel-2); }
 </style>
 </head>
 <body>
@@ -160,44 +164,66 @@
 <header>
   <div>
     <div class="brand">RIMBA</div>
-    <div class="tagline">Supplier due diligence &amp; EUDR compliance co-pilot</div>
+    <div class="tagline" id="context">Supplier due diligence &amp; EUDR compliance co-pilot</div>
   </div>
   <div class="spacer"></div>
-  <select id="supplier"></select>
-  <label style="font-size:13px;color:var(--muted)">
+  <button id="back" class="ghost" hidden>← Supply base</button>
+  <label id="pacedWrap" style="font-size:13px;color:var(--muted)" hidden>
     <input type="checkbox" id="paced" checked> paced
   </label>
-  <button id="run">Run screening</button>
-  <button id="reset" class="ghost">Clear</button>
+  <button id="refresh">Screen supply base</button>
 </header>
 
-<main>
-  <div style="display:flex;flex-direction:column;gap:18px;">
+<!-- ================= PORTFOLIO ================= -->
+<div class="wrap" id="viewPortfolio">
+  <div class="kpis" id="kpis"></div>
+
+  <section>
+    <h2>Risk distribution <small id="distMeta"></small></h2>
+    <div class="body">
+      <div class="dist" id="dist"></div>
+      <div class="distkey" id="distkey"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Needs a decision <small>escalate · no-go · blocked</small></h2>
+    <div id="queue"><div class="empty">Screening…</div></div>
+  </section>
+
+  <section>
+    <h2>Supply base <small id="baseMeta"></small></h2>
+    <div id="groups"><div class="empty">Screening…</div></div>
+    <div class="note">
+      Everything here is screened by the deterministic rubric — free and milliseconds per supplier.
+      Only ambiguous cases go to the agent, which is what keeps a base of hundreds affordable.
+    </div>
+  </section>
+</div>
+
+<!-- ================= DETAIL ================= -->
+<main id="viewDetail" hidden>
+  <div class="col">
     <section>
       <h2>Evidence map</h2>
       <div id="map"><div class="map-empty">Run a screening to plot the concession, loss and hotspots.</div></div>
     </section>
-
     <section>
       <h2>Agent reasoning</h2>
-      <div id="steps"><div class="empty">Pick a supplier and run a screening.</div></div>
-      <div class="note" id="pacenote" hidden>
-        Steps are real; display is paced for legibility. Each step shows its true elapsed time.
-      </div>
+      <div id="steps"><div class="empty">Select a supplier.</div></div>
+      <div class="note" id="pacenote" hidden>Steps are real; display is paced for legibility. Each step shows its true elapsed time.</div>
     </section>
   </div>
 
-  <div style="display:flex;flex-direction:column;gap:18px;">
+  <div class="col">
     <section>
       <h2>Risk assessment</h2>
       <div class="body" id="score"><div class="empty" style="padding:8px 0">No run yet.</div></div>
     </section>
-
     <section>
       <h2>Due diligence statement</h2>
       <div id="dds"><div class="empty">No run yet.</div></div>
     </section>
-
     <section>
       <h2>Evidence ledger <span id="evcount" style="color:var(--muted);font-weight:400"></span></h2>
       <div id="evidence"><div class="empty">No run yet.</div></div>
@@ -209,149 +235,220 @@
 <script src="/map.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
-const stepsEl = $("steps"), scoreEl = $("score"), ddsEl = $("dds"), evEl = $("evidence");
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = (n) => (n ?? 0).toLocaleString("en-US");
+const BANDS = ["GO", "CONDITIONAL", "ESCALATE", "NO_GO", "BLOCKED"];
 let source = null;
 
-const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* ---------------- portfolio ---------------- */
 
-async function loadSuppliers() {
-  const list = await (await fetch("/api/suppliers")).json();
-  $("supplier").innerHTML = list
-    .map(s => `<option value="${esc(s.supplier_id)}">${esc(s.supplier_id)} — ${esc(s.legal_name)}</option>`)
-    .join("");
+async function loadPortfolio() {
+  $("refresh").disabled = true;
+  $("queue").innerHTML = $("groups").innerHTML = `<div class="empty">Screening…</div>`;
+  let p;
+  try {
+    p = await (await fetch("/api/portfolio")).json();
+  } catch (e) {
+    $("queue").innerHTML = `<div class="empty" style="color:var(--bad)">Could not reach the server.</div>`;
+    $("refresh").disabled = false;
+    return;
+  }
+  const t = p.totals;
+
+  $("context").textContent = `${p.mill?.name || "Supply base"} · ${t.suppliers} suppliers · ${fmt(t.volume_m3_month)} m³/month`;
+
+  $("kpis").innerHTML = `
+    ${kpi(t.screened, "suppliers screened", "good")}
+    ${kpi(t.exceptions, "need a decision now", t.exceptions ? "bad" : "good")}
+    ${kpi(t.needs_documents, "waiting on documents", t.needs_documents ? "warn" : "good")}
+    ${kpi(t.volume_covered_pct + "%", "of volume with an issuable DDS", t.volume_covered_pct > 80 ? "good" : "warn")}
+    ${kpi(t.smallholders, "smallholder plots", "")}
+    ${kpi(t.point_rule_plots, "under 4 ha — GPS point rule, no polygon required", "")}`;
+
+  const total = t.suppliers || 1;
+  $("dist").innerHTML = BANDS.map(b => {
+    const n = p.bands[b] || 0;
+    if (!n) return "";
+    return `<div class="${b}" style="width:${(n / total * 100).toFixed(2)}%" title="${b}: ${n}">${n}</div>`;
+  }).join("");
+  $("distkey").innerHTML = BANDS.map(b =>
+    `<span><i class="${b}" style="background:${bandColor(b)}"></i>${b.replace("_", "-")} ${p.bands[b] || 0}</span>`).join("");
+  $("distMeta").textContent = `screened ${p.generated_at.replace("T", " ").replace("+00:00", " UTC")}`;
+
+  $("queue").innerHTML = p.exceptions.length
+    ? table(p.exceptions, true)
+    : `<div class="empty" style="color:var(--accent)">Nothing needs a decision. Every exception is cleared.</div>`;
+
+  $("baseMeta").textContent = `${p.groups.length} groups`;
+  $("groups").innerHTML = p.groups.map(g => `
+    <details class="grp" ${g.exceptions ? "open" : ""}>
+      <summary>
+        <span class="gname">${esc(g.name)}</span>
+        <span class="pill ${g.worst_band}">${g.worst_band.replace("_", "-")}</span>
+        <span class="spacer"></span>
+        <span class="gmeta">${g.supplier_count} suppliers · ${fmt(g.volume_m3_month)} m³ ${g.exceptions ? `· <b style="color:var(--bad)">${g.exceptions} exception(s)</b>` : ""}</span>
+      </summary>
+      ${table(g.suppliers, false)}
+    </details>`).join("");
+
+  document.querySelectorAll("tr.row").forEach(tr =>
+    tr.addEventListener("click", () => openDetail(tr.dataset.sid, tr.dataset.name)));
+  $("refresh").disabled = false;
 }
 
-function clearAll(msg) {
-  stepsEl.innerHTML = `<div class="empty">${esc(msg)}</div>`;
-  document.getElementById("map").innerHTML = `<div class="map-empty">${esc(msg)}</div>`;
-  scoreEl.innerHTML = `<div class="empty" style="padding:8px 0">No run yet.</div>`;
-  ddsEl.innerHTML = `<div class="empty">No run yet.</div>`;
-  evEl.innerHTML = `<div class="empty">No run yet.</div>`;
-  $("evcount").textContent = "";
-  $("pacenote").hidden = true;
+function kpi(n, label, cls) {
+  return `<div class="kpi ${cls}"><div class="n">${n}</div><div class="l">${label}</div></div>`;
 }
+
+function bandColor(b) {
+  return { GO: "#3ddc97", CONDITIONAL: "#6ba7d8", ESCALATE: "#f0b429", NO_GO: "#e5484d", BLOCKED: "#7a2b2e" }[b];
+}
+
+function table(rows, withAction) {
+  return `<table><thead><tr>
+      <th>Supplier</th><th>Band</th><th class="num">Score</th><th class="num">Area</th>
+      <th class="num">m³/mo</th><th>${withAction ? "Why / what to do" : "Finding"}</th>
+    </tr></thead><tbody>
+    ${rows.map(r => `
+      <tr class="row" data-sid="${esc(r.supplier_id)}" data-name="${esc(r.legal_name)}">
+        <td>${esc(r.legal_name)}
+          ${r.tier === "smallholder" ? '<span class="tag">smallholder</span>' : ""}
+          ${r.geolocation_requirement === "point" ? '<span class="tag">GPS point</span>' : ""}
+          <div class="sid">${esc(r.supplier_id)}</div></td>
+        <td><span class="pill ${r.band}">${r.band.replace("_", "-")}</span></td>
+        <td class="num">${r.score === null ? "—" : r.score}</td>
+        <td class="num">${r.area_ha === null ? "—" : fmt(Math.round(r.area_ha)) + " ha"}</td>
+        <td class="num">${fmt(r.volume_m3_month)}</td>
+        <td class="reason">${esc(r.reason)}${withAction && r.action !== "None" ? `<div style="margin-top:4px;color:var(--flag)">→ ${esc(r.action)}</div>` : ""}</td>
+      </tr>`).join("")}
+    </tbody></table>`;
+}
+
+/* ---------------- detail ---------------- */
+
+function openDetail(sid, name) {
+  $("viewPortfolio").hidden = true;
+  $("viewDetail").hidden = false;
+  $("back").hidden = false;
+  $("pacedWrap").hidden = false;
+  $("refresh").hidden = true;
+  $("context").textContent = `${name} · ${sid}`;
+  runScreening(sid);
+}
+
+$("back").addEventListener("click", () => {
+  if (source) source.close();
+  $("viewDetail").hidden = true;
+  $("viewPortfolio").hidden = false;
+  $("back").hidden = true;
+  $("pacedWrap").hidden = true;
+  $("refresh").hidden = false;
+  loadPortfolio();
+});
 
 function addStep(s) {
-  if (stepsEl.querySelector(".empty")) stepsEl.innerHTML = "";
+  if ($("steps").querySelector(".empty")) $("steps").innerHTML = "";
   const div = document.createElement("div");
   div.className = `step ${s.status}${s.phase === "branch" ? " branch" : ""}`;
-  div.innerHTML = `
-    <div class="dot"></div>
-    <div style="min-width:0">
+  div.innerHTML = `<div class="dot"></div><div style="min-width:0">
       <div class="title">${esc(s.title)}</div>
       ${s.detail ? `<div class="detail">${esc(s.detail)}</div>` : ""}
-      <div class="meta">${esc(s.phase)} · ${s.elapsed_ms} ms</div>
-    </div>`;
-  stepsEl.appendChild(div);
-  div.scrollIntoView({ behavior: "smooth", block: "nearest" });
-}
-
-function renderMap(layers) {
-  if (!layers) return;
-  new RimbaMap.EvidenceMap(document.getElementById("map"), layers);
+      <div class="meta">${esc(s.phase)} · ${s.elapsed_ms} ms</div></div>`;
+  $("steps").appendChild(div);
 }
 
 function renderScore(a) {
   if (!a) return;
-  const maxPenalty = (c) => c.max_penalty || 1;
-  scoreEl.innerHTML = `
+  $("score").innerHTML = `
     <div class="scorewrap">
       <div class="score">${a.score}</div>
-      <div>
-        <div class="band ${esc(a.recommendation)}">${esc(a.recommendation)}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:6px">
-          Computed by the deterministic rubric — not by a model.
-        </div>
-      </div>
+      <div><span class="pill ${a.recommendation}">${a.recommendation.replace("_", "-")}</span>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Computed by the deterministic rubric — not by a model.</div></div>
     </div>
-    <div class="comp">
-      ${a.components.map(c => `
-        <div class="comp-row">
-          <div class="comp-head">
-            <span class="dim">${esc(c.dimension)}</span>
-            <span class="val">−${c.penalty} / ${c.max_penalty}</span>
-          </div>
-          <div class="bar"><span style="width:${(c.penalty / maxPenalty(c) * 100).toFixed(1)}%"></span></div>
-          ${c.reasons.length ? `<ul class="reasons">${c.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
-        </div>`).join("")}
-    </div>
-    ${a.hard_gates.length ? `
-      <div class="gate">
-        <b>HARD GATES APPLIED — SCORE CAPPED AT 59</b>
-        ${a.hard_gates.map(g => `<div>• ${esc(g)}</div>`).join("")}
-      </div>` : ""}
-  `;
+    <div class="comp">${a.components.map(c => `
+      <div class="comp-row">
+        <div class="comp-head"><span class="dim">${esc(c.dimension)}</span><span class="val">−${c.penalty} / ${c.max_penalty}</span></div>
+        <div class="bar"><span style="width:${(c.penalty / (c.max_penalty || 1) * 100).toFixed(1)}%"></span></div>
+        ${c.reasons.length ? `<ul class="reasons">${c.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
+      </div>`).join("")}</div>
+    ${a.hard_gates.length ? `<div class="gate"><b>HARD GATES APPLIED — SCORE CAPPED AT 59</b>
+      ${a.hard_gates.map(g => `<div>• ${esc(g)}</div>`).join("")}</div>` : ""}`;
 }
 
 function renderDds(dds) {
   if (!dds) return;
-  if (dds.issued) {
-    ddsEl.innerHTML = `
-      <div class="body">
-        <div style="color:var(--accent);font-weight:700;margin-bottom:6px">Draft issuable</div>
-        <div style="font-size:13.5px;color:var(--muted)">
-          Negligible-risk conclusion supported by the evidence. Still requires review and signature
-          by an authorised human representative.
-        </div>
-      </div>
-      <details><summary>TRACES-aligned statement (JSON)<span class="src">field names pending verification against the official schema</span></summary>
-      <pre>${esc(JSON.stringify(dds.statement, null, 2))}</pre></details>`;
-    return;
-  }
-  ddsEl.innerHTML = `
-    <div class="body" style="padding-bottom:4px">
-      <div style="color:var(--flag);font-weight:700;margin-bottom:4px">Not issuable — ${dds.gaps.length} gap(s)</div>
-      <div style="font-size:13px;color:var(--muted)">A request list procurement can act on, not a rejection letter.</div>
-    </div>
-    ${dds.gaps.map(g => `
-      <div class="gap">
-        <code>${esc(g.code)}</code>
-        <div class="req">${esc(g.requirement)}</div>
-        <div class="why">${esc(g.why)}</div>
-      </div>`).join("")}`;
+  $("dds").innerHTML = dds.issued
+    ? `<div class="body"><div style="color:var(--accent);font-weight:700;margin-bottom:6px">Draft issuable</div>
+       <div style="font-size:13.5px;color:var(--muted)">Negligible-risk conclusion supported by the evidence. Still requires review and signature by an authorised human.</div></div>
+       <details class="ev"><summary>TRACES-aligned statement (JSON)</summary><pre>${esc(JSON.stringify(dds.statement, null, 2))}</pre></details>`
+    : `<div class="body" style="padding-bottom:4px">
+         <div style="color:var(--flag);font-weight:700;margin-bottom:4px">Not issuable — ${dds.gaps.length} gap(s)</div>
+         <div style="font-size:13px;color:var(--muted)">A request list procurement can act on, not a rejection letter.</div></div>
+       ${dds.gaps.map(g => `<div class="gap"><code>${esc(g.code)}</code>
+         <div class="req">${esc(g.requirement)}</div><div class="why">${esc(g.why)}</div></div>`).join("")}`;
 }
 
 function renderEvidence(ev) {
   if (!ev) return;
   $("evcount").textContent = `(${ev.evidence_count})`;
-  evEl.innerHTML = ev.evidence.map(e => `
-    <details>
-      <summary>${esc(e.claim)}<span class="src">${esc(e.source)} · ${esc(e.claim_id)} · ${esc(e.retrieved_at)}</span></summary>
-      <pre>${esc(JSON.stringify(e.artifact, null, 2))}</pre>
-    </details>`).join("");
+  $("evidence").innerHTML = ev.evidence.map(e => `
+    <details class="ev"><summary>${esc(e.claim)}<span class="src">${esc(e.source)} · ${esc(e.claim_id)}</span></summary>
+    <pre>${esc(JSON.stringify(e.artifact, null, 2))}</pre></details>`).join("");
 }
 
-function run() {
-  const supplier = $("supplier").value;
+function renderBlocked(r) {
+  // A blocked supplier still has to say something in every panel. Leaving placeholders
+  // up makes a finished run look like a hung one.
+  const problems = (r.problems || []).map(p => `<li>${esc(p)}</li>`).join("");
+  $("map").innerHTML = `<div class="map-empty">
+      Geometry cannot be mapped — it did not pass validation.<br>
+      <span style="color:var(--bad)">${esc((r.problems || [])[0] || "invalid geometry")}</span>
+    </div>`;
+  $("score").innerHTML = `
+    <div class="scorewrap">
+      <div class="score" style="color:var(--bad)">—</div>
+      <div><span class="pill BLOCKED">BLOCKED</span>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">
+          No score computed. Geometry gates every later step, so nothing downstream can be trusted.
+        </div></div>
+    </div>
+    <div class="gate"><b>WHY THE ASSESSMENT STOPPED</b><ul style="margin:4px 0 0;padding-left:18px">${problems}</ul></div>`;
+  $("dds").innerHTML = `
+    <div class="body" style="padding-bottom:4px">
+      <div style="color:var(--bad);font-weight:700;margin-bottom:4px">Not issuable — assessment blocked</div>
+      <div style="font-size:13px;color:var(--muted)">A statement cannot be drafted without a usable plot geometry.</div>
+    </div>
+    <div class="gap"><code>GEOMETRY_UNUSABLE</code>
+      <div class="req">${esc(r.required_action || "Request a valid WGS84 polygon.")}</div></div>`;
+  renderEvidence(r.evidence);
+}
+
+function runScreening(sid) {
   const pace = $("paced").checked ? 550 : 0;
   if (source) source.close();
-  clearAll("Running…");
-  stepsEl.innerHTML = "";
+  $("steps").innerHTML = "";
+  $("map").innerHTML = `<div class="map-empty">Running…</div>`;
   $("pacenote").hidden = !$("paced").checked;
-  $("run").disabled = true;
 
-  source = new EventSource(`/api/stream?supplier=${encodeURIComponent(supplier)}&pace=${pace}`);
+  source = new EventSource(`/api/stream?supplier=${encodeURIComponent(sid)}&pace=${pace}`);
   source.addEventListener("step", (e) => addStep(JSON.parse(e.data)));
   source.addEventListener("result", (e) => {
     const r = JSON.parse(e.data);
-    renderMap(r.map);
+    if (r.blocked) { renderBlocked(r); return; }
+    if (r.map) new RimbaMap.EvidenceMap($("map"), r.map);
     renderScore(r.assessment);
     renderDds(r.dds);
     renderEvidence(r.evidence);
   });
-  source.addEventListener("done", () => { source.close(); $("run").disabled = false; });
-  source.addEventListener("error", (e) => {
-    let msg = "Stream failed. Is the server still running?";
-    try { msg = JSON.parse(e.data).message; } catch (_) {}
-    stepsEl.innerHTML = `<div class="empty" style="color:var(--bad)">${esc(msg)}</div>`;
+  source.addEventListener("done", () => source.close());
+  source.addEventListener("error", () => {
+    $("steps").innerHTML = `<div class="empty" style="color:var(--bad)">Stream failed.</div>`;
     if (source) source.close();
-    $("run").disabled = false;
   });
 }
 
-$("run").addEventListener("click", run);
-$("reset").addEventListener("click", () => { if (source) source.close(); clearAll("Cleared."); $("run").disabled = false; });
-loadSuppliers();
+$("refresh").addEventListener("click", loadPortfolio);
+loadPortfolio();
 </script>
 </body>
 </html>

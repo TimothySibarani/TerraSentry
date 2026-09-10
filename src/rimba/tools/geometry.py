@@ -10,6 +10,7 @@ GeoJSON mandates and what EUDR submissions expect.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -79,19 +80,29 @@ def geometry_from_geojson(raw: dict[str, Any]) -> BaseGeometry:
 
 
 def area_hectares(geom: BaseGeometry) -> float:
-    """Geodesic area in hectares.
+    """Geodesic area in hectares. Returns 0.0 when the area is not computable.
 
     Uses pyproj's geodesic computation rather than a projected CRS, which avoids
     picking the wrong UTM zone for concessions that straddle a zone boundary --
     a real problem in Kalimantan and Sumatra.
+
+    Coordinates outside the valid range -- typically a lon/lat transposition, which
+    puts "latitude" at 110 degrees -- make the geodesic solver return NaN. NaN must
+    never reach the data model: ``json.dumps`` emits it as a bare ``NaN`` token, which
+    Python's own parser accepts but every browser rejects as invalid JSON. One bad
+    supplier record would take down the whole panel. Validation reports the real
+    problem; the number here just stays finite.
     """
     area_m2, _ = _GEOD.geometry_area_perimeter(geom)
-    return abs(area_m2) / 10_000.0
+    area_ha = abs(area_m2) / 10_000.0
+    return area_ha if math.isfinite(area_ha) else 0.0
 
 
 def perimeter_km(geom: BaseGeometry) -> float:
+    """Geodesic perimeter in km, or 0.0 when not computable. See area_hectares."""
     _, perim_m = _GEOD.geometry_area_perimeter(geom)
-    return abs(perim_m) / 1_000.0
+    perim = abs(perim_m) / 1_000.0
+    return perim if math.isfinite(perim) else 0.0
 
 
 def geolocation_requirement(area_ha: float) -> GeolocationRequirement:

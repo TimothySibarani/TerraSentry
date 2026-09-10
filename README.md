@@ -55,6 +55,7 @@ data/polygons/           Demo supplier concession polygons (GeoJSON, WGS84)
 data/entities/           Synthetic corporate registry for entity-anomaly demo
 data/cache/              Pre-computed analysis results for Demo Day (do not process live on stage)
 src/rimba/pipeline.py    Screening pipeline, emits steps (shared by CLI and web panel)
+src/rimba/portfolio.py   Screens the whole supply base; totals, bands, exception queue
 src/rimba/tools/         Agent tools: geometry, FIRMS hotspots, forest change, entity lookup
 src/rimba/scoring.py     Deterministic risk rubric  <- NOT an LLM
 src/rimba/dds.py         TRACES-aligned Due Diligence Statement builder
@@ -62,7 +63,7 @@ src/rimba/evidence.py    Evidence ledger with citations
 src/rimba/agent/         Bedrock orchestration loop, tool specs, prompts
 web/index.html           Local web panel (map, reasoning stream, scorecard, evidence, DDS)
 web/map.js               Evidence map renderer -- no Leaflet, no CDN, works offline
-scripts/                 CLI + local server entrypoints
+scripts/                 CLI, local server, portfolio seeding, imagery, preflight
 tests/                   Unit tests for the deterministic parts
 ```
 
@@ -88,9 +89,12 @@ Required keys (all free to obtain — see `docs/data-sources.md`):
 python -m scripts.serve
 ```
 
-Opens http://localhost:8765. Pick a supplier, hit **Run screening**, and the reasoning
-stream fills in step by step, with the scorecard, evidence ledger and DDS output on the
-right. Standard library only — no Flask, nothing extra to install.
+Opens http://localhost:8765 on the **supply base**: 23 suppliers screened, KPI tiles, a
+risk distribution, and an exception queue of the handful that need a decision. Click any
+row to drill into that supplier — map, reasoning stream, scorecard, evidence ledger, DDS.
+
+That order is the point. Nobody reviews suppliers one at a time; the single-supplier view
+is the drill-down, not the home screen. Standard library only — no Flask, nothing to install.
 
 The pipeline finishes in about 10 ms, which is too fast to read, so the panel paces the
 display (toggle it off with the *paced* checkbox). The steps and their payloads are real

@@ -8,6 +8,7 @@ borrowed laptop five minutes before a demo.
 
 Endpoints:
     GET  /                          the panel
+    GET  /api/portfolio             whole supply base screened, aggregated
     GET  /api/suppliers             demo suppliers
     GET  /api/screen?supplier=ID    full dossier as JSON (no streaming)
     GET  /api/stream?supplier=ID    Server-Sent Events, one event per real pipeline step
@@ -23,6 +24,7 @@ Run from the repo root -- the data paths are relative to it.
 from __future__ import annotations
 
 import json
+import math
 import sys
 import time
 import webbrowser
@@ -33,7 +35,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from rimba import pipeline  # noqa: E402
+from rimba import pipeline, portfolio  # noqa: E402
 
 WEB = ROOT / "web"
 DATA_DIR = ROOT / "data"
@@ -48,6 +50,26 @@ CONTENT_TYPES = {
     ".json": "application/json", ".js": "text/javascript; charset=utf-8",
 }
 DEFAULT_PACE_MS = 550
+
+
+def dumps(payload: object) -> str:
+    """JSON that a browser will actually parse.
+
+    Python emits NaN and Infinity as bare tokens and accepts them again on the way in,
+    so a round-trip through Python hides the problem completely -- but JSON.parse in
+    every browser rejects them, and the client dies on a payload the server thinks is
+    fine. Coerce non-finite floats to null so one odd number cannot take down the panel.
+    """
+    def clean(obj):
+        if isinstance(obj, float):
+            return obj if math.isfinite(obj) else None
+        if isinstance(obj, dict):
+            return {k: clean(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [clean(v) for v in obj]
+        return obj
+
+    return json.dumps(clean(payload), ensure_ascii=False, allow_nan=False)
 
 
 class Server(ThreadingHTTPServer):
@@ -76,7 +98,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _json(self, payload: object, code: int = 200) -> None:
-        self._send(code, json.dumps(payload, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+        self._send(code, dumps(payload).encode("utf-8"), "application/json; charset=utf-8")
 
     def _query(self) -> dict[str, list[str]]:
         return parse_qs(urlparse(self.path).query)
@@ -102,6 +124,13 @@ class Handler(BaseHTTPRequestHandler):
 
         if route.startswith("/data/"):
             self._serve_data(route)
+            return
+
+        if route == "/api/portfolio":
+            try:
+                self._json(portfolio.screen_all())
+            except Exception as exc:
+                self._json({"error": f"{type(exc).__name__}: {exc}"}, code=500)
             return
 
         if route == "/api/suppliers":

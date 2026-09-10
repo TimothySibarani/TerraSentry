@@ -80,3 +80,38 @@ def test_data_route_refuses_unlisted_suffixes():
         assert _get(base, "/data/cache")[0] == 404                     # directory, not a file
     finally:
         srv.shutdown()
+
+
+def test_server_never_emits_nan():
+    """Python writes NaN as a bare token and reads it back happily; browsers refuse it.
+
+    A lon/lat transposition makes the geodesic area NaN, and one such supplier used to
+    produce a payload that Python round-tripped fine and every browser rejected -- so the
+    panel died on data the server considered valid.
+    """
+    import json as _json
+
+    srv, base = _serve()
+    try:
+        for path in ("/api/portfolio", "/api/screen?supplier=SUP-023"):
+            code, body = _get(base, path)
+            assert code == 200, path
+            text = body.decode("utf-8")
+            assert "NaN" not in text and "Infinity" not in text, f"{path} emitted a non-finite token"
+            _json.loads(text, parse_constant=_reject)  # strict: fail on NaN/Infinity
+    finally:
+        srv.shutdown()
+
+
+def _reject(token):
+    raise AssertionError(f"non-finite JSON constant in payload: {token}")
+
+
+def test_transposed_coordinates_give_a_finite_area_and_a_clear_problem():
+    from rimba import pipeline
+
+    r = pipeline.run("SUP-023")
+    import math
+
+    assert math.isfinite(r["geometry"]["area_ha"])
+    assert any("swapped" in p for p in r["problems"])
