@@ -1,6 +1,6 @@
 ---
 import "../styles/tokens.css";
-const { title = "TerraSentry — Supplier Due Diligence Panel", context = "" } = Astro.props;
+const { title = "TerraSentry" } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -11,15 +11,6 @@ const { title = "TerraSentry — Supplier Due Diligence Panel", context = "" } =
     <meta name="description" content="Supplier due diligence and EUDR compliance screening." />
   </head>
   <body>
-    <!-- Static chrome: no JavaScript is shipped for any of this. -->
-    <header>
-      <div>
-        <div class="brand">TerraSentry</div>
-        <div class="tagline">{context || "Supplier due diligence & EUDR compliance co-pilot"}</div>
-      </div>
-      <div class="spacer"></div>
-      <slot name="actions" />
-    </header>
     <slot />
   </body>
 </html>

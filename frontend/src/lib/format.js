@@ -1,11 +1,11 @@
 export const BANDS = ["GO", "CONDITIONAL", "ESCALATE", "NO_GO", "BLOCKED"];
 
 export const BAND_COLOR = {
-  GO: "var(--accent)",
-  CONDITIONAL: "var(--info)",
-  ESCALATE: "var(--flag)",
-  NO_GO: "var(--bad)",
-  BLOCKED: "#7a2b2e",
+  GO: "var(--go)",
+  CONDITIONAL: "var(--conditional)",
+  ESCALATE: "var(--escalate)",
+  NO_GO: "var(--nogo)",
+  BLOCKED: "var(--blocked)",
 };
 
 /** "NO_GO" reads as shouting in a table cell; "NO-GO" does not. */

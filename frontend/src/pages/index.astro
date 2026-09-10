@@ -1,9 +1,9 @@
 ---
 import Base from "../layouts/Base.layout.astro";
-import PortfolioView from "../components/PortfolioView.jsx";
+import Workstation from "../components/Workstation.jsx";
 ---
 <Base title="TerraSentry — Supply base">
-  <!-- client:load: this island IS the page content, so deferring it would only show an
-       empty frame first. Everything above it is static HTML with no JS shipped. -->
-  <PortfolioView client:load />
+  <!-- One island for the shell. Everything below the <head> is data-driven, so deferring
+       hydration would only show an empty frame first. -->
+  <Workstation client:load />
 </Base>

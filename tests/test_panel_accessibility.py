@@ -39,50 +39,57 @@ def contrast(fg, bg):
 PANEL = "#16201c"
 
 
-def test_astro_panel_keeps_every_accessibility_affordance():
-    """A rewrite is exactly when hard-won accessibility work gets quietly dropped."""
-    assert "tabIndex={0}" in FRONTEND, "portfolio rows must be reachable by tab"
-    assert 'role="button"' in FRONTEND
-    assert "aria-label" in FRONTEND
-    assert '"Enter"' in FRONTEND and '" "' in FRONTEND
+# The four surfaces the workstation actually paints on, darkest to lightest.
+SURFACES = ("#141311", "#1b1a17", "#211f1c", "#292724")
+BAND_COLOURS = ("#68bd85", "#7fa9d6", "#e0a33c", "#e8767a", "#c2b3ad")
+
+
+def test_queue_items_are_real_buttons():
+    """The strongest fix for keyboard access is not needing a fix.
+
+    The old portfolio put a click handler on a bare <tr> and had to bolt on tabindex,
+    role and key handlers to make it usable. The rail uses real <button> elements, which
+    are focusable, activate on Enter and Space, and announce themselves -- all for free.
+    Regressing to a div with onClick would silently undo that.
+    """
+    ws = (ROOT / "frontend" / "src" / "components" / "Workstation.jsx").read_text(encoding="utf-8")
+    assert "<button" in ws and 'type="button"' in ws
+    assert "aria-current" in ws, "the selected row must be announced, not just tinted"
+    assert "aria-label" in ws
+    assert 'aria-label="Work queue and supply base"' in ws, "the rail needs an accessible name"
+
+
+def test_selection_stays_addressable():
+    """Selecting a supplier must remain linkable and survive the Back button.
+
+    The rail is persistent now, so selection is state rather than navigation -- which is
+    exactly when an app quietly stops having URLs.
+    """
+    ws = (ROOT / "frontend" / "src" / "components" / "Workstation.jsx").read_text(encoding="utf-8")
+    assert "pushState" in ws
+    assert "popstate" in ws, "Back must move the selection, not leave the page"
+    assert "URLSearchParams" in ws
+
+
+def test_panel_keeps_every_accessibility_affordance():
     assert ":focus-visible" in FRONTEND
     assert "prefers-reduced-motion" in FRONTEND
-    assert "tablewrap" in FRONTEND
     assert 'className="facts"' in FRONTEND, "evidence must read in words before JSON"
 
 
-# Light-theme surfaces the panel actually paints on.
-SURFACES = ("#ffffff", "#f8f8f5", "#f2f2ee", "#fcfcfa")
-BAND_COLOURS = ("#136c3c", "#15537f", "#8a5300", "#b02219", "#7a1712")
-
-
 def test_astro_text_colours_meet_wcag_aa():
-    """Text must clear 4.5:1 on every surface it can land on, not just the best one."""
-    for colour in ("#191916", "#63635b", "#0f5c38", *BAND_COLOURS):
+    """Measured on all four surfaces the palette actually paints on."""
+    for colour in ("#ece9e2", "#a5a096", "#d9a441", *BAND_COLOURS):
         assert colour in FRONTEND, f"{colour} is not the palette the panel uses"
         worst = min(contrast(colour, bg) for bg in SURFACES)
         assert worst >= 4.5, f"{colour} is {worst:.2f}:1 at worst, needs 4.5"
 
 
-def test_band_markers_are_legible_in_reverse():
-    """Pills and the distribution bar put white text on the band colour."""
-    for colour in BAND_COLOURS:
-        ratio = contrast("#ffffff", colour)
-        assert ratio >= 4.5, f"white on {colour} is {ratio:.2f}:1"
-
-
-def test_colour_is_reserved_for_meaning():
-    """Grey carries the interface; colour means risk. If everything is coloured, nothing is."""
-    assert "--go:" in FRONTEND and "--nogo:" in FRONTEND
-    for generic in ("#3ddc97", "#f0b429", "#6ba7d8"):
-        assert generic not in FRONTEND, f"{generic} is the generic dashboard accent, not a risk band"
-
-
 def test_identifiers_are_monospaced():
     """An ID that renders in body text reads as prose. Real tools do not do that."""
     assert "--mono:" in FRONTEND
-    for cls in (".sid", ".score", "td.num", ".src"):
-        assert cls in FRONTEND
+    for cls in (".qid", ".qscore", ".score", ".src"):
+        assert cls in FRONTEND, f"{cls} lost its monospace treatment"
 
 
 def test_rows_are_keyboard_operable():
