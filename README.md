@@ -54,12 +54,14 @@ docs/                    Architecture, scoring rubric, data sources, demo script
 data/polygons/           Demo supplier concession polygons (GeoJSON, WGS84)
 data/entities/           Synthetic corporate registry for entity-anomaly demo
 data/cache/              Pre-computed analysis results for Demo Day (do not process live on stage)
+src/rimba/pipeline.py    Screening pipeline, emits steps (shared by CLI and web panel)
 src/rimba/tools/         Agent tools: geometry, FIRMS hotspots, forest change, entity lookup
 src/rimba/scoring.py     Deterministic risk rubric  <- NOT an LLM
 src/rimba/dds.py         TRACES-aligned Due Diligence Statement builder
 src/rimba/evidence.py    Evidence ledger with citations
 src/rimba/agent/         Bedrock orchestration loop, tool specs, prompts
-scripts/                 CLI entrypoints
+web/index.html           Local web panel (reasoning stream, scorecard, evidence, DDS)
+scripts/                 CLI + local server entrypoints
 tests/                   Unit tests for the deterministic parts
 ```
 
@@ -79,11 +81,32 @@ Required keys (all free to obtain — see `docs/data-sources.md`):
 | `AWS_REGION`, AWS credentials | Hackathon AWS account (finalists) |
 | `GFW_API_KEY` | Optional — https://data-api.globalforestwatch.org/ |
 
-Run a screening against the bundled demo supplier:
+### Try it — web panel
 
 ```bash
-python -m scripts.run_screening --supplier "PT Rimba Lestari Jaya"
+python -m scripts.serve
 ```
+
+Opens http://localhost:8765. Pick a supplier, hit **Run screening**, and the reasoning
+stream fills in step by step, with the scorecard, evidence ledger and DDS output on the
+right. Standard library only — no Flask, nothing extra to install.
+
+The pipeline finishes in about 10 ms, which is too fast to read, so the panel paces the
+display (toggle it off with the *paced* checkbox). The steps and their payloads are real
+and unmodified; each shows its true elapsed time. Never describe the pacing as
+processing time.
+
+### Try it — command line
+
+```bash
+python -m scripts.run_screening --supplier SUP-001
+```
+
+```bash
+python -m scripts.run_screening --list
+```
+
+Both entrypoints call the same `rimba.pipeline.run()`. If they ever disagree, that is a bug.
 
 ## Build order (recommended)
 
