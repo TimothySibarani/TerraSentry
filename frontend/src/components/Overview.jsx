@@ -1,4 +1,5 @@
 import { BANDS, BAND_COLOR, bandLabel, fmt } from "../lib/format.js";
+import { VolumeByBand, YearBars } from "./Charts.jsx";
 
 /**
  * The canvas at rest.
@@ -25,6 +26,8 @@ export default function Overview({ data, onSelect, selected }) {
         human; the matrix below is everyone.
       </p>
 
+      <div className="ovhead">
+        <div>
       <div className="dist">
         {BANDS.filter((b) => data.bands[b]).map((b) => (
           <div key={b} className={b} style={{ width: `${(data.bands[b] / total) * 100}%` }}
@@ -40,6 +43,26 @@ export default function Overview({ data, onSelect, selected }) {
             {bandLabel(b)} {data.bands[b] || 0}
           </span>
         ))}
+      </div>
+
+        </div>
+
+        <div className="charts">
+          <YearBars
+            title="Tree-cover loss after the cutoff"
+            unit="ha"
+            years={data.series.years}
+            data={data.series.loss_ha}
+            format={(v) => (v >= 10 ? Math.round(v) : v)}
+          />
+          <YearBars
+            title="Fire hotspots inside plots"
+            unit="detections"
+            years={data.series.years}
+            data={data.series.hotspots}
+          />
+          <VolumeByBand volume={data.series.volume_by_band} />
+        </div>
       </div>
 
       <div className="bigstats">

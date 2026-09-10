@@ -41,7 +41,7 @@ PANEL = "#16201c"
 
 # The four surfaces the workstation actually paints on, darkest to lightest.
 SURFACES = ("#141311", "#1b1a17", "#211f1c", "#292724")
-BAND_COLOURS = ("#68bd85", "#7fa9d6", "#e0a33c", "#e8767a", "#c2b3ad")
+BAND_COLOURS = ("#68c98a", "#6b9ada", "#f0c451", "#f07f90", "#b3aea4")
 
 
 def test_queue_items_are_real_buttons():
@@ -169,3 +169,35 @@ def test_components_use_tokens_not_raw_hex():
                 if match.lower() not in {"#ffffff", "#fff"}:
                     offenders.append(f"{path.name}:{n} {match}")
     assert not offenders, f"raw hex outside the palette: {offenders}"
+
+
+def test_blocked_carries_a_second_encoding():
+    """BLOCKED is a low-chroma grey, which sits too close to the reds under deutan vision.
+
+    The palette validator flagged exactly that pair, so BLOCKED is hatched wherever it is
+    painted as a solid. Dropping the hatch would put it back to colour-alone against a
+    colour it cannot be told apart from.
+    """
+    css = (ROOT / "frontend" / "src" / "styles" / "tokens.css").read_text(encoding="utf-8")
+    assert "repeating-linear-gradient" in css
+    for cls in (".dist .BLOCKED", ".cell.BLOCKED", ".chip.BLOCKED"):
+        assert cls in css, f"{cls} lost its hatch"
+
+
+def test_every_chart_ships_a_table():
+    """A bar you can only read by pixel length is not evidence, and this is a compliance tool."""
+    charts = (ROOT / "frontend" / "src" / "components" / "Charts.jsx").read_text(encoding="utf-8")
+    assert charts.count('className="tbl"') >= 2, "each chart needs its own table view"
+    assert charts.count("<table>") >= 2
+
+
+def test_loss_and_fire_are_not_on_one_pair_of_axes():
+    """Hectares and detections are different units.
+
+    Putting them on a dual axis would assert a relationship the data does not state; they
+    are aligned small multiples sharing a year axis instead.
+    """
+    overview = (ROOT / "frontend" / "src" / "components" / "Overview.jsx").read_text(encoding="utf-8")
+    assert overview.count("<YearBars") == 2, "loss and fire must be two charts, not one"
+    charts = (ROOT / "frontend" / "src" / "components" / "Charts.jsx").read_text(encoding="utf-8")
+    assert "y2Scale" not in charts and "rightAxis" not in charts

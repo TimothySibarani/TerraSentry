@@ -67,6 +67,13 @@ def screen_all() -> dict[str, Any]:
 
     rows: list[dict[str, Any]] = []
     bands: dict[str, int] = {b: 0 for b in BAND_ORDER}
+    # Two series over the same years, kept apart on purpose. Hectares and detections are
+    # different units, and putting them on one pair of axes would invent a relationship
+    # the data does not state. Aligned small multiples let a reader see the 2023
+    # coincidence without the chart asserting causation.
+    loss_by_year: dict[str, float] = {}
+    fires_by_year: dict[str, int] = {}
+    volume_by_band: dict[str, int] = {b: 0 for b in BAND_ORDER}
 
     for supplier_id, supplier in by_id.items():
         try:
@@ -88,6 +95,12 @@ def screen_all() -> dict[str, Any]:
         band = "BLOCKED" if result.get("blocked") else result["assessment"]["recommendation"]
         bands[band] = bands.get(band, 0) + 1
         geometry = result.get("geometry") or {}
+        volume_by_band[band] = volume_by_band.get(band, 0) + supplier.get("volume_m3_month", 0)
+
+        for year, ha in ((result.get("forest_change") or {}).get("loss_by_year") or {}).items():
+            loss_by_year[year] = round(loss_by_year.get(year, 0.0) + ha, 3)
+        for year, n in ((result.get("hotspots") or {}).get("by_year") or {}).items():
+            fires_by_year[year] = fires_by_year.get(year, 0) + n
 
         rows.append({
             "supplier_id": supplier_id,
@@ -157,6 +170,14 @@ def screen_all() -> dict[str, Any]:
             "point_rule_plots": point_rule,
         },
         "bands": bands,
+        "series": {
+            # Only years in scope: EUDR cares about loss after 31 Dec 2020, so starting
+            # the axis earlier would pad the chart with bars that carry no obligation.
+            "years": sorted(set(loss_by_year) | set(fires_by_year)),
+            "loss_ha": loss_by_year,
+            "hotspots": fires_by_year,
+            "volume_by_band": volume_by_band,
+        },
         "exceptions": exceptions,
         "groups": groups,
         "rows": rows,
