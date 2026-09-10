@@ -10,13 +10,17 @@ from pyproj import Geod
 from shapely.affinity import scale
 from shapely.geometry import Polygon, mapping
 
+from terrasentry_core.seed.consignment import generate_consignment, generate_operator
 from terrasentry_core.seed.legality import generate_legality
 from terrasentry_core.seed.regions import REGIONS, Region
 from terrasentry_core.seed.schemas import (
+    AmbiguityReason,
     Archetype,
     BatchDataset,
     BatchRecord,
+    ExpectedSignal,
     LegalityDataset,
+    OperatorDataset,
     Scenario,
     SeedDataset,
     SeedPolygon,
@@ -25,9 +29,14 @@ from terrasentry_core.seed.schemas import (
 DEFAULT_RNG_SEED = 20260911
 BATCH_DISTRIBUTION: dict[str, int] = {"compliant": 30, "high_risk": 12, "ambiguous": 8}
 DEMO_QUOTA: dict[str, int] = {"compliant": 3, "high_risk": 3, "ambiguous": 2}
-
 _HA_PER_SQ_DEGREE = 1_230_000.0
 _GEOD = Geod(ellps="WGS84")
+_EXPECTED_SIGNALS: tuple[ExpectedSignal, ...] = ("deforestation", "fire", "legal")
+_EXPECTED_AMBIGUITIES: tuple[AmbiguityReason, ...] = (
+    "borderline_area",
+    "old_fire_scar",
+    "permit_gap",
+)
 
 _AREA_RANGES: dict[str, tuple[float, float]] = {
     "compliant": (300.0, 4000.0),
@@ -127,6 +136,8 @@ def generate_batch(*, rng_seed: int = DEFAULT_RNG_SEED, batch_size: int | None =
     rng.shuffle(archetypes)
 
     demo_counts: dict[str, int] = dict.fromkeys(DEMO_QUOTA, 0)
+    signal_index = 0
+    ambiguity_index = 0
     assigned: set[Scenario] = set()
     records: list[BatchRecord] = []
     for index, archetype in enumerate(archetypes, start=1):
@@ -150,11 +161,28 @@ def generate_batch(*, rng_seed: int = DEFAULT_RNG_SEED, batch_size: int | None =
             scenario=scenario,
         )
         supplier_id = f"SUP-{index:03d}"
+        expected_signal: ExpectedSignal | None = None
+        expected_ambiguity: AmbiguityReason | None = None
+        if archetype == "high_risk":
+            expected_signal = _EXPECTED_SIGNALS[signal_index % len(_EXPECTED_SIGNALS)]
+            signal_index += 1
+        elif archetype == "ambiguous":
+            expected_ambiguity = _EXPECTED_AMBIGUITIES[ambiguity_index % len(_EXPECTED_AMBIGUITIES)]
+            ambiguity_index += 1
         legality = generate_legality(
             rng,
             supplier_id=supplier_id,
             index=index,
             archetype=archetype,
+            region=region,
+            min_concession_ha=polygon.area_ha,
+            ambiguity=expected_ambiguity,
+        )
+        consignment = generate_consignment(
+            rng,
+            supplier_id=supplier_id,
+            index=index,
+            legality=legality,
             region=region,
         )
         records.append(
@@ -163,7 +191,10 @@ def generate_batch(*, rng_seed: int = DEFAULT_RNG_SEED, batch_size: int | None =
                 supplier_id=supplier_id,
                 polygon=polygon,
                 legality=legality,
+                consignment=consignment,
                 expected_archetype=archetype,
+                expected_signal=expected_signal,
+                expected_ambiguity=expected_ambiguity,
             )
         )
 
@@ -187,3 +218,7 @@ def legality_dataset(batch: BatchDataset) -> LegalityDataset:
         rng_seed=batch.rng_seed,
         records=[record.legality for record in batch.records],
     )
+
+
+def operator_dataset(batch: BatchDataset) -> OperatorDataset:
+    return OperatorDataset(rng_seed=batch.rng_seed, operator=generate_operator())

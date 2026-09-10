@@ -14,6 +14,7 @@ from terrasentry_core.seed.generator import (
     demo_dataset,
     generate_batch,
     legality_dataset,
+    operator_dataset,
 )
 
 
@@ -36,11 +37,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     batch = generate_batch(rng_seed=args.seed)
     demo = demo_dataset(batch)
     legality = legality_dataset(batch)
+    operator = operator_dataset(batch)
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     _write(out_dir / "demo_polygons.json", demo)
     _write(out_dir / "legality.json", legality)
+    _write(out_dir / "operator.json", operator)
     _write(out_dir / "batch_50.json", batch)
 
     live = [polygon.scenario for polygon in demo.polygons if polygon.scenario]

@@ -1,0 +1,189 @@
+{
+  "schemaVersion": "eudr-is-v3",
+  "operatorRole": "OPERATOR",
+  "statement": {
+    "internalReferenceNumber": "TS-SUP-TEST-REC-GOLDEN",
+    "activityType": "IMPORT",
+    "commodities": [
+      {
+        "hsHeading": "1511",
+        "descriptors": {
+          "descriptionOfGoods": "Crude palm oil (synthetic consignment)",
+          "goodsMeasure": {
+            "netWeight": 4500000.0,
+            "supplementaryUnit": null,
+            "supplementaryUnitQualifier": null,
+            "percentageEstimationOrDeviation": null
+          }
+        },
+        "position": 1,
+        "speciesInfo": {
+          "scientificName": "Elaeis guineensis",
+          "commonName": "Kelapa sawit"
+        },
+        "producers": [
+          {
+            "country": "ID",
+            "name": "PT Uji Lestari Nusantara",
+            "position": 1,
+            "geometryGeojson": "eyJ0eXBlIjoiRmVhdHVyZUNvbGxlY3Rpb24iLCJmZWF0dXJlcyI6W3sidHlwZSI6IkZlYXR1cmUiLCJwcm9wZXJ0aWVzIjp7IlByb2R1Y2VyTmFtZSI6IlBUIFVqaSBMZXN0YXJpIE51c2FudGFyYSIsIlByb2R1Y2VyQ291bnRyeSI6IklEIiwiUHJvZHVjdGlvblBsYWNlIjoiQmxvY2sgMDEg4oCUIFRlc3QgKFNZTlRIKSIsIkFyZWEiOjUwMC4wfSwiZ2VvbWV0cnkiOnsidHlwZSI6IlBvbHlnb24iLCJjb29yZGluYXRlcyI6W1tbMTAxLjAsMC4wXSxbMTAxLjAyLDAuMF0sWzEwMS4wMiwwLjAyXSxbMTAxLjAsMC4wMl0sWzEwMS4wLDAuMF1dXX19XX0="
+          }
+        ]
+      }
+    ],
+    "geoLocationConfidential": false,
+    "countryOfActivity": "NL",
+    "borderCrossCountry": "NL",
+    "representedOperator": {
+      "operatorName": "SYNTH EU Imports B.V.",
+      "operatorReferenceNumber": {
+        "identifierType": "eori",
+        "identifierValue": "NL998877665544332"
+      },
+      "operatorAddress": {
+        "country": "NL",
+        "street": "SYNTH-Port 1",
+        "postalCode": "3011 XX",
+        "city": "Rotterdam",
+        "fullAddress": null
+      },
+      "operatorEmail": "ops@synth.terrasentry.example",
+      "operatorPhone": "+31 10 000 0000"
+    },
+    "comment": null
+  },
+  "assessment": {
+    "recordId": "REC-GOLDEN",
+    "supplierId": "SUP-TEST",
+    "polygonId": "PLY-GOLDEN",
+    "rubricVersion": "1.0.0",
+    "score": 70,
+    "verdict": "ambiguous",
+    "riskLevel": "non_negligible",
+    "findings": [
+      {
+        "code": "legal_permit",
+        "level": "clear",
+        "points": 0,
+        "detail": "permit status 'active', HGU/PBPH present, no sanctions",
+        "evidenceIds": [
+          "EV-legality_dataset-5c44b246ebba",
+          "EV-legality_dataset-b1eef7c62862",
+          "EV-legality_dataset-e50b4ce7f970",
+          "EV-deterministic_rubric-445303d70b2b"
+        ]
+      },
+      {
+        "code": "deforestation_loss",
+        "level": "flag",
+        "points": 50,
+        "detail": "post-2021 tree cover loss 12.00 ha (2.40% of plot) in 2021-2025",
+        "evidenceIds": [
+          "EV-global_forest_watch-5d522619ea10",
+          "EV-global_forest_watch-4109c1baa504",
+          "EV-deterministic_rubric-4349f4915c80"
+        ]
+      },
+      {
+        "code": "fire_cluster",
+        "level": "flag",
+        "points": 30,
+        "detail": "2 fire detection(s), 30.0 MW FRP, window 2026-09-01..2026-09-01; last detection 0d before window end",
+        "evidenceIds": [
+          "EV-nasa_firms-b3676ef42822",
+          "EV-nasa_firms-bb31f39c5470",
+          "EV-nasa_firms-83b936214d9d",
+          "EV-deterministic_rubric-0dfd2ba1b78c"
+        ]
+      },
+      {
+        "code": "area_mismatch",
+        "level": "clear",
+        "points": 0,
+        "detail": "concession 9000.0 ha covers plot 500.00 ha",
+        "evidenceIds": [
+          "EV-legality_dataset-1a9ece9a9d27",
+          "EV-concession_dataset-abeff1c8f795",
+          "EV-deterministic_rubric-0fbd5ce6152d"
+        ]
+      },
+      {
+        "code": "certification",
+        "level": "clear",
+        "points": -10,
+        "detail": "certifications on file: ISPO",
+        "evidenceIds": [
+          "EV-legality_dataset-ac26c793730f",
+          "EV-deterministic_rubric-e7afcd9daa08"
+        ]
+      }
+    ],
+    "dataGaps": []
+  },
+  "citations": {
+    "statement.internalReferenceNumber": [
+      "EV-legality_dataset-517f5a1aa059"
+    ],
+    "statement.activityType": [
+      "EV-operator_dataset-87a3ed1f165b"
+    ],
+    "statement.countryOfActivity": [
+      "EV-operator_dataset-87a3ed1f165b"
+    ],
+    "statement.borderCrossCountry": [
+      "EV-operator_dataset-87a3ed1f165b"
+    ],
+    "statement.representedOperator.operatorName": [
+      "EV-operator_dataset-10b227d7cb95"
+    ],
+    "statement.representedOperator.operatorReferenceNumber": [
+      "EV-operator_dataset-60b2e69816c1"
+    ],
+    "statement.representedOperator.operatorAddress": [
+      "EV-operator_dataset-580b060cc5c7"
+    ],
+    "statement.representedOperator.operatorContact": [
+      "EV-operator_dataset-75c45e5bb1c6"
+    ],
+    "statement.commodities[0].descriptors.descriptionOfGoods": [
+      "EV-consignment_dataset-6618f2f62250"
+    ],
+    "statement.commodities[0].descriptors.goodsMeasure.netWeight": [
+      "EV-consignment_dataset-c19d6804ea51"
+    ],
+    "statement.commodities[0].descriptors.goodsMeasure.supplementaryUnit": [
+      "EV-consignment_dataset-c19d6804ea51"
+    ],
+    "statement.commodities[0].hsHeading": [
+      "EV-consignment_dataset-a767389ac13f"
+    ],
+    "statement.commodities[0].speciesInfo": [
+      "EV-consignment_dataset-afa77ed2bdc6"
+    ],
+    "statement.commodities[0].producers[0].name": [
+      "EV-legality_dataset-53ac8c257f36"
+    ],
+    "statement.commodities[0].producers[0].country": [
+      "EV-concession_dataset-ebe7bd87f5c4"
+    ],
+    "statement.commodities[0].producers[0].productionPlace": [
+      "EV-consignment_dataset-db4511844c0b"
+    ],
+    "statement.commodities[0].producers[0].geometryGeojson": [
+      "EV-concession_dataset-ef1423825a65"
+    ],
+    "statement.geoLocationConfidential": [
+      "EV-deterministic_rubric-27a0e748629c"
+    ],
+    "assessment.score": [
+      "EV-deterministic_rubric-baa99dc360ab"
+    ],
+    "assessment.verdict": [
+      "EV-deterministic_rubric-27a0e748629c"
+    ]
+  },
+  "disclosures": [
+    "SYNTHETIC TEST DATA — fixture"
+  ],
+  "synthetic": true
+}

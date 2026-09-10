@@ -4,7 +4,7 @@ Everything in this directory is **generated and deterministic**; nothing here is
 except the geography. Regenerate at any time:
 
 ```bash
-uv run python -m terrasentry_core.seed            # writes the three JSON files below
+uv run python -m terrasentry_core.seed            # writes the JSON files below
 uv run python -m terrasentry_core.seed --seed 42  # same structure, different draw
 ```
 
@@ -14,31 +14,53 @@ uv run python -m terrasentry_core.seed --seed 42  # same structure, different dr
 | --- | --- |
 | `demo_polygons.json` | 8 hand-picked polygons for M1/M3: the two live scenarios plus 6 more |
 | `legality.json` | 50 synthetic supplier/permit/beneficial-ownership records |
-| `batch_50.json` | The full 50-record batch: polygon + legality + expected archetype |
+| `operator.json` | The single synthetic EU operator used on every DDS |
+| `batch_50.json` | The full 50-record batch: polygon + legality + consignment + expected archetype |
 
 ## Disclosure
 
-Two disclosures are embedded in every file and repeated on the records:
+Disclosures are embedded in every file and repeated on the records:
 
 - Polygons: *"Coordinates are synthetic but placed inside real forest regions of Sumatra
   and Kalimantan so Hansen GFC and NASA FIRMS return real data for them."*
 - Legality: *"SYNTHETIC TEST DATA — companies, permits, people, and identifiers are
   invented for TerraSentry and do not describe any real organisation or person."*
+- Consignments: *"SYNTHETIC TEST DATA — consignment quantities, products, and the EU
+  operator are invented... Only the HS heading and product structure follow the real
+  EUDR formats."*
 
 The generator only composes invented names, and every trading name carries a `SYNTH-`
-marker. The UI and DDS must surface the synthetic label wherever legality data appears.
+marker. The UI and DDS must surface the synthetic label wherever legality or
+consignment data appears.
 
 ## Distribution (batch_50.json)
 
 | Archetype | Count | Intent |
 | --- | --- | --- |
 | `compliant` | 30 | Varied regions and polygon sizes; clean permit history |
-| `high_risk` | 12 | Mix of suspended/expired permits and logged sanctions |
-| `ambiguous` | 8 | Conflicting signals (e.g. permit plus missing PBPH, borderline area) |
+| `high_risk` | 12 | `expected_signal` cycles `deforestation` / `fire` / `legal` so all three detection paths are exercised (4 each) |
+| `ambiguous` | 8 | `expected_ambiguity` cycles `borderline_area` / `old_fire_scar` / `permit_gap` (3/3/2) |
 
 The scripted assignment here is a **design target**, not a verdict: M2's deterministic
-rubric derives the actual outcome from the data, and M6 compares the observed breakdown to
-this design.
+rubric (`python -m terrasentry_core.assessment`) derives the actual outcome from the data,
+and M6 compares the observed breakdown to this design with the calibration harness.
+
+## Consignments and the EU operator
+
+Each `BatchRecord` embeds one synthetic consignment shaped for the EUDR DDS:
+
+| Field | Rule |
+| --- | --- |
+| Commodity | HGU-only permit → `oil_palm`; PBPH-only permit → `wood`; otherwise deterministic draw |
+| HS heading | `1511` (crude palm oil) or `4703` (chemical wood pulp) |
+| Net weight | deterministic tonnes/ha draw × concession area |
+| Species | `Elaeis guineensis` or `Acacia mangium` |
+| Production place | `Block NN — <region> (SYNTH)` |
+| Harvest year | 2023–2025 |
+
+`operator.json` holds the synthetic EU importer (EORI, Rotterdam address) declared as the
+represented operator on every DDS. M2's DDS builder maps these records onto the EUDR
+Information System V3 `SubmitDdsRequest` JSON/XML payload.
 
 ## Regions
 
@@ -71,6 +93,7 @@ The archetype labels are unverified until a live run. Day 1 (or as soon as keys 
 ```bash
 uv run python -m terrasentry_integrations.preflight --polygons data/seed/demo_polygons.json
 uv run python -m terrasentry_core.reference --seed data/seed/demo_polygons.json
+uv run python -m terrasentry_core.assessment --run data/runs/<run>.json --out data/dds
 ```
 
 If a demo polygon returns no loss and no fire hotspots in a region where we expected
@@ -80,5 +103,5 @@ Record the final numbers in `docs/milestones.md` M1 notes.
 ## Determinism
 
 `generate_batch(rng_seed=...)` is stable: the same seed produces byte-identical JSON.
-Tests in `python/core/tests/test_seed.py` assert the distribution, validity, bounds, and
-the synthetic labelling.
+`python/core/tests/test_seed.py` asserts the distribution, validity, bounds, synthetic
+labelling, consignment formats, and that the committed files match the generator exactly.

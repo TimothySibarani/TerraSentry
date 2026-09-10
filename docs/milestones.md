@@ -62,7 +62,7 @@ M1 Integrations + cache  --->  M2 Deterministic core  --->  M3 Agent orchestrati
 | --- | --- | --- | --- | --- |
 | M0 Foundation & tooling | Done | W1 | — | `pnpm check` green, `pnpm dev` runs both apps, CI on push |
 | M1 Integrations + cache | Done | W1-W2 | M0 | 5-10 real polygon lookups, cached and rate-limited (verified with deterministic mocks; live numbers tracked in §3 key gates) |
-| M2 Deterministic core | Todo | W2 | M1 | Reproducible score, cited evidence, valid DDS |
+| M2 Deterministic core | Done | W2 | M1 | Reproducible score, cited evidence, valid DDS |
 | M3 Agent orchestration | Todo | W2-W3 | M2 | Reference-pipeline parity + verifier catch + HITL |
 | M4 API + persistence | Todo | W3 | M3 | Run endpoints + SSE + batch worker, generated client |
 | M5 Cockpit | Todo | W3-W4 | M4 | Demo flow navigable, live trace, batch summary, map |
@@ -147,15 +147,35 @@ recorded in this doc's notes; no rate-limit failures at the chosen concurrency.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
-| Domain models, enums, verdict and run-state types | Todo | TBD | `python/core/.../domain/` |
-| Evidence ledger (source, artifact, timestamp per claim) | Todo | TBD | `evidence.py` |
-| Deterministic rubric / scoring | Todo | TBD | `scoring.py`; model never computes the score |
-| DDS builder (JSON + XML, TRACES-aligned) | Todo | TBD | `dds.py` |
-| Synthetic legality/entity dataset in realistic HGU formats | Todo | TBD | `data/seed/`; labelled synthetic |
-| Unit tests for scoring, geometry, evidence, DDS | Todo | TBD | pytest + respx |
+| Domain models, enums, verdict and run-state types | Done | — | `domain/` (`enums.py`, `models.py`, `run_state.py`); `advance` enforces the architecture state machine |
+| Evidence ledger (source, artifact, timestamp per claim) | Done | — | `evidence.py`; deterministic content-hash ids, idempotent records, timestamps from source `fetched_at` only |
+| Deterministic rubric / scoring | Done | — | `scoring.py`; `RubricConfig`, `assess`, `fingerprint`, `RUBRIC_VERSION`; no clock/network/model |
+| DDS builder (JSON + XML, TRACES-aligned) | Done | — | `dds.py`; EUDR Information System V3 namespaces/`SubmitDdsRequest`, GeoJSON >4 ha polygon rule, citation validation |
+| Synthetic legality/entity dataset in realistic HGU formats | Done | — | Landed in M1; M2 added deterministic consignments + EU operator + expected signal/ambiguity labels |
+| Unit tests for scoring, geometry, evidence, DDS | Done | — | 66 core tests incl. golden DDS fixture; full suite 85 pytest green |
 
 **Exit criteria:** the same inputs always produce the same score; every DDS claim traces to a ledger
 entry; a DDS fixture validates against the expected shape.
+
+> **Completed 2026-09-11.** `python -m terrasentry_core.assessment --run data/runs/<run>.json`
+> scores an M1 reference run, emits per-record DDS JSON/XML plus an evidence snapshot and
+> `summary.json`, and prints the verdict breakdown/confusion matrix against the seed design.
+> Determinism is test-asserted at three levels: identical `Assessment` fingerprints and byte-identical
+> XML/JSON, identical ledger evidence ids, and a committed DDS golden fixture
+> (`python/core/tests/fixtures/dds_reference.{json,xml}`). `validate_citations` fails a required DDS
+> claim with no ledger citation (`UncitedClaimError`) or an unknown id (`LedgerLookupError`). The DDS
+> XML mirrors the public EUDR Information System V3 operator API (namespaces, field names, HS/species
+> structure, GeoJSON at six decimals with polygons above 4 ha); submission itself remains out of scope
+> and credential-free, which the demo must disclose. No live GFW/FIRMS numbers are involved, so the
+> §3 key gates are unchanged; M6 tunes the `RubricConfig` thresholds against live data via the same
+> `summary.json` confusion matrix. The M2 line item "synthetic legality/entity dataset" was already
+> delivered in M1 and is extended here rather than rebuilt: consignments, the EU operator, expected
+> signal/ambiguity labels, concessions floored above their plot area, and a real permit-gap signal on
+> the ambiguous records. `test_synthetic_signal_batch_reproduces_the_design_breakdown` runs the full
+> 50-record harness over injected source signals and reproduces the intended 30/12/8 breakdown while
+> exercising all three high-risk detection paths (4 deforestation / 4 fire / 12 legal), so M6 only has
+> to confirm the same mapping against live GFW/FIRMS responses.
+
 
 ---
 
@@ -286,6 +306,7 @@ Append one line per meaningful update. Keep newest at the top.
 
 | Date | Milestone | Update |
 | --- | --- | --- |
+| 2026-09-11 | M2 | Deterministic core landed: domain models/enums/run-state machine, content-hashed evidence ledger, config-driven rubric with `fingerprint`, EUDR Information System V3-aligned DDS builder (JSON + SOAP `SubmitDdsRequest` XML) with mandatory citation validation, and the `python -m terrasentry_core.assessment` CLI that scores an M1 reference run and writes per-record DDS/evidence artifacts plus a `summary.json` confusion matrix for M6 calibration. Seed data extended deterministically with consignments, the synthetic EU operator, expected signal/ambiguity labels, concession-floor sanity, and a real permit-gap signal (HGU→oil palm, PBPH→wood; 4/4/4 high-risk signals; 3/3/2 ambiguity reasons). A full 50-record synthetic-signal harness reproduces the intended 30/12/8 breakdown and exercises all three detection paths. Core suite 66 tests (85 total) green; Ruff/Pyright clean; `pnpm check`/`pnpm test` green. DDS submission is out of scope and disclosed; live thresholds still need the §3 Day-1 keys. |
 | 2026-09-11 | M1 | Integration layer landed: GFW/Hansen + NASA FIRMS clients (per-source limiter, retry/backoff, typed errors), Redis response cache (`cache.py`, memory backend for tests), GFW async batch path, deterministic seed data (8 demo polygons + 30/12/8 batch with synthetic HGU/PBPH legality), reference pipeline, preflight probe. Setup runbooks added under `docs/setup/` (AWS free tier/credits + Bedrock, SAP BTP/Integration Suite/sandbox, data-source keys). 26 pytest tests green, Ruff/Pyright clean. M1 marked Done: cached zero-external-call re-runs are test-asserted; live latency/quota measurements delegated to the §3 Day-1 key gates (no credentials in the build environment). |
 | 2026-09-10 | M0 | UI foundation landed: shadcn base-mira, single DESIGN.md token file, branded proof page. Python toolchain verified (uv 0.12.12, uv.lock, ruff/pyright/pytest). Real OpenAPI client, CI workflow, compose.yaml. Local Docker builds deferred to CI (container egress blocked); commit user-owned. |
 | 2026-09-10 | M0 | Scaffold created: monorepo, web + API skeletons, Effect integration, CDK shell, architecture doc. Python toolchain unverified; nothing committed yet. |

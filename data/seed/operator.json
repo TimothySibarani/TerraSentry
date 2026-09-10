@@ -1,0 +1,22 @@
+{
+  "schema_version": 2,
+  "rng_seed": 20260911,
+  "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person.",
+  "operator": {
+    "operator_id": "OP-SYNTH-001",
+    "legal_name": "SYNTH EU Imports B.V.",
+    "identifier_type": "eori",
+    "identifier_value": "NL998877665544332",
+    "address_line": "SYNTH-Port 1",
+    "postal_code": "3011 XX",
+    "city": "Rotterdam",
+    "country": "NL",
+    "email": "ops@synth.terrasentry.example",
+    "phone": "+31 10 000 0000",
+    "activity_type": "IMPORT",
+    "country_of_activity": "NL",
+    "border_cross_country": "NL",
+    "synthetic": true,
+    "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
+  }
+}

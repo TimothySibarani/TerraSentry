@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "rng_seed": 20260911,
   "distribution": {
     "compliant": 30,
@@ -68,7 +68,7 @@
         "hgu_number": "HGU No. 343/HGU/BPN/2020",
         "pbp_number": null,
         "permit_status": "suspended",
-        "concession_area_ha": 15021.4,
+        "concession_area_ha": 15110.2,
         "province": "Riau",
         "kabupaten": "Siak",
         "beneficial_owners": [
@@ -82,7 +82,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-001",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 48686777.9,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 01 — Riau peat forests (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "deforestation",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-002",
@@ -95,48 +112,28 @@
         "archetype": "compliant",
         "scenario": "compliant_live",
         "is_demo": true,
-        "area_ha": 2394.01,
-        "centroid_lat": -1.013023,
-        "centroid_lon": 102.262624,
+        "area_ha": 540.16,
+        "centroid_lat": -0.72815,
+        "centroid_lon": 102.139987,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.28051453359316,
-                -1.0171938418770978
+                102.12149948812589,
+                -0.7303913282747443
               ],
               [
-                102.29859342136874,
-                -1.0091730196942914
+                102.12807170351414,
+                -0.7137689568365504
               ],
               [
-                102.27203861977597,
-                -0.9911887126258663
+                102.17038947795913,
+                -0.7402899353242391
               ],
               [
-                102.24809989522788,
-                -0.9843884888381145
-              ],
-              [
-                102.24737509253816,
-                -0.9941753466729937
-              ],
-              [
-                102.2386561431347,
-                -0.9861247914061548
-              ],
-              [
-                102.24984600151777,
-                -1.0433153863611278
-              ],
-              [
-                102.25742089826534,
-                -1.0520655282892681
-              ],
-              [
-                102.28051453359316,
-                -1.0171938418770978
+                102.12149948812589,
+                -0.7303913282747443
               ]
             ]
           ]
@@ -144,20 +141,20 @@
       },
       "legality": {
         "supplier_id": "SUP-002",
-        "legal_name": "PT Sawit Sejahtera Nusantara",
-        "trading_name": "Sawit Sejahtera Nusantara (SYNTH-002)",
-        "group": "Grup Andalas",
-        "nib": "2555580706858",
-        "npwp": "11.122.849.2-995.018",
-        "hgu_number": "HGU No. 557/HGU/BPN/2014",
+        "legal_name": "PT Agro Sejahtera Borneo",
+        "trading_name": "Agro Sejahtera Borneo (SYNTH-002)",
+        "group": "Grup Borneo",
+        "nib": "2485715555807",
+        "npwp": "16.858.011.2-284.929",
+        "hgu_number": "HGU No. 642/HGU/BPN/2010",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 16863.2,
+        "concession_area_ha": 11156.3,
         "province": "Jambi",
         "kabupaten": "Tebo",
         "beneficial_owners": [
-          "Lestari Nugroho",
-          "Fitri Utami"
+          "Adi Wijaya",
+          "Sari Halim"
         ],
         "certifications": [
           "ISPO"
@@ -166,7 +163,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-002",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 41975251.2,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 02 — Jambi lowland forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-003",
@@ -179,36 +193,36 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": true,
-        "area_ha": 3584.76,
-        "centroid_lat": -2.559128,
-        "centroid_lon": 103.451789,
+        "area_ha": 2957.95,
+        "centroid_lat": -2.94455,
+        "centroid_lon": 104.111887,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                103.43344346334439,
-                -2.4973951183532126
+                104.0952167824579,
+                -2.888473065074809
               ],
               [
-                103.42622108463499,
-                -2.577794258322168
+                104.08865405640717,
+                -2.961505439194422
               ],
               [
-                103.45701597376754,
-                -2.5923715011879347
+                104.11663630841434,
+                -2.974747006890495
               ],
               [
-                103.47007709653045,
-                -2.5844153656924878
+                104.12850449949877,
+                -2.967519871571957
               ],
               [
-                103.50262315561409,
-                -2.6120090022266806
+                104.15807797914982,
+                -2.992585174353355
               ],
               [
-                103.43344346334439,
-                -2.4973951183532126
+                104.0952167824579,
+                -2.888473065074809
               ]
             ]
           ]
@@ -224,7 +238,7 @@
         "hgu_number": "HGU No. 759/HGU/BPN/2011",
         "pbp_number": null,
         "permit_status": "suspended",
-        "concession_area_ha": 11848.6,
+        "concession_area_ha": 12920.6,
         "province": "South Sumatra",
         "kabupaten": "Musi Banyuasin",
         "beneficial_owners": [
@@ -238,7 +252,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-003",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 65049194.1,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 03 — South Sumatra peat forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "fire",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-004",
@@ -251,36 +282,40 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": true,
-        "area_ha": 5796.31,
-        "centroid_lat": -1.900697,
-        "centroid_lon": 113.5803,
+        "area_ha": 4202.14,
+        "centroid_lat": -1.766435,
+        "centroid_lon": 112.904898,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                113.62240414604807,
-                -1.8766443877288244
+                112.91052749635107,
+                -1.7189125724580172
               ],
               [
-                113.56724756928247,
-                -1.8554158197789814
+                112.90328685454035,
+                -1.6995003913540818
               ],
               [
-                113.53344937744882,
-                -1.9293504449597338
+                112.87444633031929,
+                -1.766966698893205
               ],
               [
-                113.59742238433591,
-                -1.9395368824869208
+                112.88160472788111,
+                -1.7802252091727533
               ],
               [
-                113.61377790340501,
-                -1.9123576037639363
+                112.88904642379576,
+                -1.7903768738719277
               ],
               [
-                113.62240414604807,
-                -1.8766443877288244
+                112.93706946282195,
+                -1.8266124557139027
+              ],
+              [
+                112.91052749635107,
+                -1.7189125724580172
               ]
             ]
           ]
@@ -288,20 +323,20 @@
       },
       "legality": {
         "supplier_id": "SUP-004",
-        "legal_name": "PT Bumi Sejahtera Sriwijaya",
-        "trading_name": "Bumi Sejahtera Sriwijaya (SYNTH-004)",
-        "group": "Grup Borneo",
-        "nib": "8070367347992",
-        "npwp": "10.828.888.4-361.664",
-        "hgu_number": "HGU No. 613/HGU/BPN/2009",
+        "legal_name": "PT Sumber Mandiri Nusantara",
+        "trading_name": "Sumber Mandiri Nusantara (SYNTH-004)",
+        "group": "Grup Andalas",
+        "nib": "8347992008288",
+        "npwp": "98.436.166.4-064.950",
+        "hgu_number": "HGU No. 276/HGU/BPN/2009",
         "pbp_number": null,
-        "permit_status": "expired",
-        "concession_area_ha": 953.9,
+        "permit_status": "suspended",
+        "concession_area_ha": 12202.0,
         "province": "Central Kalimantan",
         "kabupaten": "Katingan",
         "beneficial_owners": [
-          "Indah Kusuma",
-          "Kartika Pratama"
+          "Hendra Nugroho",
+          "Joko Saputra"
         ],
         "certifications": [],
         "sanctions": [
@@ -310,7 +345,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-004",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 66494766.0,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 04 — Central Kalimantan forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "legal",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-005",
@@ -323,44 +375,36 @@
         "archetype": "ambiguous",
         "scenario": null,
         "is_demo": true,
-        "area_ha": 873.55,
-        "centroid_lat": 0.252042,
-        "centroid_lon": 116.790064,
+        "area_ha": 1336.94,
+        "centroid_lat": 0.448807,
+        "centroid_lon": 117.284788,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                116.81152197879938,
-                0.2643393230287839
+                117.30001627431281,
+                0.4827130894299838
               ],
               [
-                116.76643237688715,
-                0.2589544944061638
+                117.28806489665689,
+                0.4760634397327135
               ],
               [
-                116.7816824179679,
-                0.2397309747879633
+                117.28295301918811,
+                0.4678472288130735
               ],
               [
-                116.79613020027234,
-                0.23736416301829721
+                117.2703682011076,
+                0.474545270550199
               ],
               [
-                116.79863278684961,
-                0.24216740780184304
+                117.2834058222239,
+                0.39686595720564666
               ],
               [
-                116.8023251045219,
-                0.24409618053787674
-              ],
-              [
-                116.80732993918154,
-                0.25579376391843056
-              ],
-              [
-                116.81152197879938,
-                0.2643393230287839
+                117.30001627431281,
+                0.4827130894299838
               ]
             ]
           ]
@@ -368,29 +412,46 @@
       },
       "legality": {
         "supplier_id": "SUP-005",
-        "legal_name": "PT Agro Mandiri Nusantara",
-        "trading_name": "Agro Mandiri Nusantara (SYNTH-005)",
-        "group": "Grup Khatulistiwa",
-        "nib": "8870679587971",
-        "npwp": "59.830.564.1-445.280",
-        "hgu_number": "HGU No. 898/HGU/BPN/2011",
+        "legal_name": "PT Anugerah Lestari Sriwijaya",
+        "trading_name": "Anugerah Lestari Sriwijaya (SYNTH-005)",
+        "group": "Grup Nusantara",
+        "nib": "7795879719498",
+        "npwp": "40.564.144.5-280.699",
+        "hgu_number": "HGU No. 204/HGU/BPN/2012",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 8020.1,
+        "concession_area_ha": 13473.4,
         "province": "East Kalimantan",
         "kabupaten": "Kutai Timur",
         "beneficial_owners": [
-          "Wulan Kusuma",
-          "Adi Saputra"
+          "Adi Saputra",
+          "Lestari Wijaya"
         ],
         "certifications": [
-          "ISPO"
+          "RSPO"
         ],
         "sanctions": [],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "ambiguous"
+      "consignment": {
+        "supplier_id": "SUP-005",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 78385176.7,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 05 — East Kalimantan forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "ambiguous",
+      "expected_signal": null,
+      "expected_ambiguity": "borderline_area"
     },
     {
       "record_id": "REC-006",
@@ -403,44 +464,44 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": true,
-        "area_ha": 3179.31,
-        "centroid_lat": 0.85966,
-        "centroid_lon": 111.850941,
+        "area_ha": 2554.85,
+        "centroid_lat": 0.685137,
+        "centroid_lon": 112.408039,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                111.885495728597,
-                0.85821075170075
+                112.43069596124548,
+                0.6987830109802459
               ],
               [
-                111.86671950448115,
-                0.8879939505554673
+                112.43763976272993,
+                0.7128056692384377
               ],
               [
-                111.84817116467198,
-                0.8848466769383523
+                112.37850234387136,
+                0.7003959439134716
               ],
               [
-                111.84125651783108,
-                0.8850336244826673
+                112.39377543689781,
+                0.6572303489542753
               ],
               [
-                111.80419532893558,
-                0.8407031196895105
+                112.42277917509622,
+                0.6601420176851306
               ],
               [
-                111.87889079455255,
-                0.8406470452890895
+                112.4292850947954,
+                0.6817220885886843
               ],
               [
-                111.88804252690386,
-                0.8483122104987277
+                112.42960572979385,
+                0.6843321599563971
               ],
               [
-                111.885495728597,
-                0.85821075170075
+                112.43069596124548,
+                0.6987830109802459
               ]
             ]
           ]
@@ -448,20 +509,20 @@
       },
       "legality": {
         "supplier_id": "SUP-006",
-        "legal_name": "PT Mitra Jaya Borneo",
-        "trading_name": "Mitra Jaya Borneo (SYNTH-006)",
-        "group": "Grup Andalas",
-        "nib": "8861333190436",
-        "npwp": "23.682.909.1-124.381",
-        "hgu_number": "HGU No. 80/HGU/BPN/2008",
+        "legal_name": "PT Hutan Lestari Borneo",
+        "trading_name": "Hutan Lestari Borneo (SYNTH-006)",
+        "group": "Grup Khatulistiwa",
+        "nib": "7133319043613",
+        "npwp": "78.290.911.2-438.192",
+        "hgu_number": "HGU No. 793/HGU/BPN/2017",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 10529.7,
+        "concession_area_ha": 17089.1,
         "province": "West Kalimantan",
         "kabupaten": "Kapuas Hulu",
         "beneficial_owners": [
-          "Eko Kusuma",
-          "Eko Saputra"
+          "Eko Saputra",
+          "Joko Hidayat"
         ],
         "certifications": [
           "ISPO"
@@ -470,7 +531,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-006",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 65403596.7,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 06 — West Kalimantan forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-007",
@@ -483,48 +561,48 @@
         "archetype": "ambiguous",
         "scenario": null,
         "is_demo": true,
-        "area_ha": 1063.88,
-        "centroid_lat": 1.031757,
-        "centroid_lon": 102.480873,
+        "area_ha": 450.98,
+        "centroid_lat": 0.767173,
+        "centroid_lon": 102.175577,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.49849453126808,
-                1.0386520840888434
+                102.18651979444684,
+                0.7704770287060729
               ],
               [
-                102.48313126145243,
-                1.0474525038810312
+                102.18604478234849,
+                0.7714025800797191
               ],
               [
-                102.47869383977309,
-                1.0546877248669673
+                102.18222368902869,
+                0.7760656337153564
               ],
               [
-                102.46690127779868,
-                1.0331437069578888
+                102.17611043889289,
+                0.7856552904640002
               ],
               [
-                102.46275931417105,
-                1.0317169380898
+                102.17420027705904,
+                0.7789149650650917
               ],
               [
-                102.46088435591412,
-                1.0180381151829925
+                102.1659899389494,
+                0.7675412127320613
               ],
               [
-                102.46937898565287,
-                1.0189197254070261
+                102.16682586735936,
+                0.7608154360387533
               ],
               [
-                102.49749228326752,
-                1.0192449240236525
+                102.17384278902867,
+                0.7495607250468432
               ],
               [
-                102.49849453126808,
-                1.0386520840888434
+                102.18651979444684,
+                0.7704770287060729
               ]
             ]
           ]
@@ -532,20 +610,20 @@
       },
       "legality": {
         "supplier_id": "SUP-007",
-        "legal_name": "PT Agro Sejahtera Andalas",
-        "trading_name": "Agro Sejahtera Andalas (SYNTH-007)",
+        "legal_name": "PT Sawit Sejahtera Sriwijaya",
+        "trading_name": "Sawit Sejahtera Sriwijaya (SYNTH-007)",
         "group": "Grup Andalas",
-        "nib": "1430819156849",
-        "npwp": "85.755.232.4-309.969",
-        "hgu_number": "HGU No. 247/HGU/BPN/2018",
-        "pbp_number": null,
+        "nib": "9497575523243",
+        "npwp": "19.969.256.9-537.738",
+        "hgu_number": "HGU No. 544/HGU/BPN/2006",
+        "pbp_number": "SK.2087/MENLHK-PKTL/PBPH/2006",
         "permit_status": "active",
-        "concession_area_ha": 3771.8,
+        "concession_area_ha": 9140.9,
         "province": "Riau",
         "kabupaten": "Siak",
         "beneficial_owners": [
-          "Maya Kusuma",
-          "Lestari Hartono"
+          "Citra Hartono",
+          "Rahmat Kusuma"
         ],
         "certifications": [
           "ISPO"
@@ -554,7 +632,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "ambiguous"
+      "consignment": {
+        "supplier_id": "SUP-007",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 36395583.7,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 07 — Riau peat forests (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "ambiguous",
+      "expected_signal": null,
+      "expected_ambiguity": "old_fire_scar"
     },
     {
       "record_id": "REC-008",
@@ -567,48 +662,36 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 4579.3,
-        "centroid_lat": -2.052508,
-        "centroid_lon": 102.872828,
+        "area_ha": 4226.27,
+        "centroid_lat": -2.002441,
+        "centroid_lon": 101.644647,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.89749546449386,
-                -2.040881518329741
+                101.67268790843892,
+                -1.969715179929941
               ],
               [
-                102.88658181497607,
-                -2.016348566735646
+                101.60237728576422,
+                -1.980771794267861
               ],
               [
-                102.85246272228673,
-                -2.0189494436141744
+                101.60556080739048,
+                -1.998958461848423
               ],
               [
-                102.84348246486255,
-                -2.0282598320612157
+                101.65043840399423,
+                -2.0393638853329126
               ],
               [
-                102.83965939871635,
-                -2.078467631633651
+                101.67032285485323,
+                -2.045993163785284
               ],
               [
-                102.83640734858108,
-                -2.0805425316745234
-              ],
-              [
-                102.91466090167762,
-                -2.0804994411473468
-              ],
-              [
-                102.91040177952505,
-                -2.0645756224801945
-              ],
-              [
-                102.89749546449386,
-                -2.040881518329741
+                101.67268790843892,
+                -1.969715179929941
               ]
             ]
           ]
@@ -616,20 +699,20 @@
       },
       "legality": {
         "supplier_id": "SUP-008",
-        "legal_name": "PT Hutan Makmur Khatulistiwa",
-        "trading_name": "Hutan Makmur Khatulistiwa (SYNTH-008)",
-        "group": "Grup Nusantara",
-        "nib": "5630249205403",
-        "npwp": "68.963.007.8-364.909",
-        "hgu_number": null,
-        "pbp_number": "SK.2547/MENLHK-PKTL/PBPH/2014",
-        "permit_status": "expired",
-        "concession_area_ha": 13391.4,
+        "legal_name": "PT Agro Sentosa Andalas",
+        "trading_name": "Agro Sentosa Andalas (SYNTH-008)",
+        "group": "Grup Sriwijaya",
+        "nib": "1249205403589",
+        "npwp": "73.007.836.4-909.378",
+        "hgu_number": "HGU No. 673/HGU/BPN/2013",
+        "pbp_number": null,
+        "permit_status": "suspended",
+        "concession_area_ha": 9744.4,
         "province": "Jambi",
         "kabupaten": "Tebo",
         "beneficial_owners": [
-          "Putra Hidayat",
-          "Lestari Wijaya"
+          "Citra Utami",
+          "Putra Santoso"
         ],
         "certifications": [],
         "sanctions": [
@@ -638,7 +721,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-008",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 31780931.8,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 08 — Jambi lowland forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "deforestation",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-009",
@@ -651,36 +751,44 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 3092.97,
-        "centroid_lat": -2.670542,
-        "centroid_lon": 104.125051,
+        "area_ha": 2331.14,
+        "centroid_lat": -2.373065,
+        "centroid_lon": 104.22808,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                104.15798627887467,
-                -2.654786028442087
+                104.25996934491732,
+                -2.3696627976223548
               ],
               [
-                104.15415686381884,
-                -2.642998701927351
+                104.2415709952973,
+                -2.3505688446475674
               ],
               [
-                104.09579102959201,
-                -2.662520979042164
+                104.20576947016647,
+                -2.355461803842278
               ],
               [
-                104.06626670098952,
-                -2.6806536702340185
+                104.20369134886849,
+                -2.3548012672037224
               ],
               [
-                104.15819022810136,
-                -2.6914560225201787
+                104.20197331333388,
+                -2.3629133255088948
               ],
               [
-                104.15798627887467,
-                -2.654786028442087
+                104.20502242633646,
+                -2.3806824169529524
+              ],
+              [
+                104.22478224125076,
+                -2.4045916271567003
+              ],
+              [
+                104.25996934491732,
+                -2.3696627976223548
               ]
             ]
           ]
@@ -688,29 +796,46 @@
       },
       "legality": {
         "supplier_id": "SUP-009",
-        "legal_name": "PT Sumber Sentosa Sriwijaya",
-        "trading_name": "Sumber Sentosa Sriwijaya (SYNTH-009)",
+        "legal_name": "PT Karya Sejahtera Khatulistiwa",
+        "trading_name": "Karya Sejahtera Khatulistiwa (SYNTH-009)",
         "group": "Grup Borneo",
-        "nib": "6884839664577",
-        "npwp": "94.988.913.2-781.929",
-        "hgu_number": "HGU No. 625/HGU/BPN/2019",
+        "nib": "6778498891327",
+        "npwp": "91.929.211.3-167.740",
+        "hgu_number": "HGU No. 718/HGU/BPN/2013",
         "pbp_number": null,
         "permit_status": "suspended",
-        "concession_area_ha": 2691.2,
+        "concession_area_ha": 10243.4,
         "province": "South Sumatra",
         "kabupaten": "Musi Banyuasin",
         "beneficial_owners": [
-          "Citra Hartono",
-          "Dewi Saputra"
+          "Kartika Saputra",
+          "Citra Nugroho"
         ],
         "certifications": [],
         "sanctions": [
-          "2021 permit suspension (synthetic)"
+          "2022 permit suspension (synthetic)"
         ],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-009",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 40357413.4,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 09 — South Sumatra peat forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "fire",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-010",
@@ -723,44 +848,40 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": true,
-        "area_ha": 2999.17,
-        "centroid_lat": -1.681229,
-        "centroid_lon": 113.824398,
+        "area_ha": 987.14,
+        "centroid_lat": -1.857996,
+        "centroid_lon": 113.822711,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                113.85276282204669,
-                -1.6767860973471032
+                113.8298944405718,
+                -1.832899912889014
               ],
               [
-                113.8251552176657,
-                -1.6506304888743004
+                113.80436656319371,
+                -1.8536164563386857
               ],
               [
-                113.80430913849588,
-                -1.6559826787474372
+                113.81139578564388,
+                -1.857140956488565
               ],
               [
-                113.80217910003637,
-                -1.6654732420274536
+                113.81467103036827,
+                -1.877638493846845
               ],
               [
-                113.78833901885264,
-                -1.6892058915021888
+                113.83187035713418,
+                -1.8762890580266993
               ],
               [
-                113.83928518772188,
-                -1.7093321922118143
+                113.8351924536869,
+                -1.8674288176000329
               ],
               [
-                113.85134657074173,
-                -1.7092582623364565
-              ],
-              [
-                113.85276282204669,
-                -1.6767860973471032
+                113.8298944405718,
+                -1.832899912889014
               ]
             ]
           ]
@@ -768,20 +889,20 @@
       },
       "legality": {
         "supplier_id": "SUP-010",
-        "legal_name": "PT Karya Sentosa Borneo",
-        "trading_name": "Karya Sentosa Borneo (SYNTH-010)",
+        "legal_name": "PT Agro Lestari Andalas",
+        "trading_name": "Agro Lestari Andalas (SYNTH-010)",
         "group": "Grup Khatulistiwa",
-        "nib": "3064929843247",
-        "npwp": "43.704.360.6-426.259",
-        "hgu_number": "HGU No. 86/HGU/BPN/2020",
+        "nib": "9432473370436",
+        "npwp": "16.426.259.5-973.680",
+        "hgu_number": "HGU No. 621/HGU/BPN/2013",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 6594.7,
+        "concession_area_ha": 13320.5,
         "province": "Central Kalimantan",
         "kabupaten": "Katingan",
         "beneficial_owners": [
-          "Putra Hartono",
-          "Maya Hidayat"
+          "Fitri Kusuma",
+          "Putra Santoso"
         ],
         "certifications": [
           "ISPO"
@@ -790,7 +911,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-010",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 60010672.7,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 10 — Central Kalimantan forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-011",
@@ -803,48 +941,40 @@
         "archetype": "ambiguous",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 132.55,
-        "centroid_lat": 0.736421,
-        "centroid_lon": 117.219357,
+        "area_ha": 449.39,
+        "centroid_lat": 1.134261,
+        "centroid_lon": 117.294469,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                117.22261546159444,
-                0.7403823097023632
+                117.29004979399059,
+                1.148089357134712
               ],
               [
-                117.2237027735662,
-                0.7452914556219132
+                117.28280450290598,
+                1.1497680296106232
               ],
               [
-                117.22087567145542,
-                0.7461015893754936
+                117.2849974033513,
+                1.1393016775280942
               ],
               [
-                117.22161876271795,
-                0.7495471074884801
+                117.28800173942679,
+                1.1256265738345856
               ],
               [
-                117.21236283916338,
-                0.7273841974500235
+                117.30217751298022,
+                1.1233685887229896
               ],
               [
-                117.22098284849741,
-                0.7305671478360987
+                117.3112759047579,
+                1.1245805346949513
               ],
               [
-                117.22213067265383,
-                0.7338703344700386
-              ],
-              [
-                117.22498317719385,
-                0.7336707160104656
-              ],
-              [
-                117.22261546159444,
-                0.7403823097023632
+                117.29004979399059,
+                1.148089357134712
               ]
             ]
           ]
@@ -852,29 +982,46 @@
       },
       "legality": {
         "supplier_id": "SUP-011",
-        "legal_name": "PT Agro Jaya Borneo",
-        "trading_name": "Agro Jaya Borneo (SYNTH-011)",
-        "group": "Grup Nusantara",
-        "nib": "8362080549597",
-        "npwp": "95.036.117.5-530.291",
-        "hgu_number": "HGU No. 526/HGU/BPN/2017",
+        "legal_name": "PT Hutan Sentosa Borneo",
+        "trading_name": "Hutan Sentosa Borneo (SYNTH-011)",
+        "group": "Grup Sriwijaya",
+        "nib": "7208054959798",
+        "npwp": "60.361.175.5-302.914",
+        "hgu_number": null,
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 5159.9,
+        "concession_area_ha": 8882.8,
         "province": "East Kalimantan",
         "kabupaten": "Kutai Timur",
         "beneficial_owners": [
-          "Lestari Saputra",
-          "Eko Saputra"
+          "Maya Santoso",
+          "Maya Utami"
         ],
         "certifications": [
-          "ISPO"
+          "RSPO"
         ],
         "sanctions": [],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "ambiguous"
+      "consignment": {
+        "supplier_id": "SUP-011",
+        "commodity": "wood",
+        "description": "Bleached hardwood kraft pulp (synthetic consignment)",
+        "hs_heading": "4703",
+        "species_scientific": "Acacia mangium",
+        "species_common": "Acacia",
+        "net_weight_kg": 95111092.5,
+        "supplementary_unit": 105678.992,
+        "supplementary_unit_qualifier": "MTQ",
+        "production_place": "Block 11 — East Kalimantan forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "ambiguous",
+      "expected_signal": null,
+      "expected_ambiguity": "permit_gap"
     },
     {
       "record_id": "REC-012",
@@ -887,40 +1034,36 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 3581.1,
-        "centroid_lat": 0.69415,
-        "centroid_lon": 111.244393,
+        "area_ha": 2775.29,
+        "centroid_lat": 0.890863,
+        "centroid_lon": 110.897633,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                111.27106153347634,
-                0.7075830814004512
+                110.93763714302075,
+                0.9016702191043879
               ],
               [
-                111.21837955894784,
-                0.7271032121130496
+                110.90118703655556,
+                0.9217682059047538
               ],
               [
-                111.20539331331905,
-                0.7093108370505256
+                110.86499753809453,
+                0.8886429751270506
               ],
               [
-                111.21916082740054,
-                0.7046151595124327
+                110.88054222337082,
+                0.8713413985154399
               ],
               [
-                111.22581599389717,
-                0.6556469609361275
+                110.86849463986364,
+                0.8453977923863436
               ],
               [
-                111.29254619551078,
-                0.692850321485258
-              ],
-              [
-                111.27106153347634,
-                0.7075830814004512
+                110.93763714302075,
+                0.9016702191043879
               ]
             ]
           ]
@@ -928,20 +1071,20 @@
       },
       "legality": {
         "supplier_id": "SUP-012",
-        "legal_name": "PT Sawit Lestari Nusantara",
-        "trading_name": "Sawit Lestari Nusantara (SYNTH-012)",
-        "group": "Grup Khatulistiwa",
-        "nib": "5134095959198",
-        "npwp": "34.559.269.1-867.531",
-        "hgu_number": "HGU No. 381/HGU/BPN/2005",
+        "legal_name": "PT Sawit Sejahtera Khatulistiwa",
+        "trading_name": "Sawit Sejahtera Khatulistiwa (SYNTH-012)",
+        "group": "Grup Sriwijaya",
+        "nib": "5095959198245",
+        "npwp": "69.269.186.7-531.290",
+        "hgu_number": "HGU No. 678/HGU/BPN/2013",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 3190.5,
+        "concession_area_ha": 7910.6,
         "province": "West Kalimantan",
         "kabupaten": "Kapuas Hulu",
         "beneficial_owners": [
-          "Bayu Nugroho",
-          "Taufik Nugroho"
+          "Indah Halim",
+          "Yusuf Wijaya"
         ],
         "certifications": [
           "ISPO"
@@ -950,7 +1093,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-012",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 26871373.5,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 12 — West Kalimantan forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-013",
@@ -963,40 +1123,40 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 1647.17,
-        "centroid_lat": -0.618659,
-        "centroid_lon": 101.156761,
+        "area_ha": 2503.12,
+        "centroid_lat": -0.065068,
+        "centroid_lon": 102.000565,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                101.18451458980734,
-                -0.6070313564528025
+                102.04208333266524,
+                -0.03865722041672147
               ],
               [
-                101.13725484006126,
-                -0.5989666915747458
+                102.02673909495402,
+                -0.033678536989586096
               ],
               [
-                101.1400042536019,
-                -0.6020754396871034
+                101.9693599855527,
+                -0.06573808198558694
               ],
               [
-                101.13175301217221,
-                -0.6338082962492013
+                101.96563817737672,
+                -0.08178957775050945
               ],
               [
-                101.14855122235717,
-                -0.6298370114064102
+                102.0028451019266,
+                -0.0950818544721579
               ],
               [
-                101.16371745908596,
-                -0.6440813668549988
+                102.02052778586739,
+                -0.05951181892928209
               ],
               [
-                101.18451458980734,
-                -0.6070313564528025
+                102.04208333266524,
+                -0.03865722041672147
               ]
             ]
           ]
@@ -1004,20 +1164,20 @@
       },
       "legality": {
         "supplier_id": "SUP-013",
-        "legal_name": "PT Hutan Makmur Borneo",
-        "trading_name": "Hutan Makmur Borneo (SYNTH-013)",
+        "legal_name": "PT Sumber Mandiri Khatulistiwa",
+        "trading_name": "Sumber Mandiri Khatulistiwa (SYNTH-013)",
         "group": "Grup Andalas",
-        "nib": "7123518326897",
-        "npwp": "78.066.333.0-146.138",
-        "hgu_number": "HGU No. 599/HGU/BPN/2018",
+        "nib": "2235183268976",
+        "npwp": "90.663.330.1-461.387",
+        "hgu_number": "HGU No. 896/HGU/BPN/2005",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 16630.0,
+        "concession_area_ha": 11447.7,
         "province": "Riau",
         "kabupaten": "Siak",
         "beneficial_owners": [
-          "Wulan Wijaya",
-          "Nur Halim"
+          "Citra Saputra",
+          "Kartika Hidayat"
         ],
         "certifications": [
           "ISPO"
@@ -1026,7 +1186,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-013",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 57073085.5,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 13 — Riau peat forests (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-014",
@@ -1039,36 +1216,40 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 2343.55,
-        "centroid_lat": -1.30483,
-        "centroid_lon": 102.055215,
+        "area_ha": 1433.07,
+        "centroid_lat": -2.170427,
+        "centroid_lon": 101.6551,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.03339318011017,
-                -1.2644958197114002
+                101.67408679082274,
+                -2.1641484383958614
               ],
               [
-                102.03215428329777,
-                -1.2896918440293477
+                101.65195434399189,
+                -2.1496831838775825
               ],
               [
-                102.0421034435007,
-                -1.3231242962583734
+                101.63376913076311,
+                -2.1589933442387177
               ],
               [
-                102.03427570560207,
-                -1.3311353413543996
+                101.63832859078289,
+                -2.1770334561237927
               ],
               [
-                102.0948623468574,
-                -1.3220995632294614
+                101.6455539817444,
+                -2.1894003458436013
               ],
               [
-                102.03339318011017,
-                -1.2644958197114002
+                101.67774932926443,
+                -2.1827012136128783
+              ],
+              [
+                101.67408679082274,
+                -2.1641484383958614
               ]
             ]
           ]
@@ -1076,20 +1257,20 @@
       },
       "legality": {
         "supplier_id": "SUP-014",
-        "legal_name": "PT Bumi Lestari Nusantara",
-        "trading_name": "Bumi Lestari Nusantara (SYNTH-014)",
-        "group": "Grup Sriwijaya",
-        "nib": "5367571316002",
-        "npwp": "23.913.475.9-106.199",
-        "hgu_number": "HGU No. 441/HGU/BPN/2017",
+        "legal_name": "PT Karya Sentosa Sriwijaya",
+        "trading_name": "Karya Sentosa Sriwijaya (SYNTH-014)",
+        "group": "Grup Andalas",
+        "nib": "2316002991391",
+        "npwp": "44.759.106.1-995.854",
+        "hgu_number": "HGU No. 471/HGU/BPN/2018",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 5995.8,
+        "concession_area_ha": 8536.1,
         "province": "Jambi",
         "kabupaten": "Tebo",
         "beneficial_owners": [
-          "Sari Halim",
-          "Joko Saputra"
+          "Lestari Utami",
+          "Yusuf Kusuma"
         ],
         "certifications": [
           "ISPO"
@@ -1098,7 +1279,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-014",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 45143504.8,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 14 — Jambi lowland forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-015",
@@ -1111,44 +1309,40 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 2743.79,
-        "centroid_lat": -3.180098,
-        "centroid_lon": 104.007166,
+        "area_ha": 2242.87,
+        "centroid_lat": -2.606012,
+        "centroid_lon": 102.802712,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                104.02864792601792,
-                -3.1554348625822355
+                102.8244190876848,
+                -2.5691655651962817
               ],
               [
-                104.01193926558139,
-                -3.156016442283149
+                102.76106466984892,
+                -2.6308327313776436
               ],
               [
-                103.99510457528608,
-                -3.149949664320467
+                102.7618046648155,
+                -2.6411164377996847
               ],
               [
-                103.97658899605136,
-                -3.1830255639558236
+                102.76160859015936,
+                -2.6457267974018404
               ],
               [
-                104.01424811224967,
-                -3.215277744113724
+                102.77139621094001,
+                -2.635311404018881
               ],
               [
-                104.0178263433185,
-                -3.2125488013827708
+                102.83703898442427,
+                -2.602101312731799
               ],
               [
-                104.02969891175911,
-                -3.1935109150035768
-              ],
-              [
-                104.02864792601792,
-                -3.1554348625822355
+                102.8244190876848,
+                -2.5691655651962817
               ]
             ]
           ]
@@ -1156,20 +1350,20 @@
       },
       "legality": {
         "supplier_id": "SUP-015",
-        "legal_name": "PT Mitra Sejahtera Andalas",
-        "trading_name": "Mitra Sejahtera Andalas (SYNTH-015)",
+        "legal_name": "PT Agro Mandiri Nusantara",
+        "trading_name": "Agro Mandiri Nusantara (SYNTH-015)",
         "group": "Grup Andalas",
-        "nib": "7478567166153",
-        "npwp": "70.843.570.6-517.113",
-        "hgu_number": "HGU No. 452/HGU/BPN/2010",
+        "nib": "9567166153608",
+        "npwp": "53.570.651.7-113.907",
+        "hgu_number": "HGU No. 432/HGU/BPN/2020",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 14583.9,
+        "concession_area_ha": 9516.0,
         "province": "South Sumatra",
         "kabupaten": "Musi Banyuasin",
         "beneficial_owners": [
-          "Adi Utami",
-          "Putra Kusuma"
+          "Wulan Pratama",
+          "Eko Nugroho"
         ],
         "certifications": [
           "ISPO"
@@ -1178,7 +1372,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-015",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 55890130.1,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 15 — South Sumatra peat forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-016",
@@ -1191,44 +1402,40 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 4593.98,
-        "centroid_lat": -2.34612,
-        "centroid_lon": 113.439703,
+        "area_ha": 1327.32,
+        "centroid_lat": -0.998105,
+        "centroid_lon": 112.430765,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                113.44468115838517,
-                -2.3171958551378573
+                112.45241596306897,
+                -0.9999822995373695
               ],
               [
-                113.44186370460268,
-                -2.2974694421815456
+                112.42276287420603,
+                -0.9751819093660108
               ],
               [
-                113.43026851336906,
-                -2.3091946669205257
+                112.4209838174049,
+                -0.9762528817448921
               ],
               [
-                113.39627212123874,
-                -2.3139889133177385
+                112.40469822100161,
+                -0.9768166591899745
               ],
               [
-                113.43141132641325,
-                -2.375991491825698
+                112.44129575527433,
+                -1.032360699229686
               ],
               [
-                113.44099886301852,
-                -2.3965132157099105
+                112.4429424528721,
+                -1.016260734380999
               ],
               [
-                113.4823240979285,
-                -2.3598322655466597
-              ],
-              [
-                113.44468115838517,
-                -2.3171958551378573
+                112.45241596306897,
+                -0.9999822995373695
               ]
             ]
           ]
@@ -1236,29 +1443,46 @@
       },
       "legality": {
         "supplier_id": "SUP-016",
-        "legal_name": "PT Anugerah Lestari Khatulistiwa",
-        "trading_name": "Anugerah Lestari Khatulistiwa (SYNTH-016)",
+        "legal_name": "PT Anugerah Mandiri Sriwijaya",
+        "trading_name": "Anugerah Mandiri Sriwijaya (SYNTH-016)",
         "group": "Grup Nusantara",
-        "nib": "7109605262310",
-        "npwp": "82.394.802.5-071.035",
-        "hgu_number": null,
-        "pbp_number": "SK.2662/MENLHK-PKTL/PBPH/2019",
-        "permit_status": "suspended",
-        "concession_area_ha": 17856.8,
+        "nib": "7052623109723",
+        "npwp": "58.025.071.0-359.181",
+        "hgu_number": "HGU No. 147/HGU/BPN/2012",
+        "pbp_number": null,
+        "permit_status": "expired",
+        "concession_area_ha": 2062.7,
         "province": "Central Kalimantan",
         "kabupaten": "Katingan",
         "beneficial_owners": [
-          "Dewi Hidayat",
-          "Dewi Pratama"
+          "Eko Saputra",
+          "Hendra Utami"
         ],
         "certifications": [],
         "sanctions": [
-          "2019 permit suspension (synthetic)"
+          "2018 permit suspension (synthetic)"
         ],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-016",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 11050450.1,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 16 — Central Kalimantan forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "legal",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-017",
@@ -1271,48 +1495,44 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 2341.53,
-        "centroid_lat": 0.018589,
-        "centroid_lon": 115.777633,
+        "area_ha": 882.85,
+        "centroid_lat": 1.053437,
+        "centroid_lon": 115.652953,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                115.79959211551146,
-                0.014149758789821665
+                115.67056366980242,
+                1.0560406336780435
               ],
               [
-                115.79485529387075,
-                0.016256713353402154
+                115.66294802506354,
+                1.061221197075914
               ],
               [
-                115.7943928246989,
-                0.023244572533984535
+                115.6654103024103,
+                1.0634312214754782
               ],
               [
-                115.80354347851026,
-                0.036451974061905625
+                115.65474468568914,
+                1.0715274790183449
               ],
               [
-                115.7436381595161,
-                0.03791421181855281
+                115.64027936138889,
+                1.0622896525046213
               ],
               [
-                115.7451992327049,
-                0.019028415216004162
+                115.63664653150225,
+                1.0560093880370807
               ],
               [
-                115.79982682011014,
-                -0.010438903915638124
+                115.65157142995176,
+                1.0311346971758066
               ],
               [
-                115.81147693344333,
-                0.008214493407973436
-              ],
-              [
-                115.79959211551146,
-                0.014149758789821665
+                115.67056366980242,
+                1.0560406336780435
               ]
             ]
           ]
@@ -1320,20 +1540,20 @@
       },
       "legality": {
         "supplier_id": "SUP-017",
-        "legal_name": "PT Mitra Jaya Andalas",
-        "trading_name": "Mitra Jaya Andalas (SYNTH-017)",
-        "group": "Grup Sriwijaya",
-        "nib": "3296125192451",
-        "npwp": "17.177.124.2-422.693",
-        "hgu_number": "HGU No. 958/HGU/BPN/2014",
+        "legal_name": "PT Karya Jaya Sriwijaya",
+        "trading_name": "Karya Jaya Sriwijaya (SYNTH-017)",
+        "group": "Grup Andalas",
+        "nib": "2251924510717",
+        "npwp": "81.242.422.6-938.102",
+        "hgu_number": "HGU No. 160/HGU/BPN/2009",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 9404.5,
+        "concession_area_ha": 5933.2,
         "province": "East Kalimantan",
         "kabupaten": "Kutai Timur",
         "beneficial_owners": [
-          "Adi Santoso",
-          "Joko Halim"
+          "Lestari Wijaya",
+          "Taufik Kusuma"
         ],
         "certifications": [
           "ISPO"
@@ -1342,7 +1562,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-017",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 18830022.8,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 17 — East Kalimantan forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-018",
@@ -1355,36 +1592,36 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 3108.56,
-        "centroid_lat": 0.125128,
-        "centroid_lon": 111.239846,
+        "area_ha": 2281.6,
+        "centroid_lat": 0.726763,
+        "centroid_lon": 112.02558,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                111.25080817038646,
-                0.15864631636994572
+                112.05858025138657,
+                0.7301064517881584
               ],
               [
-                111.20052688287412,
-                0.13228502073018303
+                112.06232841922686,
+                0.7373877504120996
               ],
               [
-                111.21508082352098,
-                0.11477375596912251
+                112.04557612758656,
+                0.7493910477295893
               ],
               [
-                111.24760560589435,
-                0.09269617020889878
+                111.9922903367004,
+                0.7327543925829805
               ],
               [
-                111.27239853079284,
-                0.11271346316713948
+                112.00867007803403,
+                0.6974557342723018
               ],
               [
-                111.25080817038646,
-                0.15864631636994572
+                112.05858025138657,
+                0.7301064517881584
               ]
             ]
           ]
@@ -1392,20 +1629,20 @@
       },
       "legality": {
         "supplier_id": "SUP-018",
-        "legal_name": "PT Mitra Perkasa Sriwijaya",
-        "trading_name": "Mitra Perkasa Sriwijaya (SYNTH-018)",
-        "group": "Grup Borneo",
-        "nib": "2415692187344",
-        "npwp": "95.665.790.8-130.402",
-        "hgu_number": "HGU No. 950/HGU/BPN/2013",
+        "legal_name": "PT Karya Lestari Borneo",
+        "trading_name": "Karya Lestari Borneo (SYNTH-018)",
+        "group": "Grup Andalas",
+        "nib": "3187344856657",
+        "npwp": "18.130.402.4-161.840",
+        "hgu_number": "HGU No. 749/HGU/BPN/2008",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 14196.2,
+        "concession_area_ha": 12174.7,
         "province": "West Kalimantan",
         "kabupaten": "Kapuas Hulu",
         "beneficial_owners": [
-          "Citra Saputra",
-          "Citra Hidayat"
+          "Yusuf Halim",
+          "Bayu Pratama"
         ],
         "certifications": [
           "ISPO"
@@ -1414,7 +1651,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-018",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 54207303.4,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 18 — West Kalimantan forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-019",
@@ -1427,44 +1681,40 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 3700.01,
-        "centroid_lat": -0.165846,
-        "centroid_lon": 101.075639,
+        "area_ha": 3747.96,
+        "centroid_lat": -0.29593,
+        "centroid_lon": 101.753017,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                101.10351152209316,
-                -0.1506828093197573
+                101.72437211206,
+                -0.25803474101902174
               ],
               [
-                101.06055276713924,
-                -0.13321064645798586
+                101.71647479904499,
+                -0.30159720881910473
               ],
               [
-                101.04022995430974,
-                -0.14936499788659321
+                101.75785085881668,
+                -0.3261644797036226
               ],
               [
-                101.03997290641995,
-                -0.16160058753997011
+                101.7978057061427,
+                -0.30984695437196375
               ],
               [
-                101.07950307834258,
-                -0.204357234174832
+                101.79809952124793,
+                -0.3053308730743267
               ],
               [
-                101.1064492472983,
-                -0.18126660115511195
+                101.80078428296196,
+                -0.30056808077618696
               ],
               [
-                101.11011280304801,
-                -0.1690442633516053
-              ],
-              [
-                101.10351152209316,
-                -0.1506828093197573
+                101.72437211206,
+                -0.25803474101902174
               ]
             ]
           ]
@@ -1472,20 +1722,20 @@
       },
       "legality": {
         "supplier_id": "SUP-019",
-        "legal_name": "PT Anugerah Perkasa Nusantara",
-        "trading_name": "Anugerah Perkasa Nusantara (SYNTH-019)",
-        "group": "Grup Khatulistiwa",
-        "nib": "8118201008677",
-        "npwp": "12.790.588.4-407.199",
-        "hgu_number": "HGU No. 650/HGU/BPN/2015",
+        "legal_name": "PT Anugerah Lestari Nusantara",
+        "trading_name": "Anugerah Lestari Nusantara (SYNTH-019)",
+        "group": "Grup Nusantara",
+        "nib": "1086770279058",
+        "npwp": "94.407.199.5-308.197",
+        "hgu_number": "HGU No. 956/HGU/BPN/2009",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 16378.4,
+        "concession_area_ha": 6895.4,
         "province": "Riau",
         "kabupaten": "Siak",
         "beneficial_owners": [
-          "Gunawan Pratama",
-          "Taufik Wijaya"
+          "Gunawan Kusuma",
+          "Wulan Santoso"
         ],
         "certifications": [
           "ISPO"
@@ -1494,7 +1744,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-019",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 21126321.5,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 19 — Riau peat forests (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-020",
@@ -1507,40 +1774,44 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 2826.65,
-        "centroid_lat": -1.738818,
-        "centroid_lon": 102.506211,
+        "area_ha": 572.19,
+        "centroid_lat": -1.17951,
+        "centroid_lon": 101.6182,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.53852348680374,
-                -1.731233490589069
+                101.60697612120133,
+                -1.163434959544945
               ],
               [
-                102.52114504598629,
-                -1.7213672286804025
+                101.60504069945446,
+                -1.18234363103729
               ],
               [
-                102.52944016538802,
-                -1.7165148163641653
+                101.62619231493136,
+                -1.193141539714269
               ],
               [
-                102.52034340058486,
-                -1.7012780144676811
+                101.62635926751113,
+                -1.1914502146894392
               ],
               [
-                102.45782986679924,
-                -1.7616656355896945
+                101.63057151672777,
+                -1.1909234258412662
               ],
               [
-                102.53218147014917,
-                -1.75587081452414
+                101.63191691870247,
+                -1.1905850371913638
               ],
               [
-                102.53852348680374,
-                -1.731233490589069
+                101.63196955133985,
+                -1.1786780880408463
+              ],
+              [
+                101.60697612120133,
+                -1.163434959544945
               ]
             ]
           ]
@@ -1548,20 +1819,20 @@
       },
       "legality": {
         "supplier_id": "SUP-020",
-        "legal_name": "PT Mitra Sentosa Sriwijaya",
-        "trading_name": "Mitra Sentosa Sriwijaya (SYNTH-020)",
-        "group": "Grup Borneo",
-        "nib": "3833273712430",
-        "npwp": "80.636.680.6-946.346",
-        "hgu_number": "HGU No. 433/HGU/BPN/2017",
+        "legal_name": "PT Anugerah Perkasa Sriwijaya",
+        "trading_name": "Anugerah Perkasa Sriwijaya (SYNTH-020)",
+        "group": "Grup Sriwijaya",
+        "nib": "5307063668069",
+        "npwp": "56.346.704.6-562.254",
+        "hgu_number": "HGU No. 809/HGU/BPN/2020",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 8390.8,
+        "concession_area_ha": 3488.9,
         "province": "Jambi",
         "kabupaten": "Tebo",
         "beneficial_owners": [
-          "Joko Saputra",
-          "Kartika Saputra"
+          "Maya Kusuma",
+          "Adi Pratama"
         ],
         "certifications": [
           "ISPO"
@@ -1570,7 +1841,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-020",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 12237663.6,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 20 — Jambi lowland forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-021",
@@ -1583,40 +1871,44 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 971.99,
-        "centroid_lat": -2.211232,
-        "centroid_lon": 103.141838,
+        "area_ha": 3577.13,
+        "centroid_lat": -3.445038,
+        "centroid_lon": 104.20293,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                103.16043118978848,
-                -2.2051256500704266
+                104.23794690679168,
+                -3.4399540195653167
               ],
               [
-                103.12143945714234,
-                -2.196375015724442
+                104.2226073630168,
+                -3.421594048619328
               ],
               [
-                103.12646598952563,
-                -2.218263738709015
+                104.18157941670376,
+                -3.4145749925611524
               ],
               [
-                103.1296024666583,
-                -2.22432236267938
+                104.17216801650747,
+                -3.429230437458729
               ],
               [
-                103.13597680055634,
-                -2.2228566948339745
+                104.17801533693014,
+                -3.4633270470137303
               ],
               [
-                103.16512341324162,
-                -2.219994117309043
+                104.19637177618816,
+                -3.4707772957838454
               ],
               [
-                103.16043118978848,
-                -2.2051256500704266
+                104.2110413147807,
+                -3.485305699400224
+              ],
+              [
+                104.23794690679168,
+                -3.4399540195653167
               ]
             ]
           ]
@@ -1624,20 +1916,20 @@
       },
       "legality": {
         "supplier_id": "SUP-021",
-        "legal_name": "PT Anugerah Lestari Andalas",
-        "trading_name": "Anugerah Lestari Andalas (SYNTH-021)",
-        "group": "Grup Khatulistiwa",
-        "nib": "3539786538985",
-        "npwp": "33.377.394.9-130.418",
-        "hgu_number": "HGU No. 147/HGU/BPN/2011",
+        "legal_name": "PT Sumber Makmur Sriwijaya",
+        "trading_name": "Sumber Makmur Sriwijaya (SYNTH-021)",
+        "group": "Grup Sriwijaya",
+        "nib": "5913041888624",
+        "npwp": "83.213.732.6-774.456",
+        "hgu_number": "HGU No. 521/HGU/BPN/2012",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 9841.2,
+        "concession_area_ha": 10293.1,
         "province": "South Sumatra",
         "kabupaten": "Musi Banyuasin",
         "beneficial_owners": [
-          "Nur Santoso",
-          "Indah Utami"
+          "Taufik Santoso",
+          "Adi Halim"
         ],
         "certifications": [
           "ISPO"
@@ -1646,7 +1938,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-021",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 31521357.5,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 21 — South Sumatra peat forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-022",
@@ -1659,40 +1968,40 @@
         "archetype": "ambiguous",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 424.35,
-        "centroid_lat": -1.716633,
-        "centroid_lon": 111.800065,
+        "area_ha": 584.39,
+        "centroid_lat": -1.874198,
+        "centroid_lon": 111.525188,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                111.7942233071317,
-                -1.6978013205161349
+                111.54071511670057,
+                -1.876532586296553
               ],
               [
-                111.79259496587092,
-                -1.712726950612334
+                111.53221635581846,
+                -1.869698505002104
               ],
               [
-                111.78681066817005,
-                -1.7170500874716692
+                111.51919173756647,
+                -1.8598567440428757
               ],
               [
-                111.77923755832713,
-                -1.7148045668458443
+                111.50610390997971,
+                -1.8688195755241048
               ],
               [
-                111.78402923371546,
-                -1.7175955512097685
+                111.53445132142161,
+                -1.8897965600768385
               ],
               [
-                111.81782833256715,
-                -1.7312490779862226
+                111.53658784450869,
+                -1.889438036841095
               ],
               [
-                111.7942233071317,
-                -1.6978013205161349
+                111.54071511670057,
+                -1.876532586296553
               ]
             ]
           ]
@@ -1700,20 +2009,20 @@
       },
       "legality": {
         "supplier_id": "SUP-022",
-        "legal_name": "PT Sawit Perkasa Sriwijaya",
-        "trading_name": "Sawit Perkasa Sriwijaya (SYNTH-022)",
-        "group": "Grup Sriwijaya",
-        "nib": "6149198173838",
-        "npwp": "64.117.368.4-061.938",
-        "hgu_number": "HGU No. 283/HGU/BPN/2006",
-        "pbp_number": "SK.1961/MENLHK-PKTL/PBPH/2006",
+        "legal_name": "PT Hutan Mandiri Sriwijaya",
+        "trading_name": "Hutan Mandiri Sriwijaya (SYNTH-022)",
+        "group": "Grup Nusantara",
+        "nib": "2736840619389",
+        "npwp": "73.936.856.6-302.744",
+        "hgu_number": "HGU No. 565/HGU/BPN/2011",
+        "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 15517.5,
+        "concession_area_ha": 3590.4,
         "province": "Central Kalimantan",
         "kabupaten": "Katingan",
         "beneficial_owners": [
-          "Maya Hartono",
-          "Wulan Hartono"
+          "Indah Utami",
+          "Bayu Wijaya"
         ],
         "certifications": [
           "RSPO"
@@ -1722,7 +2031,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "ambiguous"
+      "consignment": {
+        "supplier_id": "SUP-022",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 16208788.3,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 22 — Central Kalimantan forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "ambiguous",
+      "expected_signal": null,
+      "expected_ambiguity": "borderline_area"
     },
     {
       "record_id": "REC-023",
@@ -1735,40 +2061,40 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 1884.93,
-        "centroid_lat": 0.065874,
-        "centroid_lon": 116.178184,
+        "area_ha": 440.09,
+        "centroid_lat": 0.25232,
+        "centroid_lon": 116.386759,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                116.20452253290004,
-                0.07777589292134345
+                116.40098525503272,
+                0.2562207192434681
               ],
               [
-                116.1880538736777,
-                0.0916563892688746
+                116.39113892608553,
+                0.26061350336777817
               ],
               [
-                116.17959522451356,
-                0.0813778925033796
+                116.38970470177684,
+                0.2623341460869603
               ],
               [
-                116.14724101178935,
-                0.07110508496564959
+                116.37579423314851,
+                0.25859455010926913
               ],
               [
-                116.1647027333464,
-                0.04422077180988239
+                116.37368116352233,
+                0.2498675222891506
               ],
               [
-                116.1925841808319,
-                0.048958545439693565
+                116.39001682895811,
+                0.23998445478334857
               ],
               [
-                116.20452253290004,
-                0.07777589292134345
+                116.40098525503272,
+                0.2562207192434681
               ]
             ]
           ]
@@ -1776,20 +2102,20 @@
       },
       "legality": {
         "supplier_id": "SUP-023",
-        "legal_name": "PT Agro Jaya Khatulistiwa",
-        "trading_name": "Agro Jaya Khatulistiwa (SYNTH-023)",
-        "group": "Grup Sriwijaya",
-        "nib": "2452708419840",
-        "npwp": "34.380.502.4-111.192",
-        "hgu_number": "HGU No. 492/HGU/BPN/2012",
+        "legal_name": "PT Karya Makmur Khatulistiwa",
+        "trading_name": "Karya Makmur Khatulistiwa (SYNTH-023)",
+        "group": "Grup Nusantara",
+        "nib": "3411119216405",
+        "npwp": "17.348.447.7-049.067",
+        "hgu_number": "HGU No. 650/HGU/BPN/2006",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 14001.7,
+        "concession_area_ha": 11617.1,
         "province": "East Kalimantan",
         "kabupaten": "Kutai Timur",
         "beneficial_owners": [
-          "Maya Nugroho",
-          "Bayu Halim"
+          "Kartika Santoso",
+          "Wulan Hartono"
         ],
         "certifications": [
           "ISPO"
@@ -1798,7 +2124,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-023",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 52048189.2,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 23 — East Kalimantan forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-024",
@@ -1811,44 +2154,48 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 409.04,
-        "centroid_lat": -0.733448,
-        "centroid_lon": 112.082207,
+        "area_ha": 3154.72,
+        "centroid_lat": -0.118719,
+        "centroid_lon": 111.961801,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                112.09561068593682,
-                -0.7332614901278749
+                111.99181068039287,
+                -0.10272821810169222
               ],
               [
-                112.08304912495298,
-                -0.7208730725236069
+                111.96536334585055,
+                -0.09295985687061628
               ],
               [
-                112.08157311352359,
-                -0.7257086951725815
+                111.92968156389331,
+                -0.09806901414942927
               ],
               [
-                112.06696179425059,
-                -0.7296047148219909
+                111.94079692617173,
+                -0.14776465781705156
               ],
               [
-                112.07788171139013,
-                -0.7417388834352455
+                111.94688263769724,
+                -0.14216770128877185
               ],
               [
-                112.08437128779103,
-                -0.7451533364338011
+                111.98318589417845,
+                -0.14109790215182763
               ],
               [
-                112.09279832327245,
-                -0.7360009674288505
+                111.99590171573455,
+                -0.14392833608896813
               ],
               [
-                112.09561068593682,
-                -0.7332614901278749
+                111.98709676324516,
+                -0.12324827042914685
+              ],
+              [
+                111.99181068039287,
+                -0.10272821810169222
               ]
             ]
           ]
@@ -1856,20 +2203,20 @@
       },
       "legality": {
         "supplier_id": "SUP-024",
-        "legal_name": "PT Anugerah Makmur Nusantara",
-        "trading_name": "Anugerah Makmur Nusantara (SYNTH-024)",
-        "group": "Grup Borneo",
-        "nib": "8435562144432",
-        "npwp": "94.306.802.4-417.222",
-        "hgu_number": "HGU No. 430/HGU/BPN/2017",
+        "legal_name": "PT Agro Jaya Borneo",
+        "trading_name": "Agro Jaya Borneo (SYNTH-024)",
+        "group": "Grup Khatulistiwa",
+        "nib": "1244172224634",
+        "npwp": "12.133.783.3-411.557",
+        "hgu_number": "HGU No. 41/HGU/BPN/2012",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 16395.8,
+        "concession_area_ha": 10625.3,
         "province": "West Kalimantan",
         "kabupaten": "Kapuas Hulu",
         "beneficial_owners": [
-          "Indah Saputra",
-          "Gunawan Nugroho"
+          "Maya Kusuma",
+          "Fitri Hartono"
         ],
         "certifications": [
           "ISPO"
@@ -1878,7 +2225,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-024",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 52532568.4,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 24 — West Kalimantan forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-025",
@@ -1891,40 +2255,48 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 317.75,
-        "centroid_lat": -0.677336,
-        "centroid_lon": 102.777537,
+        "area_ha": 969.86,
+        "centroid_lat": 1.042322,
+        "centroid_lon": 101.758658,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.78691638933472,
-                -0.6703234578323165
+                101.7798219899578,
+                1.041154537373651
               ],
               [
-                102.78233194358629,
-                -0.6677376063388744
+                101.77253599465605,
+                1.0440646549407901
               ],
               [
-                102.776807598494,
-                -0.6689096700436514
+                101.77758445199542,
+                1.0492734552330683
               ],
               [
-                102.77420798930339,
-                -0.6679668853030161
+                101.75963062849753,
+                1.0586458023676548
               ],
               [
-                102.7665476635369,
-                -0.681629279639168
+                101.75957816311148,
+                1.059600855015271
               ],
               [
-                102.78144103789819,
-                -0.6886233701532021
+                101.73926900327469,
+                1.041928925791197
               ],
               [
-                102.78691638933472,
-                -0.6703234578323165
+                101.73600964469063,
+                1.0302636069179494
+              ],
+              [
+                101.7795291094714,
+                1.033906610683421
+              ],
+              [
+                101.7798219899578,
+                1.041154537373651
               ]
             ]
           ]
@@ -1932,20 +2304,20 @@
       },
       "legality": {
         "supplier_id": "SUP-025",
-        "legal_name": "PT Hutan Mandiri Nusantara",
-        "trading_name": "Hutan Mandiri Nusantara (SYNTH-025)",
+        "legal_name": "PT Anugerah Sentosa Borneo",
+        "trading_name": "Anugerah Sentosa Borneo (SYNTH-025)",
         "group": "Grup Nusantara",
-        "nib": "6649070921982",
-        "npwp": "88.959.749.4-703.100",
-        "hgu_number": "HGU No. 267/HGU/BPN/2005",
+        "nib": "4100350335680",
+        "npwp": "61.552.143.6-032.765",
+        "hgu_number": "HGU No. 869/HGU/BPN/2014",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 4196.6,
+        "concession_area_ha": 13238.5,
         "province": "Riau",
         "kabupaten": "Siak",
         "beneficial_owners": [
-          "Adi Hartono",
-          "Hendra Halim"
+          "Nur Santoso",
+          "Joko Utami"
         ],
         "certifications": [
           "ISPO"
@@ -1954,7 +2326,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-025",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 75373771.2,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 25 — Riau peat forests (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-026",
@@ -1967,36 +2356,48 @@
         "archetype": "ambiguous",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 681.27,
-        "centroid_lat": -2.307634,
-        "centroid_lon": 102.393205,
+        "area_ha": 1494.53,
+        "centroid_lat": -1.636929,
+        "centroid_lon": 102.804952,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.41008160594289,
-                -2.2992157627683527
+                102.81161225056836,
+                -1.6164752098295434
               ],
               [
-                102.39051880414979,
-                -2.2928639388267964
+                102.80928806879771,
+                -1.6174570670417447
               ],
               [
-                102.38080075810383,
-                -2.2974696969876147
+                102.80021730750488,
+                -1.6184215432333868
               ],
               [
-                102.38345223880796,
-                -2.305671984452111
+                102.78470052330847,
+                -1.6224949564886848
               ],
               [
-                102.38743268097728,
-                -2.331761383596602
+                102.78130160295031,
+                -1.6360093100768258
               ],
               [
-                102.41008160594289,
-                -2.2992157627683527
+                102.80629617727352,
+                -1.6559499843314722
+              ],
+              [
+                102.81564002142498,
+                -1.6621550204406914
+              ],
+              [
+                102.82661121622989,
+                -1.6420795793583376
+              ],
+              [
+                102.81161225056836,
+                -1.6164752098295434
               ]
             ]
           ]
@@ -2004,20 +2405,20 @@
       },
       "legality": {
         "supplier_id": "SUP-026",
-        "legal_name": "PT Mitra Sejahtera Andalas",
-        "trading_name": "Mitra Sejahtera Andalas (SYNTH-026)",
-        "group": "Grup Borneo",
-        "nib": "6286576248378",
-        "npwp": "96.385.492.6-772.829",
-        "hgu_number": "HGU No. 837/HGU/BPN/2009",
-        "pbp_number": null,
+        "legal_name": "PT Anugerah Makmur Khatulistiwa",
+        "trading_name": "Anugerah Makmur Khatulistiwa (SYNTH-026)",
+        "group": "Grup Sriwijaya",
+        "nib": "1335120233060",
+        "npwp": "47.980.031.9-118.780",
+        "hgu_number": "HGU No. 724/HGU/BPN/2010",
+        "pbp_number": "SK.9504/MENLHK-PKTL/PBPH/2010",
         "permit_status": "active",
-        "concession_area_ha": 16957.3,
+        "concession_area_ha": 2576.3,
         "province": "Jambi",
         "kabupaten": "Tebo",
         "beneficial_owners": [
-          "Citra Santoso",
-          "Bayu Hartono"
+          "Yusuf Utami",
+          "Dewi Halim"
         ],
         "certifications": [
           "RSPO"
@@ -2026,7 +2427,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "ambiguous"
+      "consignment": {
+        "supplier_id": "SUP-026",
+        "commodity": "wood",
+        "description": "Bleached hardwood kraft pulp (synthetic consignment)",
+        "hs_heading": "4703",
+        "species_scientific": "Acacia mangium",
+        "species_common": "Acacia",
+        "net_weight_kg": 35986129.0,
+        "supplementary_unit": 39984.588,
+        "supplementary_unit_qualifier": "MTQ",
+        "production_place": "Block 26 — Jambi lowland forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "ambiguous",
+      "expected_signal": null,
+      "expected_ambiguity": "old_fire_scar"
     },
     {
       "record_id": "REC-027",
@@ -2039,32 +2457,40 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 1073.78,
-        "centroid_lat": -3.761412,
-        "centroid_lon": 103.155447,
+        "area_ha": 1378.3,
+        "centroid_lat": -3.687398,
+        "centroid_lon": 102.94096,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                103.14133664594148,
-                -3.7390504670592564
+                102.96490775298442,
+                -3.6910077272686697
               ],
               [
-                103.15579248109783,
-                -3.734340070108509
+                102.94905450659817,
+                -3.6690977857166867
               ],
               [
-                103.17060732440511,
-                -3.7756419496041445
+                102.93847536344617,
+                -3.6690146658549474
               ],
               [
-                103.15353465869761,
-                -3.7912483774210313
+                102.9268799180223,
+                -3.6680791080013404
               ],
               [
-                103.14133664594148,
-                -3.7390504670592564
+                102.92389614105383,
+                -3.707292114767647
+              ],
+              [
+                102.94619369051392,
+                -3.703891936705902
+              ],
+              [
+                102.96490775298442,
+                -3.6910077272686697
               ]
             ]
           ]
@@ -2072,20 +2498,20 @@
       },
       "legality": {
         "supplier_id": "SUP-027",
-        "legal_name": "PT Sawit Lestari Sriwijaya",
-        "trading_name": "Sawit Lestari Sriwijaya (SYNTH-027)",
-        "group": "Grup Nusantara",
-        "nib": "9780019715940",
-        "npwp": "59.352.824.0-823.283",
-        "hgu_number": "HGU No. 586/HGU/BPN/2008",
+        "legal_name": "PT Hutan Sentosa Andalas",
+        "trading_name": "Hutan Sentosa Andalas (SYNTH-027)",
+        "group": "Grup Borneo",
+        "nib": "3400794025558",
+        "npwp": "51.744.054.4-843.955",
+        "hgu_number": "HGU No. 833/HGU/BPN/2005",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 15498.5,
+        "concession_area_ha": 13718.4,
         "province": "South Sumatra",
         "kabupaten": "Musi Banyuasin",
         "beneficial_owners": [
-          "Indah Saputra",
-          "Bayu Wijaya"
+          "Indah Santoso",
+          "Bayu Halim"
         ],
         "certifications": [
           "ISPO"
@@ -2094,7 +2520,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-027",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 51368698.5,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 27 — South Sumatra peat forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-028",
@@ -2107,44 +2550,36 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 4779.95,
-        "centroid_lat": -1.00799,
-        "centroid_lon": 111.510831,
+        "area_ha": 4990.06,
+        "centroid_lat": -2.207468,
+        "centroid_lon": 113.153591,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                111.44570532083958,
-                -0.9782309061185235
+                113.17161624551416,
+                -2.1623292438867834
               ],
               [
-                111.48123357589998,
-                -1.015638331305231
+                113.13963572482628,
+                -2.1781060795122693
               ],
               [
-                111.50736198264102,
-                -1.0351535280259545
+                113.09915164381052,
+                -2.2312323467971353
               ],
               [
-                111.54744513651491,
-                -1.044525146364954
+                113.17336337182358,
+                -2.2340858365523917
               ],
               [
-                111.54687348388967,
-                -1.0365095242474187
+                113.19768577825702,
+                -2.240933358270959
               ],
               [
-                111.55478696455421,
-                -0.9945432134933545
-              ],
-              [
-                111.55405992986576,
-                -0.9917259742421871
-              ],
-              [
-                111.44570532083958,
-                -0.9782309061185235
+                113.17161624551416,
+                -2.1623292438867834
               ]
             ]
           ]
@@ -2152,29 +2587,46 @@
       },
       "legality": {
         "supplier_id": "SUP-028",
-        "legal_name": "PT Anugerah Sejahtera Borneo",
-        "trading_name": "Anugerah Sejahtera Borneo (SYNTH-028)",
-        "group": "Grup Sriwijaya",
-        "nib": "6542053347530",
-        "npwp": "36.857.446.4-279.175",
-        "hgu_number": null,
-        "pbp_number": "SK.4198/MENLHK-PKTL/PBPH/2006",
-        "permit_status": "expired",
-        "concession_area_ha": 9561.9,
+        "legal_name": "PT Sawit Sejahtera Borneo",
+        "trading_name": "Sawit Sejahtera Borneo (SYNTH-028)",
+        "group": "Grup Borneo",
+        "nib": "9426724547275",
+        "npwp": "18.539.773.0-005.872",
+        "hgu_number": "HGU No. 318/HGU/BPN/2005",
+        "pbp_number": null,
+        "permit_status": "suspended",
+        "concession_area_ha": 12540.3,
         "province": "Central Kalimantan",
         "kabupaten": "Katingan",
         "beneficial_owners": [
-          "Joko Halim",
-          "Taufik Pratama"
+          "Adi Nugroho",
+          "Joko Wijaya"
         ],
         "certifications": [],
         "sanctions": [
-          "2023 permit suspension (synthetic)"
+          "2022 permit suspension (synthetic)"
         ],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-028",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 73194583.8,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 28 — Central Kalimantan forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "deforestation",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-029",
@@ -2187,36 +2639,44 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 2155.36,
-        "centroid_lat": 0.514806,
-        "centroid_lon": 116.958744,
+        "area_ha": 3061.57,
+        "centroid_lat": 0.571463,
+        "centroid_lon": 116.550757,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                117.0026831467369,
-                0.49134107661144166
+                116.57554645225389,
+                0.596489889252612
               ],
               [
-                117.00334282561448,
-                0.4987586506603223
+                116.51592314628815,
+                0.5830319807502707
               ],
               [
-                116.95609250251641,
-                0.5354798612196565
+                116.51177536143658,
+                0.5662811078937868
               ],
               [
-                116.94553492512665,
-                0.5370129692741616
+                116.52113963105396,
+                0.5513993785958536
               ],
               [
-                116.91218346958647,
-                0.5158448541630016
+                116.52983313318279,
+                0.5540116886594717
               ],
               [
-                117.0026831467369,
-                0.49134107661144166
+                116.5854280613313,
+                0.5531071883527647
+              ],
+              [
+                116.58666068739828,
+                0.5625836224329784
+              ],
+              [
+                116.57554645225389,
+                0.596489889252612
               ]
             ]
           ]
@@ -2224,29 +2684,46 @@
       },
       "legality": {
         "supplier_id": "SUP-029",
-        "legal_name": "PT Anugerah Makmur Andalas",
-        "trading_name": "Anugerah Makmur Andalas (SYNTH-029)",
-        "group": "Grup Andalas",
-        "nib": "8300058728404",
-        "npwp": "51.876.819.9-416.819",
-        "hgu_number": null,
-        "pbp_number": "SK.445/MENLHK-PKTL/PBPH/2015",
-        "permit_status": "expired",
-        "concession_area_ha": 15281.1,
+        "legal_name": "PT Karya Lestari Khatulistiwa",
+        "trading_name": "Karya Lestari Khatulistiwa (SYNTH-029)",
+        "group": "Grup Nusantara",
+        "nib": "7548110813923",
+        "npwp": "45.059.953.9-452.373",
+        "hgu_number": "HGU No. 614/HGU/BPN/2020",
+        "pbp_number": null,
+        "permit_status": "suspended",
+        "concession_area_ha": 9027.6,
         "province": "East Kalimantan",
         "kabupaten": "Kutai Timur",
         "beneficial_owners": [
-          "Putra Pratama",
-          "Yusuf Utami"
+          "Hendra Hartono",
+          "Rahmat Hartono"
         ],
         "certifications": [],
         "sanctions": [
-          "2019 permit suspension (synthetic)"
+          "2024 permit suspension (synthetic)"
         ],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-029",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 48864319.9,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 29 — East Kalimantan forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "fire",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-030",
@@ -2259,44 +2736,40 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 1750.62,
-        "centroid_lat": 0.556942,
-        "centroid_lon": 111.439238,
+        "area_ha": 1205.21,
+        "centroid_lat": -0.738915,
+        "centroid_lon": 109.986593,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                111.46353816442264,
-                0.5714809942092922
+                109.95517454288002,
+                -0.7247742532910721
               ],
               [
-                111.41645732431117,
-                0.571329670564437
+                109.96821503881121,
+                -0.7409094862104522
               ],
               [
-                111.40486214382982,
-                0.5640364786101684
+                109.97658890480598,
+                -0.7442628067813424
               ],
               [
-                111.4390705809261,
-                0.5371589998374631
+                109.9724332843531,
+                -0.7549526266090458
               ],
               [
-                111.45971917759572,
-                0.5363166733319764
+                110.01391229420899,
+                -0.7468734498283729
               ],
               [
-                111.44679999619522,
-                0.5467593682162585
+                110.00805330909962,
+                -0.7312924114042392
               ],
               [
-                111.46083172192498,
-                0.541429601149404
-              ],
-              [
-                111.46353816442264,
-                0.5714809942092922
+                109.95517454288002,
+                -0.7247742532910721
               ]
             ]
           ]
@@ -2304,20 +2777,20 @@
       },
       "legality": {
         "supplier_id": "SUP-030",
-        "legal_name": "PT Sawit Jaya Nusantara",
-        "trading_name": "Sawit Jaya Nusantara (SYNTH-030)",
+        "legal_name": "PT Mitra Perkasa Nusantara",
+        "trading_name": "Mitra Perkasa Nusantara (SYNTH-030)",
         "group": "Grup Sriwijaya",
-        "nib": "4505995394523",
-        "npwp": "83.533.733.0-232.997",
-        "hgu_number": "HGU No. 618/HGU/BPN/2012",
+        "nib": "1457684297045",
+        "npwp": "93.586.588.8-293.752",
+        "hgu_number": "HGU No. 982/HGU/BPN/2005",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 16178.1,
+        "concession_area_ha": 4325.8,
         "province": "West Kalimantan",
         "kabupaten": "Kapuas Hulu",
         "beneficial_owners": [
-          "Rahmat Nugroho",
-          "Yusuf Nugroho"
+          "Fitri Halim",
+          "Kartika Hartono"
         ],
         "certifications": [
           "ISPO"
@@ -2326,7 +2799,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-030",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 25401713.6,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 30 — West Kalimantan forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-031",
@@ -2339,40 +2829,44 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 368.92,
-        "centroid_lat": 1.137025,
-        "centroid_lon": 102.78855,
+        "area_ha": 2971.36,
+        "centroid_lat": -0.684386,
+        "centroid_lon": 102.686312,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.79920621604714,
-                1.1449429481054012
+                102.68206286596326,
+                -0.646154165525078
               ],
               [
-                102.78701329840803,
-                1.1460287291156324
+                102.67549097699019,
+                -0.6518372879444878
               ],
               [
-                102.77971121440908,
-                1.1421254172389272
+                102.67340565924214,
+                -0.6510978634393361
               ],
               [
-                102.77911483916347,
-                1.1293667056149683
+                102.65525294719727,
+                -0.6932203404341888
               ],
               [
-                102.78152616382604,
-                1.125893788152358
+                102.67234283786176,
+                -0.7048372673494426
               ],
               [
-                102.79804365945961,
-                1.132964154293031
+                102.69997535834574,
+                -0.7144571804392524
               ],
               [
-                102.79920621604714,
-                1.1449429481054012
+                102.72035488671199,
+                -0.6950745874069254
+              ],
+              [
+                102.68206286596326,
+                -0.646154165525078
               ]
             ]
           ]
@@ -2380,20 +2874,20 @@
       },
       "legality": {
         "supplier_id": "SUP-031",
-        "legal_name": "PT Karya Makmur Khatulistiwa",
-        "trading_name": "Karya Makmur Khatulistiwa (SYNTH-031)",
-        "group": "Grup Borneo",
-        "nib": "6835865888293",
-        "npwp": "85.227.255.3-713.154",
-        "hgu_number": "HGU No. 941/HGU/BPN/2020",
+        "legal_name": "PT Sawit Perkasa Borneo",
+        "trading_name": "Sawit Perkasa Borneo (SYNTH-031)",
+        "group": "Grup Khatulistiwa",
+        "nib": "3459290816302",
+        "npwp": "35.427.819.2-743.395",
+        "hgu_number": "HGU No. 666/HGU/BPN/2017",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 14558.4,
+        "concession_area_ha": 16046.6,
         "province": "Riau",
         "kabupaten": "Siak",
         "beneficial_owners": [
-          "Indah Kusuma",
-          "Putra Halim"
+          "Adi Nugroho",
+          "Kartika Halim"
         ],
         "certifications": [
           "ISPO"
@@ -2402,7 +2896,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-031",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 75878875.8,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 31 — Riau peat forests (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-032",
@@ -2415,48 +2926,48 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 541.94,
-        "centroid_lat": -1.052613,
-        "centroid_lon": 102.834145,
+        "area_ha": 601.13,
+        "centroid_lat": -1.556414,
+        "centroid_lon": 102.549789,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.83508627245976,
-                -1.0424826524730262
+                102.55767873550407,
+                -1.5400679839027922
               ],
               [
-                102.82999180246709,
-                -1.0413827505391748
+                102.54160990432102,
+                -1.5492326811000212
               ],
               [
-                102.82276634983118,
-                -1.044559986144106
+                102.53530992312471,
+                -1.550862031755807
               ],
               [
-                102.82046160229245,
-                -1.059698191394488
+                102.53679719670754,
+                -1.5546589889803086
               ],
               [
-                102.828748100386,
-                -1.0618348029962523
+                102.54188393859539,
+                -1.5659456201886346
               ],
               [
-                102.83365106169424,
-                -1.0610664406248338
+                102.55189553249839,
+                -1.5740077501091876
               ],
               [
-                102.84565196255129,
-                -1.0604074489908866
+                102.55594898218536,
+                -1.5637752091389934
               ],
               [
-                102.85176718661292,
-                -1.052906960913283
+                102.56182882630323,
+                -1.5600403413582906
               ],
               [
-                102.83508627245976,
-                -1.0424826524730262
+                102.55767873550407,
+                -1.5400679839027922
               ]
             ]
           ]
@@ -2464,20 +2975,20 @@
       },
       "legality": {
         "supplier_id": "SUP-032",
-        "legal_name": "PT Karya Sentosa Borneo",
-        "trading_name": "Karya Sentosa Borneo (SYNTH-032)",
-        "group": "Grup Khatulistiwa",
-        "nib": "2630225427819",
-        "npwp": "37.433.950.4-550.971",
-        "hgu_number": "HGU No. 598/HGU/BPN/2010",
+        "legal_name": "PT Hutan Sentosa Borneo",
+        "trading_name": "Hutan Sentosa Borneo (SYNTH-032)",
+        "group": "Grup Sriwijaya",
+        "nib": "4427113682872",
+        "npwp": "83.848.335.4-026.062",
+        "hgu_number": "HGU No. 320/HGU/BPN/2019",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 14213.5,
+        "concession_area_ha": 9563.5,
         "province": "Jambi",
         "kabupaten": "Tebo",
         "beneficial_owners": [
-          "Wulan Saputra",
-          "Rahmat Saputra"
+          "Putra Santoso",
+          "Dewi Kusuma"
         ],
         "certifications": [
           "ISPO"
@@ -2486,7 +2997,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-032",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 45993487.8,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 32 — Jambi lowland forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-033",
@@ -2499,40 +3027,48 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 2029.23,
-        "centroid_lat": -3.275825,
-        "centroid_lon": 103.069456,
+        "area_ha": 342.7,
+        "centroid_lat": -3.453577,
+        "centroid_lon": 102.617161,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                103.09945076746104,
-                -3.2875498228640065
+                102.63073216118859,
+                -3.44754187319649
               ],
               [
-                103.10662809732486,
-                -3.274618744742349
+                102.63025858588493,
+                -3.446989855740132
               ],
               [
-                103.0662920100086,
-                -3.2621429664979846
+                102.61170987525286,
+                -3.4464015458233743
               ],
               [
-                103.01770806606709,
-                -3.2561900991733133
+                102.60758268230258,
+                -3.444235990972445
               ],
               [
-                103.01500340696884,
-                -3.2583208590200314
+                102.60912091745529,
+                -3.4581621920339916
               ],
               [
-                103.0985477456203,
-                -3.303758258171607
+                102.6088652092859,
+                -3.462930551590873
               ],
               [
-                103.09945076746104,
-                -3.2875498228640065
+                102.61251773315952,
+                -3.4640631577284027
+              ],
+              [
+                102.62275853034721,
+                -3.4594814759891137
+              ],
+              [
+                102.63073216118859,
+                -3.44754187319649
               ]
             ]
           ]
@@ -2540,20 +3076,20 @@
       },
       "legality": {
         "supplier_id": "SUP-033",
-        "legal_name": "PT Mitra Sentosa Sriwijaya",
-        "trading_name": "Mitra Sentosa Sriwijaya (SYNTH-033)",
-        "group": "Grup Andalas",
-        "nib": "2136828727384",
-        "npwp": "93.354.026.0-628.721",
-        "hgu_number": "HGU No. 286/HGU/BPN/2011",
+        "legal_name": "PT Anugerah Sejahtera Sriwijaya",
+        "trading_name": "Anugerah Sejahtera Sriwijaya (SYNTH-033)",
+        "group": "Grup Sriwijaya",
+        "nib": "1718890250674",
+        "npwp": "18.880.070.7-702.776",
+        "hgu_number": "HGU No. 476/HGU/BPN/2016",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 10985.2,
+        "concession_area_ha": 5675.6,
         "province": "South Sumatra",
         "kabupaten": "Musi Banyuasin",
         "beneficial_owners": [
-          "Yusuf Nugroho",
-          "Adi Hidayat"
+          "Rahmat Halim",
+          "Dewi Kusuma"
         ],
         "certifications": [
           "ISPO"
@@ -2562,7 +3098,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-033",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 19807653.7,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 33 — South Sumatra peat forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-034",
@@ -2575,36 +3128,48 @@
         "archetype": "ambiguous",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 183.24,
-        "centroid_lat": -1.839431,
-        "centroid_lon": 112.259228,
+        "area_ha": 370.26,
+        "centroid_lat": -2.589529,
+        "centroid_lon": 112.713512,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                112.2655434474128,
-                -1.8298646667760192
+                112.72446110512763,
+                -2.5886975223988338
               ],
               [
-                112.26545283707458,
-                -1.8254916484424275
+                112.71242820435828,
+                -2.580548005112599
               ],
               [
-                112.25176910347693,
-                -1.8416156862062223
+                112.71053215618193,
+                -2.5780041441834456
               ],
               [
-                112.25700040275251,
-                -1.8497634837772432
+                112.70542027348927,
+                -2.574497755350037
               ],
               [
-                112.25950224267172,
-                -1.8512957508722685
+                112.70373009908155,
+                -2.5828979849847764
               ],
               [
-                112.2655434474128,
-                -1.8298646667760192
+                112.71499466812543,
+                -2.606118235435407
+              ],
+              [
+                112.71810834818487,
+                -2.6006907244322526
+              ],
+              [
+                112.72410731785158,
+                -2.590730759180609
+              ],
+              [
+                112.72446110512763,
+                -2.5886975223988338
               ]
             ]
           ]
@@ -2612,20 +3177,20 @@
       },
       "legality": {
         "supplier_id": "SUP-034",
-        "legal_name": "PT Agro Sejahtera Sriwijaya",
-        "trading_name": "Agro Sejahtera Sriwijaya (SYNTH-034)",
-        "group": "Grup Sriwijaya",
-        "nib": "6702907188902",
-        "npwp": "60.674.088.8-007.077",
-        "hgu_number": "HGU No. 558/HGU/BPN/2016",
+        "legal_name": "PT Anugerah Sejahtera Andalas",
+        "trading_name": "Anugerah Sejahtera Andalas (SYNTH-034)",
+        "group": "Grup Borneo",
+        "nib": "4310813747024",
+        "npwp": "57.091.525.9-768.562",
+        "hgu_number": null,
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 1136.4,
+        "concession_area_ha": 6732.4,
         "province": "Central Kalimantan",
         "kabupaten": "Katingan",
         "beneficial_owners": [
-          "Fitri Utami",
-          "Putra Saputra"
+          "Maya Hidayat",
+          "Maya Saputra"
         ],
         "certifications": [
           "RSPO"
@@ -2634,7 +3199,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "ambiguous"
+      "consignment": {
+        "supplier_id": "SUP-034",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 33131650.1,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 34 — Central Kalimantan forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "ambiguous",
+      "expected_signal": null,
+      "expected_ambiguity": "permit_gap"
     },
     {
       "record_id": "REC-035",
@@ -2647,36 +3229,36 @@
         "archetype": "ambiguous",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 514.05,
-        "centroid_lat": -0.134333,
-        "centroid_lon": 117.267786,
+        "area_ha": 1242.18,
+        "centroid_lat": 1.060268,
+        "centroid_lon": 116.313744,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                117.28171148730893,
-                -0.13784701674026442
+                116.28987496170203,
+                1.0836259826155423
               ],
               [
-                117.27797343564545,
-                -0.1204357904822978
+                116.30187396379188,
+                1.0512191271919744
               ],
               [
-                117.27347901461344,
-                -0.12138397722183589
+                116.31604839658263,
+                1.037618366719894
               ],
               [
-                117.25250170476703,
-                -0.1369479426524712
+                116.32650214129538,
+                1.0489819832873015
               ],
               [
-                117.2531079210642,
-                -0.14655112644831145
+                116.34260118846132,
+                1.0595308032271018
               ],
               [
-                117.28171148730893,
-                -0.13784701674026442
+                116.28987496170203,
+                1.0836259826155423
               ]
             ]
           ]
@@ -2684,20 +3266,20 @@
       },
       "legality": {
         "supplier_id": "SUP-035",
-        "legal_name": "PT Karya Sentosa Andalas",
-        "trading_name": "Karya Sentosa Andalas (SYNTH-035)",
-        "group": "Grup Nusantara",
-        "nib": "7465437574287",
-        "npwp": "53.310.813.7-470.244",
-        "hgu_number": "HGU No. 318/HGU/BPN/2015",
-        "pbp_number": "SK.6091/MENLHK-PKTL/PBPH/2015",
+        "legal_name": "PT Agro Sejahtera Andalas",
+        "trading_name": "Agro Sejahtera Andalas (SYNTH-035)",
+        "group": "Grup Sriwijaya",
+        "nib": "2095628934186",
+        "npwp": "59.068.426.5-672.570",
+        "hgu_number": "HGU No. 265/HGU/BPN/2020",
+        "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 8855.9,
+        "concession_area_ha": 10381.5,
         "province": "East Kalimantan",
         "kabupaten": "Kutai Timur",
         "beneficial_owners": [
-          "Yusuf Wijaya",
-          "Lestari Santoso"
+          "Indah Saputra",
+          "Gunawan Santoso"
         ],
         "certifications": [
           "ISPO"
@@ -2706,7 +3288,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "ambiguous"
+      "consignment": {
+        "supplier_id": "SUP-035",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 34094275.9,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 35 — East Kalimantan forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "ambiguous",
+      "expected_signal": null,
+      "expected_ambiguity": "borderline_area"
     },
     {
       "record_id": "REC-036",
@@ -2719,48 +3318,40 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 3279.41,
-        "centroid_lat": -0.156176,
-        "centroid_lon": 110.649225,
+        "area_ha": 2852.63,
+        "centroid_lat": 0.667559,
+        "centroid_lon": 112.368247,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                110.6659311619546,
-                -0.12330590980171036
+                112.34500093399149,
+                0.6932260143219428
               ],
               [
-                110.6419747534191,
-                -0.13140927600428376
+                112.32811231852494,
+                0.6681388699065222
               ],
               [
-                110.62046351823929,
-                -0.13071168493628696
+                112.3207128631154,
+                0.6626887419863683
               ],
               [
-                110.61662171144118,
-                -0.13990316326858407
+                112.41074155468405,
+                0.6431667554331537
               ],
               [
-                110.63654659059236,
-                -0.1789791470311387
+                112.40034020024461,
+                0.6593943058510151
               ],
               [
-                110.63830843240915,
-                -0.1890634258694999
+                112.41438777575416,
+                0.6681429807874403
               ],
               [
-                110.6520255090941,
-                -0.19154469625048834
-              ],
-              [
-                110.67787353445732,
-                -0.173115283683594
-              ],
-              [
-                110.6659311619546,
-                -0.12330590980171036
+                112.34500093399149,
+                0.6932260143219428
               ]
             ]
           ]
@@ -2768,20 +3359,20 @@
       },
       "legality": {
         "supplier_id": "SUP-036",
-        "legal_name": "PT Sawit Lestari Khatulistiwa",
-        "trading_name": "Sawit Lestari Khatulistiwa (SYNTH-036)",
-        "group": "Grup Andalas",
-        "nib": "2016516992477",
-        "npwp": "49.191.210.9-562.893",
-        "hgu_number": "HGU No. 724/HGU/BPN/2016",
+        "legal_name": "PT Sawit Sejahtera Nusantara",
+        "trading_name": "Sawit Sejahtera Nusantara (SYNTH-036)",
+        "group": "Grup Nusantara",
+        "nib": "5407088613954",
+        "npwp": "95.847.011.3-616.414",
+        "hgu_number": "HGU No. 843/HGU/BPN/2013",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 4969.5,
+        "concession_area_ha": 15525.7,
         "province": "West Kalimantan",
         "kabupaten": "Kapuas Hulu",
         "beneficial_owners": [
-          "Dewi Hidayat",
-          "Maya Nugroho"
+          "Taufik Santoso",
+          "Putra Wijaya"
         ],
         "certifications": [
           "ISPO"
@@ -2790,7 +3381,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-036",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 64132439.9,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 36 — West Kalimantan forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-037",
@@ -2803,40 +3411,48 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 5801.76,
-        "centroid_lat": 0.2569,
-        "centroid_lon": 101.067307,
+        "area_ha": 5169.26,
+        "centroid_lat": 0.901149,
+        "centroid_lon": 102.706028,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                101.04159425272044,
-                0.29755253555321365
+                102.74943844632355,
+                0.9094619233272365
               ],
               [
-                101.00918238355226,
-                0.2801140569030077
+                102.72676085329574,
+                0.9259021329001862
               ],
               [
-                101.02421752549878,
-                0.26983536522375784
+                102.70722049735497,
+                0.9221211223096382
               ],
               [
-                101.03060517426658,
-                0.25787373958542975
+                102.68579966106674,
+                0.9408958787309203
               ],
               [
-                101.06281051776247,
-                0.21322477827381892
+                102.65861243309115,
+                0.9188834715552612
               ],
               [
-                101.13263111850429,
-                0.25047469663273875
+                102.69469302204308,
+                0.8627213426324452
               ],
               [
-                101.04159425272044,
-                0.29755253555321365
+                102.73433374365479,
+                0.8773689159112377
+              ],
+              [
+                102.74694042133457,
+                0.874549769324003
+              ],
+              [
+                102.74943844632355,
+                0.9094619233272365
               ]
             ]
           ]
@@ -2844,29 +3460,46 @@
       },
       "legality": {
         "supplier_id": "SUP-037",
-        "legal_name": "PT Agro Mandiri Sriwijaya",
-        "trading_name": "Agro Mandiri Sriwijaya (SYNTH-037)",
-        "group": "Grup Sriwijaya",
-        "nib": "6890404404407",
-        "npwp": "18.861.395.4-858.470",
-        "hgu_number": null,
-        "pbp_number": "SK.4670/MENLHK-PKTL/PBPH/2011",
-        "permit_status": "suspended",
-        "concession_area_ha": 1746.3,
+        "legal_name": "PT Sumber Lestari Andalas",
+        "trading_name": "Sumber Lestari Andalas (SYNTH-037)",
+        "group": "Grup Borneo",
+        "nib": "7968651401211",
+        "npwp": "25.958.983.5-902.092",
+        "hgu_number": "HGU No. 708/HGU/BPN/2020",
+        "pbp_number": null,
+        "permit_status": "expired",
+        "concession_area_ha": 12735.4,
         "province": "Riau",
         "kabupaten": "Siak",
         "beneficial_owners": [
-          "Gunawan Saputra",
-          "Citra Saputra"
+          "Sari Nugroho",
+          "Yusuf Hidayat"
         ],
         "certifications": [],
         "sanctions": [
-          "2021 permit suspension (synthetic)"
+          "2020 permit suspension (synthetic)"
         ],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-037",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 47399504.8,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 37 — Riau peat forests (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "legal",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-038",
@@ -2879,40 +3512,36 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 1390.96,
-        "centroid_lat": -1.678862,
-        "centroid_lon": 102.01056,
+        "area_ha": 1911.48,
+        "centroid_lat": -1.806532,
+        "centroid_lon": 102.252785,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.02359606215073,
-                -1.661282642788049
+                102.250148961751,
+                -1.778035705688056
               ],
               [
-                101.98870751880928,
-                -1.664000766389838
+                102.23899932689929,
+                -1.7792061092429807
               ],
               [
-                101.98476369795843,
-                -1.674099267611699
+                102.22906692133964,
+                -1.7977165383201874
               ],
               [
-                102.02025335837011,
-                -1.701502752273829
+                102.24695098351546,
+                -1.830186283782838
               ],
               [
-                102.0269371452987,
-                -1.7082255414291936
+                102.28320421429117,
+                -1.8256317649217193
               ],
               [
-                102.0277856782519,
-                -1.6874939832741171
-              ],
-              [
-                102.02359606215073,
-                -1.661282642788049
+                102.250148961751,
+                -1.778035705688056
               ]
             ]
           ]
@@ -2920,20 +3549,20 @@
       },
       "legality": {
         "supplier_id": "SUP-038",
-        "legal_name": "PT Sumber Makmur Borneo",
-        "trading_name": "Sumber Makmur Borneo (SYNTH-038)",
-        "group": "Grup Nusantara",
-        "nib": "9525655167154",
-        "npwp": "84.696.865.1-401.211",
-        "hgu_number": "HGU No. 478/HGU/BPN/2017",
+        "legal_name": "PT Sawit Sentosa Nusantara",
+        "trading_name": "Sawit Sentosa Nusantara (SYNTH-038)",
+        "group": "Grup Khatulistiwa",
+        "nib": "4468748835536",
+        "npwp": "23.369.084.6-514.582",
+        "hgu_number": "HGU No. 723/HGU/BPN/2006",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 2567.9,
+        "concession_area_ha": 15172.7,
         "province": "Jambi",
         "kabupaten": "Tebo",
         "beneficial_owners": [
-          "Wulan Halim",
-          "Taufik Kusuma"
+          "Taufik Utami",
+          "Bayu Pratama"
         ],
         "certifications": [
           "ISPO"
@@ -2942,7 +3571,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-038",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 82861961.7,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 38 — Jambi lowland forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-039",
@@ -2955,36 +3601,48 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 3023.59,
-        "centroid_lat": -3.335803,
-        "centroid_lon": 102.983488,
+        "area_ha": 3964.3,
+        "centroid_lat": -3.158507,
+        "centroid_lon": 102.772469,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                103.02726152685766,
-                -3.3385023269520824
+                102.79183433079616,
+                -3.1347731181849254
               ],
               [
-                103.00418576571694,
-                -3.302554727739582
+                102.79427451413976,
+                -3.11944319302273
               ],
               [
-                102.9420552646451,
-                -3.344693191630836
+                102.78753115128141,
+                -3.1325157421206637
               ],
               [
-                102.93818523469626,
-                -3.3553828899256724
+                102.75924002406008,
+                -3.1165095325417966
               ],
               [
-                102.94184249879073,
-                -3.3639871286104652
+                102.75662739131964,
+                -3.1169316559497697
               ],
               [
-                103.02726152685766,
-                -3.3385023269520824
+                102.7436982504481,
+                -3.1649464200789486
+              ],
+              [
+                102.74742573474681,
+                -3.189535979063105
+              ],
+              [
+                102.80707356685606,
+                -3.185913654518608
+              ],
+              [
+                102.79183433079616,
+                -3.1347731181849254
               ]
             ]
           ]
@@ -2992,20 +3650,20 @@
       },
       "legality": {
         "supplier_id": "SUP-039",
-        "legal_name": "PT Mitra Lestari Khatulistiwa",
-        "trading_name": "Mitra Lestari Khatulistiwa (SYNTH-039)",
-        "group": "Grup Andalas",
-        "nib": "6382164220003",
-        "npwp": "93.468.748.8-355.361",
-        "hgu_number": "HGU No. 378/HGU/BPN/2007",
+        "legal_name": "PT Karya Perkasa Khatulistiwa",
+        "trading_name": "Karya Perkasa Khatulistiwa (SYNTH-039)",
+        "group": "Grup Khatulistiwa",
+        "nib": "2440983193707",
+        "npwp": "47.011.201.5-905.783",
+        "hgu_number": "HGU No. 285/HGU/BPN/2020",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 3989.6,
+        "concession_area_ha": 7756.9,
         "province": "South Sumatra",
         "kabupaten": "Musi Banyuasin",
         "beneficial_owners": [
-          "Nur Kusuma",
-          "Bayu Hidayat"
+          "Kartika Halim",
+          "Adi Hidayat"
         ],
         "certifications": [
           "ISPO"
@@ -3014,7 +3672,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-039",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 44861525.1,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 39 — South Sumatra peat forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-040",
@@ -3027,44 +3702,48 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 5262.73,
-        "centroid_lat": -2.446084,
-        "centroid_lon": 112.547457,
+        "area_ha": 2547.58,
+        "centroid_lat": -1.988338,
+        "centroid_lon": 112.557586,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                112.57288760819245,
-                -2.421139004157981
+                112.57013738792674,
+                -1.9671099560963645
               ],
               [
-                112.53532441479658,
-                -2.3960909905223535
+                112.53048243571277,
+                -1.960384249159492
               ],
               [
-                112.50012972827619,
-                -2.460936466427623
+                112.53731048689338,
+                -1.9838417746169337
               ],
               [
-                112.52545641482027,
-                -2.4551133283212194
+                112.52998984950526,
+                -1.9888506034482023
               ],
               [
-                112.54405608904332,
-                -2.4856314505169137
+                112.54476556046285,
+                -2.00484203303336
               ],
               [
-                112.55917872805028,
-                -2.4928758383004017
+                112.54665845268482,
+                -2.0131411854809507
               ],
               [
-                112.58100657691617,
-                -2.4802969870790204
+                112.57860236420152,
+                -2.014328226854993
               ],
               [
-                112.57288760819245,
-                -2.421139004157981
+                112.58408261514165,
+                -1.9891331542111517
+              ],
+              [
+                112.57013738792674,
+                -1.9671099560963645
               ]
             ]
           ]
@@ -3072,29 +3751,46 @@
       },
       "legality": {
         "supplier_id": "SUP-040",
-        "legal_name": "PT Bumi Sentosa Khatulistiwa",
-        "trading_name": "Bumi Sentosa Khatulistiwa (SYNTH-040)",
-        "group": "Grup Nusantara",
-        "nib": "5925754514974",
-        "npwp": "99.144.098.3-193.707",
-        "hgu_number": "HGU No. 341/HGU/BPN/2012",
-        "pbp_number": null,
+        "legal_name": "PT Sumber Perkasa Andalas",
+        "trading_name": "Sumber Perkasa Andalas (SYNTH-040)",
+        "group": "Grup Andalas",
+        "nib": "9857496798628",
+        "npwp": "22.693.437.2-835.053",
+        "hgu_number": null,
+        "pbp_number": "SK.2346/MENLHK-PKTL/PBPH/2009",
         "permit_status": "suspended",
-        "concession_area_ha": 17720.8,
+        "concession_area_ha": 13989.7,
         "province": "Central Kalimantan",
         "kabupaten": "Katingan",
         "beneficial_owners": [
-          "Gunawan Utami",
-          "Adi Wijaya"
+          "Nur Santoso",
+          "Adi Hidayat"
         ],
         "certifications": [],
         "sanctions": [
-          "2023 permit suspension (synthetic)"
+          "2018 permit suspension (synthetic)"
         ],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-040",
+        "commodity": "wood",
+        "description": "Bleached hardwood kraft pulp (synthetic consignment)",
+        "hs_heading": "4703",
+        "species_scientific": "Acacia mangium",
+        "species_common": "Acacia",
+        "net_weight_kg": 117328040.8,
+        "supplementary_unit": 130364.49,
+        "supplementary_unit_qualifier": "MTQ",
+        "production_place": "Block 40 — Central Kalimantan forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "deforestation",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-041",
@@ -3107,36 +3803,48 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 2633.44,
-        "centroid_lat": -0.766284,
-        "centroid_lon": 117.385766,
+        "area_ha": 2008.84,
+        "centroid_lat": 0.828726,
+        "centroid_lon": 117.199229,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                117.43596521864308,
-                -0.7752224685719118
+                117.20528072888418,
+                0.8606408175446913
               ],
               [
-                117.40102520765993,
-                -0.7537255727369498
+                117.1988178776782,
+                0.848633617040979
               ],
               [
-                117.3956335242496,
-                -0.7474790983897879
+                117.17810706921408,
+                0.8461525962766455
               ],
               [
-                117.36745328589652,
-                -0.7392405185751296
+                117.17281764167323,
+                0.8291226267675608
               ],
               [
-                117.3510668262567,
-                -0.7880261809962739
+                117.17518967010493,
+                0.8266489566179305
               ],
               [
-                117.43596521864308,
-                -0.7752224685719118
+                117.20054695460016,
+                0.8027342004983182
+              ],
+              [
+                117.20094477130064,
+                0.8028785531680055
+              ],
+              [
+                117.22508844483879,
+                0.812733363018924
+              ],
+              [
+                117.20528072888418,
+                0.8606408175446913
               ]
             ]
           ]
@@ -3144,20 +3852,20 @@
       },
       "legality": {
         "supplier_id": "SUP-041",
-        "legal_name": "PT Mitra Makmur Borneo",
-        "trading_name": "Mitra Makmur Borneo (SYNTH-041)",
+        "legal_name": "PT Anugerah Perkasa Nusantara",
+        "trading_name": "Anugerah Perkasa Nusantara (SYNTH-041)",
         "group": "Grup Khatulistiwa",
-        "nib": "2125890192285",
-        "npwp": "24.856.229.3-197.885",
-        "hgu_number": "HGU No. 411/HGU/BPN/2017",
+        "nib": "3062399021368",
+        "npwp": "65.895.985.3-076.792",
+        "hgu_number": "HGU No. 271/HGU/BPN/2018",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 8601.8,
+        "concession_area_ha": 7478.1,
         "province": "East Kalimantan",
         "kabupaten": "Kutai Timur",
         "beneficial_owners": [
-          "Indah Kusuma",
-          "Nur Utami"
+          "Hendra Utami",
+          "Nur Santoso"
         ],
         "certifications": [
           "ISPO"
@@ -3166,7 +3874,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-041",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 30129405.7,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 41 — East Kalimantan forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-042",
@@ -3179,36 +3904,44 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 2392.5,
-        "centroid_lat": -0.818139,
-        "centroid_lon": 112.287995,
+        "area_ha": 2564.28,
+        "centroid_lat": -1.084528,
+        "centroid_lon": 111.419611,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                112.29957604788726,
-                -0.7810203658127914
+                111.43915456395284,
+                -1.061002164706981
               ],
               [
-                112.28091602952219,
-                -0.7857611348947073
+                111.40097346741796,
+                -1.0614981563615808
               ],
               [
-                112.26375079198743,
-                -0.8504591223834728
+                111.39713015520933,
+                -1.0644844756776046
               ],
               [
-                112.27434758622962,
-                -0.8493950102935823
+                111.39900115938075,
+                -1.1148192356163804
               ],
               [
-                112.30972308228453,
-                -0.8353386871125121
+                111.41287695760148,
+                -1.108667600688676
               ],
               [
-                112.29957604788726,
-                -0.7810203658127914
+                111.41187952049692,
+                -1.112965025813684
+              ],
+              [
+                111.4486952749835,
+                -1.0929875142123513
+              ],
+              [
+                111.43915456395284,
+                -1.061002164706981
               ]
             ]
           ]
@@ -3216,20 +3949,20 @@
       },
       "legality": {
         "supplier_id": "SUP-042",
-        "legal_name": "PT Karya Mandiri Sriwijaya",
-        "trading_name": "Karya Mandiri Sriwijaya (SYNTH-042)",
-        "group": "Grup Sriwijaya",
-        "nib": "2074464286883",
-        "npwp": "43.900.997.0-646.920",
-        "hgu_number": "HGU No. 853/HGU/BPN/2005",
+        "legal_name": "PT Hutan Makmur Borneo",
+        "trading_name": "Hutan Makmur Borneo (SYNTH-042)",
+        "group": "Grup Borneo",
+        "nib": "3208537951141",
+        "npwp": "45.249.027.1-340.829",
+        "hgu_number": "HGU No. 377/HGU/BPN/2012",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 14371.8,
+        "concession_area_ha": 14495.1,
         "province": "West Kalimantan",
         "kabupaten": "Kapuas Hulu",
         "beneficial_owners": [
-          "Fitri Hartono",
-          "Wulan Kusuma"
+          "Fitri Wijaya",
+          "Adi Halim"
         ],
         "certifications": [
           "ISPO"
@@ -3238,7 +3971,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-042",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 67007793.8,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 42 — West Kalimantan forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-043",
@@ -3251,40 +4001,40 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 567.61,
-        "centroid_lat": 0.629717,
-        "centroid_lon": 101.24438,
+        "area_ha": 3818.07,
+        "centroid_lat": -0.114806,
+        "centroid_lon": 101.405072,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                101.23363400026886,
-                0.6448429898166328
+                101.42793199774947,
+                -0.09373289674088472
               ],
               [
-                101.23296175878443,
-                0.6416360531880578
+                101.40129461049493,
+                -0.07283066479830562
               ],
               [
-                101.22984612155454,
-                0.6362782520435055
+                101.37847493332202,
+                -0.10256993220850136
               ],
               [
-                101.23357852365396,
-                0.6260274597631685
+                101.37908222160544,
+                -0.13287745761568703
               ],
               [
-                101.22609219028888,
-                0.6222999732293089
+                101.39547240109151,
+                -0.15600321242104462
               ],
               [
-                101.27012485118527,
-                0.6215139829130641
+                101.43810976748455,
+                -0.12531642609716537
               ],
               [
-                101.23363400026886,
-                0.6448429898166328
+                101.42793199774947,
+                -0.09373289674088472
               ]
             ]
           ]
@@ -3292,29 +4042,46 @@
       },
       "legality": {
         "supplier_id": "SUP-043",
-        "legal_name": "PT Mitra Mandiri Khatulistiwa",
-        "trading_name": "Mitra Mandiri Khatulistiwa (SYNTH-043)",
-        "group": "Grup Borneo",
-        "nib": "5993008592969",
-        "npwp": "61.239.345.1-043.181",
-        "hgu_number": "HGU No. 342/HGU/BPN/2009",
+        "legal_name": "PT Sawit Makmur Andalas",
+        "trading_name": "Sawit Makmur Andalas (SYNTH-043)",
+        "group": "Grup Andalas",
+        "nib": "9917085159885",
+        "npwp": "15.553.654.7-516.367",
+        "hgu_number": "HGU No. 930/HGU/BPN/2014",
         "pbp_number": null,
-        "permit_status": "expired",
-        "concession_area_ha": 2726.5,
+        "permit_status": "suspended",
+        "concession_area_ha": 14847.3,
         "province": "Riau",
         "kabupaten": "Siak",
         "beneficial_owners": [
-          "Lestari Hartono",
-          "Lestari Nugroho"
+          "Eko Utami",
+          "Bayu Hartono"
         ],
         "certifications": [],
         "sanctions": [
-          "2021 permit suspension (synthetic)"
+          "2018 permit suspension (synthetic)"
         ],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-043",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 47100147.9,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 43 — Riau peat forests (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "fire",
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-044",
@@ -3327,44 +4094,36 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 1394.03,
-        "centroid_lat": -2.206986,
-        "centroid_lon": 101.784305,
+        "area_ha": 2747.87,
+        "centroid_lat": -1.663491,
+        "centroid_lon": 102.851671,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                101.8015854679995,
-                -2.1775695302612696
+                102.87664751634466,
+                -1.6018236916564863
               ],
               [
-                101.78135181226921,
-                -2.183027473333854
+                102.83365942327092,
+                -1.6643518696320436
               ],
               [
-                101.7625576715368,
-                -2.238378611707427
+                102.81447777743594,
+                -1.7028308525677316
               ],
               [
-                101.77146749691795,
-                -2.228957045779247
+                102.85778397129232,
+                -1.682959503213441
               ],
               [
-                101.7725812023659,
-                -2.22787036438649
+                102.85827015367076,
+                -1.7271493554358957
               ],
               [
-                101.78405886294809,
-                -2.2366988735217643
-              ],
-              [
-                101.79633997168767,
-                -2.2076656486428248
-              ],
-              [
-                101.8015854679995,
-                -2.1775695302612696
+                102.87664751634466,
+                -1.6018236916564863
               ]
             ]
           ]
@@ -3372,20 +4131,20 @@
       },
       "legality": {
         "supplier_id": "SUP-044",
-        "legal_name": "PT Hutan Makmur Borneo",
-        "trading_name": "Hutan Makmur Borneo (SYNTH-044)",
-        "group": "Grup Khatulistiwa",
-        "nib": "7210582938523",
-        "npwp": "39.854.306.5-161.305",
-        "hgu_number": "HGU No. 560/HGU/BPN/2005",
+        "legal_name": "PT Sumber Sejahtera Khatulistiwa",
+        "trading_name": "Sumber Sejahtera Khatulistiwa (SYNTH-044)",
+        "group": "Grup Nusantara",
+        "nib": "9852177826493",
+        "npwp": "90.135.737.2-624.110",
+        "hgu_number": "HGU No. 757/HGU/BPN/2008",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 11526.3,
+        "concession_area_ha": 8267.9,
         "province": "Jambi",
         "kabupaten": "Tebo",
         "beneficial_owners": [
-          "Adi Hartono",
-          "Maya Nugroho"
+          "Citra Wijaya",
+          "Yusuf Hidayat"
         ],
         "certifications": [
           "ISPO"
@@ -3394,7 +4153,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-044",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 25154116.3,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 44 — Jambi lowland forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-045",
@@ -3407,40 +4183,36 @@
         "archetype": "ambiguous",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 1358.82,
-        "centroid_lat": -3.843635,
-        "centroid_lon": 103.345092,
+        "area_ha": 413.14,
+        "centroid_lat": -3.21812,
+        "centroid_lon": 103.231228,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                103.35865487315142,
-                -3.8300021318609607
+                103.25021661851532,
+                -3.2114978196173833
               ],
               [
-                103.32710005486854,
-                -3.8269958812913822
+                103.23108638702742,
+                -3.2076053665011255
               ],
               [
-                103.32309042412005,
-                -3.8480960746055124
+                103.22124545746719,
+                -3.219988125822237
               ],
               [
-                103.34276020807746,
-                -3.8585851191908267
+                103.21439921017081,
+                -3.228010181697395
               ],
               [
-                103.35221031245719,
-                -3.8648596763843464
+                103.22424297727225,
+                -3.2296934641332102
               ],
               [
-                103.36794983768972,
-                -3.8473861488231402
-              ],
-              [
-                103.35865487315142,
-                -3.8300021318609607
+                103.25021661851532,
+                -3.2114978196173833
               ]
             ]
           ]
@@ -3448,29 +4220,46 @@
       },
       "legality": {
         "supplier_id": "SUP-045",
-        "legal_name": "PT Sumber Lestari Borneo",
-        "trading_name": "Sumber Lestari Borneo (SYNTH-045)",
-        "group": "Grup Andalas",
-        "nib": "6163673270300",
-        "npwp": "81.808.974.4-040.209",
-        "hgu_number": "HGU No. 391/HGU/BPN/2016",
-        "pbp_number": "SK.3679/MENLHK-PKTL/PBPH/2016",
+        "legal_name": "PT Anugerah Perkasa Borneo",
+        "trading_name": "Anugerah Perkasa Borneo (SYNTH-045)",
+        "group": "Grup Nusantara",
+        "nib": "4656981303666",
+        "npwp": "89.989.481.0-108.932",
+        "hgu_number": "HGU No. 348/HGU/BPN/2020",
+        "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 14828.9,
+        "concession_area_ha": 5213.2,
         "province": "South Sumatra",
         "kabupaten": "Musi Banyuasin",
         "beneficial_owners": [
-          "Kartika Halim",
-          "Wulan Wijaya"
+          "Nur Halim",
+          "Dewi Wijaya"
         ],
         "certifications": [
-          "RSPO"
+          "ISPO"
         ],
         "sanctions": [],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "ambiguous"
+      "consignment": {
+        "supplier_id": "SUP-045",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 18818009.6,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 45 — South Sumatra peat forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "ambiguous",
+      "expected_signal": null,
+      "expected_ambiguity": "old_fire_scar"
     },
     {
       "record_id": "REC-046",
@@ -3483,44 +4272,36 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 3002.57,
-        "centroid_lat": -1.152177,
-        "centroid_lon": 113.729346,
+        "area_ha": 1955.41,
+        "centroid_lat": -1.350549,
+        "centroid_lon": 113.717646,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                113.74370650267295,
-                -1.1306342339166595
+                113.6892367234155,
+                -1.321760264009732
               ],
               [
-                113.74796792133027,
-                -1.1164726693032105
+                113.68627223916563,
+                -1.3281337991254938
               ],
               [
-                113.6970119538611,
-                -1.1382831126492403
+                113.69999680033102,
+                -1.3557391597245496
               ],
               [
-                113.71264093822475,
-                -1.1775491093206527
+                113.69872824829672,
+                -1.3688934378942073
               ],
               [
-                113.75430338279057,
-                -1.1779183291223678
+                113.76531994116057,
+                -1.363127689923297
               ],
               [
-                113.7588689985309,
-                -1.1659783817533662
-              ],
-              [
-                113.75296481488263,
-                -1.1529144993154834
-              ],
-              [
-                113.74370650267295,
-                -1.1306342339166595
+                113.6892367234155,
+                -1.321760264009732
               ]
             ]
           ]
@@ -3528,20 +4309,20 @@
       },
       "legality": {
         "supplier_id": "SUP-046",
-        "legal_name": "PT Sumber Mandiri Sriwijaya",
-        "trading_name": "Sumber Mandiri Sriwijaya (SYNTH-046)",
-        "group": "Grup Andalas",
-        "nib": "3411057119803",
-        "npwp": "75.651.570.8-218.694",
-        "hgu_number": "HGU No. 774/HGU/BPN/2020",
+        "legal_name": "PT Bumi Perkasa Nusantara",
+        "trading_name": "Bumi Perkasa Nusantara (SYNTH-046)",
+        "group": "Grup Sriwijaya",
+        "nib": "3867648124586",
+        "npwp": "33.394.154.9-582.375",
+        "hgu_number": "HGU No. 175/HGU/BPN/2007",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 9338.9,
+        "concession_area_ha": 8398.9,
         "province": "Central Kalimantan",
         "kabupaten": "Katingan",
         "beneficial_owners": [
-          "Wulan Utami",
-          "Lestari Kusuma"
+          "Fitri Pratama",
+          "Putra Utami"
         ],
         "certifications": [
           "ISPO"
@@ -3550,7 +4331,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-046",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 47555710.7,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 46 — Central Kalimantan forest (SYNTH)",
+        "harvest_year": 2023,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-047",
@@ -3563,36 +4361,48 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 3885.2,
-        "centroid_lat": 0.218518,
-        "centroid_lon": 117.441917,
+        "area_ha": 1811.79,
+        "centroid_lat": -0.627055,
+        "centroid_lon": 115.981342,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                117.54148579743031,
-                0.23885202876857942
+                115.99579444190844,
+                -0.6062636074478795
               ],
               [
-                117.40519190480921,
-                0.23207437832656447
+                115.99365224415511,
+                -0.601066330826272
               ],
               [
-                117.39793552315643,
-                0.21958901281832882
+                115.95044957399459,
+                -0.6332098495553304
               ],
               [
-                117.38196969190369,
-                0.18950691954558907
+                115.96392927750027,
+                -0.6539100923993113
               ],
               [
-                117.38122853809267,
-                0.18520548996174013
+                115.98146564122432,
+                -0.6396664625676154
               ],
               [
-                117.54148579743031,
-                0.23885202876857942
+                116.00322903323898,
+                -0.6317874703425415
+              ],
+              [
+                116.01090566909262,
+                -0.6205893002350895
+              ],
+              [
+                116.01289635781059,
+                -0.6175926534679559
+              ],
+              [
+                115.99579444190844,
+                -0.6062636074478795
               ]
             ]
           ]
@@ -3600,20 +4410,20 @@
       },
       "legality": {
         "supplier_id": "SUP-047",
-        "legal_name": "PT Anugerah Jaya Khatulistiwa",
-        "trading_name": "Anugerah Jaya Khatulistiwa (SYNTH-047)",
+        "legal_name": "PT Sawit Perkasa Borneo",
+        "trading_name": "Sawit Perkasa Borneo (SYNTH-047)",
         "group": "Grup Nusantara",
-        "nib": "1108932446511",
-        "npwp": "33.770.947.4-743.718",
-        "hgu_number": "HGU No. 757/HGU/BPN/2013",
+        "nib": "6663547993223",
+        "npwp": "39.953.771.6-990.371",
+        "hgu_number": "HGU No. 119/HGU/BPN/2011",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 11747.5,
+        "concession_area_ha": 5188.0,
         "province": "East Kalimantan",
         "kabupaten": "Kutai Timur",
         "beneficial_owners": [
-          "Kartika Hidayat",
-          "Nur Utami"
+          "Putra Hartono",
+          "Rahmat Halim"
         ],
         "certifications": [
           "ISPO"
@@ -3622,7 +4432,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-047",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 21580041.2,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 47 — East Kalimantan forest (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-048",
@@ -3635,36 +4462,40 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 3445.98,
-        "centroid_lat": 0.680186,
-        "centroid_lon": 110.124624,
+        "area_ha": 3214.82,
+        "centroid_lat": 0.671312,
+        "centroid_lon": 111.39224,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                110.1246176960639,
-                0.7440727743693771
+                111.41222310874578,
+                0.7146748809913273
               ],
               [
-                110.11962061339736,
-                0.7580276815912141
+                111.39620637015334,
+                0.7101123750809083
               ],
               [
-                110.10570001927991,
-                0.6499670797906199
+                111.37574986362283,
+                0.6920308501313961
               ],
               [
-                110.13077823501092,
-                0.6237336618839153
+                111.36713047408186,
+                0.644238197658614
               ],
               [
-                110.14539098041021,
-                0.6643873319648967
+                111.36497964879577,
+                0.6401852432293054
               ],
               [
-                110.1246176960639,
-                0.7440727743693771
+                111.40908956558293,
+                0.6367434168307878
+              ],
+              [
+                111.41222310874578,
+                0.7146748809913273
               ]
             ]
           ]
@@ -3672,20 +4503,20 @@
       },
       "legality": {
         "supplier_id": "SUP-048",
-        "legal_name": "PT Agro Makmur Sriwijaya",
-        "trading_name": "Agro Makmur Sriwijaya (SYNTH-048)",
+        "legal_name": "PT Sawit Jaya Sriwijaya",
+        "trading_name": "Sawit Jaya Sriwijaya (SYNTH-048)",
         "group": "Grup Borneo",
-        "nib": "6823756520771",
-        "npwp": "71.313.701.8-919.108",
-        "hgu_number": "HGU No. 101/HGU/BPN/2013",
+        "nib": "2457706949535",
+        "npwp": "85.107.051.8-598.245",
+        "hgu_number": "HGU No. 546/HGU/BPN/2006",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 1554.7,
+        "concession_area_ha": 3917.7,
         "province": "West Kalimantan",
         "kabupaten": "Kapuas Hulu",
         "beneficial_owners": [
-          "Gunawan Utami",
-          "Taufik Wijaya"
+          "Putra Kusuma",
+          "Eko Halim"
         ],
         "certifications": [
           "ISPO"
@@ -3694,7 +4525,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-048",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 20839982.6,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 48 — West Kalimantan forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-049",
@@ -3707,36 +4555,44 @@
         "archetype": "compliant",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 2966.75,
-        "centroid_lat": -0.637189,
-        "centroid_lon": 101.278848,
+        "area_ha": 3132.41,
+        "centroid_lat": -0.347984,
+        "centroid_lon": 102.38897,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                101.30731307677775,
-                -0.608372451089819
+                102.41275131409694,
+                -0.3205235443212084
               ],
               [
-                101.2654177137473,
-                -0.6099250555585742
+                102.40756095457394,
+                -0.3196784680838659
               ],
               [
-                101.25421796029451,
-                -0.6133665993496862
+                102.3857092339571,
+                -0.32431385067012275
               ],
               [
-                101.25642292389773,
-                -0.6412821697097304
+                102.37578386345228,
+                -0.3178207016926272
               ],
               [
-                101.2818611751639,
-                -0.687726459548972
+                102.35632044680204,
+                -0.3554540672089967
               ],
               [
-                101.30731307677775,
-                -0.608372451089819
+                102.36350713568552,
+                -0.3696012627959768
+              ],
+              [
+                102.41513917985239,
+                -0.3743367082099736
+              ],
+              [
+                102.41275131409694,
+                -0.3205235443212084
               ]
             ]
           ]
@@ -3744,20 +4600,20 @@
       },
       "legality": {
         "supplier_id": "SUP-049",
-        "legal_name": "PT Agro Jaya Khatulistiwa",
-        "trading_name": "Agro Jaya Khatulistiwa (SYNTH-049)",
-        "group": "Grup Andalas",
-        "nib": "2699037137375",
-        "npwp": "75.795.488.2-339.998",
-        "hgu_number": "HGU No. 212/HGU/BPN/2015",
+        "legal_name": "PT Sawit Mandiri Nusantara",
+        "trading_name": "Sawit Mandiri Nusantara (SYNTH-049)",
+        "group": "Grup Khatulistiwa",
+        "nib": "6954749938088",
+        "npwp": "28.714.468.4-809.935",
+        "hgu_number": "HGU No. 397/HGU/BPN/2009",
         "pbp_number": null,
         "permit_status": "active",
-        "concession_area_ha": 7252.7,
+        "concession_area_ha": 10187.7,
         "province": "Riau",
         "kabupaten": "Siak",
         "beneficial_owners": [
-          "Adi Nugroho",
-          "Maya Hidayat"
+          "Fitri Santoso",
+          "Gunawan Hidayat"
         ],
         "certifications": [
           "ISPO"
@@ -3766,7 +4622,24 @@
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "compliant"
+      "consignment": {
+        "supplier_id": "SUP-049",
+        "commodity": "oil_palm",
+        "description": "Crude palm oil (synthetic consignment)",
+        "hs_heading": "1511",
+        "species_scientific": "Elaeis guineensis",
+        "species_common": "Kelapa sawit",
+        "net_weight_kg": 34047248.8,
+        "supplementary_unit": null,
+        "supplementary_unit_qualifier": null,
+        "production_place": "Block 49 — Riau peat forests (SYNTH)",
+        "harvest_year": 2025,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "compliant",
+      "expected_signal": null,
+      "expected_ambiguity": null
     },
     {
       "record_id": "REC-050",
@@ -3779,44 +4652,48 @@
         "archetype": "high_risk",
         "scenario": null,
         "is_demo": false,
-        "area_ha": 3569.23,
-        "centroid_lat": -0.931,
-        "centroid_lon": 102.899436,
+        "area_ha": 1428.53,
+        "centroid_lat": -2.000703,
+        "centroid_lon": 102.872166,
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
               [
-                102.90329840829935,
-                -0.8950288999840617
+                102.89201278085969,
+                -1.9894314968977689
               ],
               [
-                102.8612347411767,
-                -0.9283272535720637
+                102.89932435557,
+                -1.9792558703349687
               ],
               [
-                102.86975068324912,
-                -0.9533899989631895
+                102.8920397294547,
+                -1.985191916390019
               ],
               [
-                102.93444557229097,
-                -0.953055287318183
+                102.89586549200342,
+                -1.9726490344996317
               ],
               [
-                102.93565640841686,
-                -0.9525650647755517
+                102.86055951093061,
+                -1.9912854777321223
               ],
               [
-                102.93275685896643,
-                -0.929968673457306
+                102.84850554249064,
+                -1.997379430042777
               ],
               [
-                102.9294196981491,
-                -0.9243815023914517
+                102.85360737556442,
+                -2.001316424563268
               ],
               [
-                102.90329840829935,
-                -0.8950288999840617
+                102.86352940213646,
+                -2.0348488744198776
+              ],
+              [
+                102.89201278085969,
+                -1.9894314968977689
               ]
             ]
           ]
@@ -3824,29 +4701,46 @@
       },
       "legality": {
         "supplier_id": "SUP-050",
-        "legal_name": "PT Sumber Makmur Borneo",
-        "trading_name": "Sumber Makmur Borneo (SYNTH-050)",
-        "group": "Grup Andalas",
-        "nib": "1518598245079",
-        "npwp": "35.714.244.8-425.782",
+        "legal_name": "PT Mitra Perkasa Andalas",
+        "trading_name": "Mitra Perkasa Andalas (SYNTH-050)",
+        "group": "Grup Nusantara",
+        "nib": "9541472178701",
+        "npwp": "61.534.220.8-294.402",
         "hgu_number": null,
-        "pbp_number": "SK.5256/MENLHK-PKTL/PBPH/2019",
-        "permit_status": "suspended",
-        "concession_area_ha": 5555.2,
+        "pbp_number": "SK.6459/MENLHK-PKTL/PBPH/2005",
+        "permit_status": "expired",
+        "concession_area_ha": 4262.9,
         "province": "Jambi",
         "kabupaten": "Tebo",
         "beneficial_owners": [
-          "Kartika Saputra",
-          "Rahmat Halim"
+          "Wulan Utami",
+          "Wulan Pratama"
         ],
         "certifications": [],
         "sanctions": [
-          "2018 permit suspension (synthetic)"
+          "2020 permit suspension (synthetic)"
         ],
         "synthetic": true,
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
-      "expected_archetype": "high_risk"
+      "consignment": {
+        "supplier_id": "SUP-050",
+        "commodity": "wood",
+        "description": "Bleached hardwood kraft pulp (synthetic consignment)",
+        "hs_heading": "4703",
+        "species_scientific": "Acacia mangium",
+        "species_common": "Acacia",
+        "net_weight_kg": 51458661.6,
+        "supplementary_unit": 57176.291,
+        "supplementary_unit_qualifier": "MTQ",
+        "production_place": "Block 50 — Jambi lowland forest (SYNTH)",
+        "harvest_year": 2024,
+        "synthetic": true,
+        "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
+      },
+      "expected_archetype": "high_risk",
+      "expected_signal": "legal",
+      "expected_ambiguity": null
     }
   ]
 }

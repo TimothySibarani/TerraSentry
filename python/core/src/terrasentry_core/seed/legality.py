@@ -11,7 +11,7 @@ import random
 from typing import Literal
 
 from terrasentry_core.seed.regions import Region
-from terrasentry_core.seed.schemas import Archetype, LegalityRecord
+from terrasentry_core.seed.schemas import AmbiguityReason, Archetype, LegalityRecord
 
 _PREFIX_WORDS = ("Sawit", "Hutan", "Agro", "Bumi", "Karya", "Sumber", "Mitra", "Anugerah")
 _SUFFIX_WORDS = ("Lestari", "Makmur", "Sejahtera", "Mandiri", "Jaya", "Perkasa", "Sentosa")
@@ -75,13 +75,24 @@ def generate_legality(
     index: int,
     archetype: Archetype,
     region: Region,
+    min_concession_ha: float = 0.0,
+    ambiguity: AmbiguityReason | None = None,
 ) -> LegalityRecord:
-    """Build one synthetic supplier/permit record shaped by the target archetype."""
+    """Build one synthetic supplier/permit record shaped by the target archetype.
+
+    ``min_concession_ha`` is the plot area the concession must contain, so the
+    generated record can never claim a concession smaller than its plot.
+    ``ambiguity="permit_gap"`` records keep an active status but omit both permit
+    numbers, which is the conflicting signal the ambiguous archetype is meant to
+    exercise.
+    """
     company = f"PT {rng.choice(_PREFIX_WORDS)} {rng.choice(_SUFFIX_WORDS)} {rng.choice(_GROUP_WORDS)}"
     trading = f"{company.removeprefix('PT ')} (SYNTH-{index:03d})"
     year = rng.randint(2005, 2020)
     hgu_number = f"HGU No. {rng.randint(10, 999)}/HGU/BPN/{year}"
     pbp_number = f"SK.{rng.randint(100, 9999)}/MENLHK-PKTL/PBPH/{year}"
+    concession_low = max(500.0, min_concession_ha * 1.2)
+    concession_high = max(18_000.0, concession_low + 500.0)
 
     permit_status: Literal["active", "expired", "suspended", "none"]
     certifications: list[str]
@@ -106,7 +117,10 @@ def generate_legality(
         permit_status = "active"
         certifications = rng.sample(["ISPO", "RSPO"], k=1)
         sanctions = []
-        hgu, pbp = hgu_number, pbp_number if rng.random() < 0.5 else None
+        if ambiguity == "permit_gap":
+            hgu, pbp = None, None
+        else:
+            hgu, pbp = hgu_number, pbp_number if rng.random() < 0.5 else None
 
     return LegalityRecord(
         supplier_id=supplier_id,
@@ -118,7 +132,7 @@ def generate_legality(
         hgu_number=hgu,
         pbp_number=pbp,
         permit_status=permit_status,
-        concession_area_ha=round(rng.uniform(500.0, 18_000.0), 1),
+        concession_area_ha=round(rng.uniform(concession_low, concession_high), 1),
         province=region.province,
         kabupaten=region.kabupaten,
         beneficial_owners=[_person(rng), _person(rng)],

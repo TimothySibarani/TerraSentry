@@ -101,9 +101,10 @@ TerraSentry/
 │   │       ├── seed/                 (M1) deterministic synthetic seed generator
 │   │       ├── reference/            (M1) parity baseline over the same GFW/FIRMS tools
 │   │       ├── tools/                (planned) tool functions exposed to Strands
-│   │       ├── evidence.py           (planned) citation ledger
-│   │       ├── scoring.py            (planned) deterministic rubric
-│   │       └── dds.py                (planned) TRACES-aligned payload builder
+│   │       ├── evidence.py           citation ledger (M2)
+│   │       ├── scoring.py            deterministic rubric (M2)
+│   │       ├── dds.py                EUDR/TRACES V3-aligned payload builder (M2)
+│   │       └── assessment/           M2 scoring pipeline + CLI over reference runs
 │   └── integrations/                 terrasentry-integrations (uv member)
 │       └── src/terrasentry_integrations/
 │           ├── sources/              GFW/Hansen, NASA FIRMS clients (+ shared http.py)
@@ -530,7 +531,7 @@ web app only receives `VITE_*` values at build time.
 | Independent Verifier | Real (LLM cross-check) | `python/core/.../agents/verifier.py` |
 | Legality & Entity | Simulated, labelled | `data/seed/` + legality specialist |
 | Supervisor | Real (Strands graph) | `python/core/.../agents/supervisor.py` |
-| Compliance & DDS Writer | Real (JSON/XML) | `python/core/.../dds.py` (planned) |
+| Compliance & DDS Writer | Real (JSON/XML) | `python/core/.../dds.py` |
 | SAP actions | Sandbox or stub, disclosed | `python/integrations/.../sap/` with `SAP_MODE` |
 | 2 live scenarios | Real data, full trace | seeded polygons in `data/seed/` + fixtures cache |
 | 50-record batch | Real GFW/FIRMS calls per record, synthetic legality | `apps/api` batch worker + `data/seed/` |
@@ -628,6 +629,15 @@ a Redis response cache; the GFW async batch path; deterministic seed data (8 dem
 30/12/8 batch with synthetic legality); the reference pipeline (`python -m terrasentry_core.reference`);
 the preflight probe (`python -m terrasentry_integrations.preflight`); and the setup runbooks under
 `docs/setup/`. The live probe and reference run are pending API keys (see `docs/milestones.md` §3).
+
+M2 landed (2026-09-11): the deterministic core in `domain/`, `evidence.py`, `scoring.py`, and
+`dds.py`, plus the `assessment/` pipeline and CLI. The rubric is config-driven (`RubricConfig`, no
+clock/network/model), the ledger uses content-hash ids and source timestamps, and the DDS builder
+mirrors the public EUDR Information System V3 operator API (SOAP `SubmitDdsRequest` namespaces and
+the GeoJSON >4 ha polygon rule) in both JSON and XML. `python -m terrasentry_core.assessment` scores
+an M1 reference run and writes per-record DDS/evidence artifacts plus a `summary.json` breakdown that
+M6 uses to calibrate thresholds against live data. 85 pytest tests green; the committed DDS golden
+fixture (`python/core/tests/fixtures/dds_reference.{json,xml}`) locks the shape.
 
 ---
 

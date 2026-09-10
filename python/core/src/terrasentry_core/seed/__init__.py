@@ -8,12 +8,16 @@ from terrasentry_core.seed.generator import (
     demo_dataset,
     generate_batch,
     legality_dataset,
+    operator_dataset,
 )
 from terrasentry_core.seed.schemas import (
     BatchDataset,
     BatchRecord,
+    ConsignmentRecord,
     LegalityDataset,
     LegalityRecord,
+    OperatorDataset,
+    OperatorRecord,
     SeedDataset,
     SeedPolygon,
 )
@@ -23,11 +27,15 @@ __all__ = [
     "DEFAULT_RNG_SEED",
     "BatchDataset",
     "BatchRecord",
+    "ConsignmentRecord",
     "LegalityDataset",
     "LegalityRecord",
+    "OperatorDataset",
+    "OperatorRecord",
     "SeedDataset",
     "SeedPolygon",
     "demo_dataset",
     "generate_batch",
     "legality_dataset",
+    "operator_dataset",
 ]

@@ -36,6 +36,8 @@ data/fixtures/**
 !data/fixtures/.gitkeep
 data/runs/**
 !data/runs/.gitkeep
+data/dds/**
+!data/dds/.gitkeep
 data/preflight/**
 !data/preflight/.gitkeep
 *.tif
