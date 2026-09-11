@@ -238,6 +238,32 @@ class DdsDocument(Base):
     run: Mapped[Run] = relationship(back_populates="dds")
 
 
+class SapAction(Base):
+    """One ERP-side action triggered by a released verdict or human decision (M7).
+
+    Rows are the audit trail behind the closed loop and the source of truth the
+    stub replays at startup (latest action per supplier). ``real`` distinguishes
+    a sandbox/live SAP call from the schema-accurate stub, so the demo can state
+    exactly which happened.
+    """
+
+    __tablename__ = "sap_actions"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"), index=True)
+    supplier_id: Mapped[str] = mapped_column(String(64), index=True)
+    vendor_id: Mapped[str] = mapped_column(String(64))
+    mode: Mapped[str] = mapped_column(String(16), default="stub")
+    status: Mapped[str] = mapped_column(String(16))
+    purchasing_block: Mapped[bool] = mapped_column(Boolean, default=False)
+    real: Mapped[bool] = mapped_column(Boolean, default=False)
+    external_reference: Mapped[str | None] = mapped_column(String(255), default=None)
+    error: Mapped[str | None] = mapped_column(Text, default=None)
+    performed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    run: Mapped[Run] = relationship()
+
+
 __all__ = [
     "Base",
     "DdsDocument",
@@ -247,5 +273,6 @@ __all__ = [
     "Run",
     "RunStep",
     "RunVerdict",
+    "SapAction",
     "Supplier",
 ]

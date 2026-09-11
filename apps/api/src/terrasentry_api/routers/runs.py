@@ -86,6 +86,7 @@ async def get_run(run_id: str, session: SessionDep) -> RunDetail:
         verdict=await store.get_verdict(run_id),
         dds=await store.get_dds(run_id),
         steps=steps,
+        sap_action=await store.get_sap_action(run_id),
     )
 
 

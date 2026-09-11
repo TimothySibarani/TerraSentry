@@ -33,6 +33,7 @@ seed records with the source signals each archetype is designed to exercise.
 | Throughput | `record_count / wall_clock_seconds` | recorded baseline | `summary.throughput_records_per_second` | asserted present | 57.34 rec/s | pending §3 |
 | Design match | Expected archetype maps to its intended verdict (confusion diagonal) | 30 compliant / 12 high-risk / 8 ambiguous, exact | `summary.confusion`, `summary.verdict_breakdown` | 30/12/8 exact | 30/12/8 exact | pending §3 |
 | HITL under load | Ambiguous records paused for human review in the same batch | 8 held (`awaiting_review`) | `summary.states.awaiting_review` | 8 | 8 | pending §3 |
+| ERP gatekeeping | Vendor status actions applied by the batch (approved / blocked / failed) | 30 approved / 12 blocked / 0 failed for released verdicts | `summary.sap_actions` | 30/12/0 asserted | 30/12/0 | pending §3 |
 | Verifier coverage | Records accepted by the deterministic verify-before-write checks | 100% | `summary.states.failed` | 0 failed | 0 failed | pending §3 |
 | Offline replay | External calls on a re-run from primed fixtures | 0 misses | `summary.cache_stats.misses` / `offline_misses` | asserted 0 on replay | 0 misses, 100 hits | pending real fixtures |
 | Cycle acceleration | Manual pre-screen time vs system time per supplier | 98% (PRD §5) | n/a | baseline not defined | baseline not defined | pending baseline |
@@ -47,6 +48,9 @@ Notes:
   `batch_concurrency = 4`.
 - Cycle acceleration needs a documented manual baseline (minutes per supplier today). Do not
   publish a percentage until that baseline is agreed; the row stays "pending baseline".
+- ERP gatekeeping runs through `SapActionService` (M7). Until SAP access lands, `SAP_MODE=stub`
+  and every action carries `real: false` in `sap_actions` and the DDS `erpAction` extension;
+  the count is real, the endpoint is a disclosed schema-accurate stub.
 
 ## Reproduce
 

@@ -7,6 +7,7 @@ their own :class:`AppServices` and pass a factory to ``create_app``.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
@@ -18,6 +19,13 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_integrations.cache import CacheBackend, build_cache
 from terrasentry_integrations.fixtures import prime_fixtures
+from terrasentry_integrations.sap import (
+    SapGateway,
+    StubSapService,
+    build_sap_gateway,
+    resolve_sap_mode,
+    sap_mode_is_real,
+)
 from terrasentry_integrations.settings import IntegrationSettings, get_integration_settings
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
@@ -25,10 +33,12 @@ from terrasentry_integrations.sources.gfw import GfwClient
 from terrasentry_api.config import Settings
 from terrasentry_api.config import settings as default_settings
 from terrasentry_api.db import check_database, create_engine_and_session
-from terrasentry_api.mock_sap import MockSapStore
 from terrasentry_api.runner import RunManager
+from terrasentry_api.sap_actions import SapActionService
 from terrasentry_api.seed_loader import seed_if_empty
 from terrasentry_api.store import RunStore
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -44,12 +54,17 @@ class AppServices:
     firms: FirmsClient
     datasets: SeedDatasets
     run_manager: RunManager
-    mock_sap: MockSapStore
+    sap: SapGateway
+    sap_stub: StubSapService
+    sap_actions: SapActionService
+    sap_mode: str
+    sap_real: bool
     offline: bool = False
     fixtures_loaded: int = 0
 
     async def aclose(self) -> None:
         await self.run_manager.shutdown()
+        await self.sap.close()
         await self.gfw.close()
         await self.firms.close()
         await self.cache.close()
@@ -74,6 +89,7 @@ async def build_services(
     cache = build_cache(resolved, offline=resolved.cache_offline)
     gfw = GfwClient(resolved, cache=cache)
     firms = FirmsClient(resolved, cache=cache)
+    sap: SapGateway | None = None
     try:
         await check_database(engine, settings.database_url)
         fixtures_loaded = 0
@@ -86,6 +102,21 @@ async def build_services(
         if settings.auto_seed:
             async with session_factory() as session:
                 await seed_if_empty(RunStore(session), datasets)
+        # Replay the persisted ERP action log into the stub so a status flip
+        # survives an API restart, then select the configured SAP transport.
+        sap_stub = StubSapService(record.supplier_id for record in datasets.records)
+        async with session_factory() as session:
+            sap_stub.restore(await RunStore(session).latest_vendor_states())
+        sap_mode = resolve_sap_mode(resolved)
+        sap_real = sap_mode_is_real(sap_mode)
+        if sap_real and not resolved.has_sap_credentials:
+            logger.warning(
+                "SAP_MODE=%s is selected but its credentials are incomplete; "
+                "ERP actions will be recorded as failed until they are configured",
+                sap_mode,
+            )
+        sap = build_sap_gateway(resolved, stub=sap_stub)
+        sap_actions = SapActionService(gateway=sap, mode=sap_mode)
         run_manager = RunManager(
             settings=settings,
             session_factory=session_factory,
@@ -93,6 +124,7 @@ async def build_services(
             gfw=gfw,
             firms=firms,
             cache=cache,
+            sap=sap_actions,
         )
         services = AppServices(
             settings=settings,
@@ -104,11 +136,17 @@ async def build_services(
             firms=firms,
             datasets=datasets,
             run_manager=run_manager,
-            mock_sap=MockSapStore(record.supplier_id for record in datasets.records),
+            sap=sap,
+            sap_stub=sap_stub,
+            sap_actions=sap_actions,
+            sap_mode=sap_mode,
+            sap_real=sap_real,
             offline=resolved.cache_offline,
             fixtures_loaded=fixtures_loaded,
         )
     except BaseException:
+        if sap is not None:
+            await sap.close()
         await gfw.close()
         await firms.close()
         await cache.close()

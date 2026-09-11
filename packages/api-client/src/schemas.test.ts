@@ -17,10 +17,13 @@ describe("HealthResponse", () => {
         status: "ok",
         offline: false,
         fixtures_loaded: 0,
+        sap_mode: "stub",
+        sap_real: false,
       });
       assert.strictEqual(health.status, "ok");
       assert.strictEqual(health.offline, false);
       assert.strictEqual(health.fixtures_loaded, 0);
+      assert.strictEqual(health.sap_mode, "stub");
     }),
   );
 
@@ -63,6 +66,35 @@ const step = {
   detail: "REC-001",
   at: "2026-09-11T10:00:00Z",
   payload: {},
+};
+
+const sapStep = {
+  step_id: "STEP-002",
+  kind: "sap",
+  name: "sap_action",
+  detail: "SUP-001: approved via stub (stub)",
+  at: "2026-09-11T10:00:01Z",
+  payload: {
+    vendor_id: "SUP-001",
+    status: "approved",
+    purchasing_block: false,
+    mode: "stub",
+    real: false,
+    error: null,
+  },
+};
+
+const sapAction = {
+  run_id: "run-1",
+  supplier_id: "SUP-001",
+  vendor_id: "SUP-001",
+  mode: "stub",
+  status: "approved",
+  purchasing_block: false,
+  real: false,
+  external_reference: null,
+  error: null,
+  performed_at: "2026-09-11T10:00:01Z",
 };
 
 const assessment = {
@@ -121,6 +153,7 @@ const batchSummary = {
     ambiguous: { compliant: 0, high_risk: 0, ambiguous: 8 },
   },
   batch_concurrency: 4,
+  sap_actions: { approved: 30, blocked: 12, failed: 0 },
   started_at: "2026-09-11T10:00:00Z",
   finished_at: "2026-09-11T10:02:03Z",
   metrics: {},
@@ -137,6 +170,7 @@ describe("BatchSummary", () => {
       assert.strictEqual(summary.confusion.ambiguous?.ambiguous, 8);
       assert.strictEqual(summary.cache_stats?.offline_misses, 0);
       assert.strictEqual(summary.batch_concurrency, 4);
+      assert.strictEqual(summary.sap_actions.blocked, 12);
     }),
   );
 });
@@ -162,7 +196,8 @@ describe("RunDetail", () => {
         },
         pending_assessment: null,
         review: null,
-        steps: [step],
+        sap_action: sapAction,
+        steps: [step, sapStep],
         dds: {
           released: true,
           schema_version: "eudr-is-v3",
@@ -171,6 +206,9 @@ describe("RunDetail", () => {
       });
       assert.strictEqual(detail.assessment?.assessment.verdict, "compliant");
       assert.strictEqual(detail.steps[0]?.name, "queued");
+      assert.strictEqual(detail.steps[1]?.kind, "sap");
+      assert.strictEqual(detail.sap_action?.status, "approved");
+      assert.strictEqual(detail.sap_action?.real, false);
       assert.isTrue(detail.dds?.released);
     }),
   );

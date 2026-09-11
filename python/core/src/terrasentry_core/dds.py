@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import base64
 import json
+from datetime import datetime
 from typing import Any
 from xml.etree import ElementTree as ET
 
@@ -188,6 +189,28 @@ class DdsAssessmentSummary(BaseModel):
     data_gaps: list[str] = Field(default_factory=list)
 
 
+class ErpAction(BaseModel):
+    """TerraSentry extension: the ERP action a released verdict triggered (M7).
+
+    ``real`` is False for the schema-accurate stub and True for a sandbox/live
+    SAP endpoint, so the dossier itself states exactly what happened. A failed
+    action is recorded with ``status="failed"`` and ``error`` set; the DDS stays
+    released because the compliance decision does not depend on ERP uptime.
+    """
+
+    model_config = _EUDR_MODEL_CONFIG
+
+    vendor_id: str
+    status: str
+    purchasing_block: bool = False
+    mode: str = "stub"
+    real: bool = False
+    external_reference: str | None = None
+    performed_at: datetime | None = None
+    disclosure: str = ""
+    error: str | None = None
+
+
 class DdsDocument(BaseModel):
     """One DDS plus the audit extension; never submitted as-is."""
 
@@ -200,10 +223,12 @@ class DdsDocument(BaseModel):
     citations: dict[str, list[str]] = Field(default_factory=dict)
     disclosures: list[str] = Field(default_factory=list)
     synthetic: bool = True
+    erp_action: ErpAction | None = None
 
     def to_json(self, *, indent: int = 2) -> str:
         """The dossier (EUDR field names, camelCase) plus the audited extension."""
-        payload = self.model_dump(mode="json", by_alias=True)
+        exclude = {"erp_action"} if self.erp_action is None else None
+        payload = self.model_dump(mode="json", by_alias=True, exclude=exclude)
         return json.dumps(payload, indent=indent, ensure_ascii=False) + "\n"
 
     def to_xml(self) -> str:

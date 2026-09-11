@@ -6,6 +6,7 @@ import { useMemo } from "react";
 
 import { ErrorState } from "#/components/error-state";
 import { PageHeader } from "#/components/page-header";
+import { SapActionCard } from "#/components/sap-panel";
 import { RunStateBadge, VerdictBadge } from "#/components/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
@@ -183,6 +184,10 @@ function RunDetailScreen({ runId }: { runId: string }) {
 					value={formatDateTime(record.started_at ?? record.created_at)}
 				/>
 			</div>
+
+			{record.kind !== "batch" ? (
+				<SapActionCard action={record.sap_action} />
+			) : null}
 
 			<Tabs
 				value={tab}

@@ -7,10 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """API-owned configuration.
 
-    Source credentials, cache settings, and Bedrock model ids have canonical
-    homes in ``terrasentry_integrations.settings`` and
+    Source credentials, cache settings, SAP mode, and Bedrock model ids have
+    canonical homes in ``terrasentry_integrations.settings`` and
     ``terrasentry_core.agents.settings``; they are intentionally not duplicated
-    here. ``sap_*`` is reserved for the M7 closed loop.
+    here.
     """
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -33,9 +33,6 @@ class Settings(BaseSettings):
     # ISO date; pins source date windows so prefetched fixtures stay valid for
     # a later offline rehearsal (M6). Empty means "use the wall clock".
     rehearsal_as_of: str = ""
-
-    sap_mode: str = "stub"
-    sap_base_url: str = ""
 
     @property
     def cors_origins(self) -> list[str]:

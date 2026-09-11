@@ -233,6 +233,7 @@ def print_report(report: dict[str, Any]) -> None:
     print(f"throughput   {summary.get('throughput_records_per_second')} records/s")
     print(f"breakdown    {summary.get('verdict_breakdown')}  expected {summary.get('expected_breakdown')}")
     print(f"confusion    {metrics.get('confusion')}")
+    print(f"erp          {metrics.get('sap_actions')}")
     print(f"cache        {metrics.get('cache_stats')}")
 
 

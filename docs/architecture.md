@@ -86,7 +86,7 @@ TerraSentry/
 │   │   │   ├── services.py           lifespan-owned app services + dependencies (M4)
 │   │   │   ├── schemas.py            API request/response models (M4)
 │   │   │   ├── seed_loader.py        idempotent seed upsert (M4)
-│   │   │   ├── mock_sap.py           in-memory SAP stub for the M7 gateway
+│   │   │   ├── sap_actions.py        M7 closed loop: verdict -> ERP action + disclosure
 │   │   │   ├── export_openapi.py     dumps OpenAPI for the TS client
 │   │   │   └── routers/              health, suppliers, runs, batch, dds, mock_sap
 │   │   └── tests/                    TestClient suites on SQLite + respx
@@ -358,20 +358,28 @@ evidence ledger with a source, artifact, and retrieval timestamp.
 
 ### 5.7 SAP integration
 
-**Decision:** define `SapGateway` as a Python protocol (already in
-`python/integrations/.../sap/__init__.py`) with three implementations selected by `SAP_MODE`:
+**Decision:** `SapGateway` is a Python protocol in
+`python/integrations/.../sap/protocol.py` with three implementations selected by `SAP_MODE`:
 
-1. `sandbox` — real calls to SAP API Business Hub / BTP trial via httpx and OData payloads.
-2. `stub` — a FastAPI router that serves API Hub-accurate payload shapes (PRD Option 2).
-3. `live` — reserved for a tenant with credentials.
+1. `stub` — `StubSapService`, an in-process vendor registry with API-Hub-accurate
+   `A_Supplier`/`A_BusinessPartner` payloads, also served by the API's `/mock-sap` router
+   (PRD Option 2). This is the demo path when no live tenant is available.
+2. `sandbox` — `HttpSapClient` calling the Business Accelerator Hub with an `APIKey` header.
+3. `live` — `HttpSapClient` calling a tenant or BTP Integration Suite endpoint with a cached
+   OAuth client-credentials token.
+
+The API does not talk to the gateway directly: `apps/api/.../sap_actions.py` maps a released
+verdict (or HITL decision) to an action, records it in the `sap_actions` audit table, replays the
+latest state into the stub at startup, adds a `sap` trace step, and attaches an `erpAction`
+extension block to the released DDS. An ERP failure is recorded but never fails the compliance run.
 
 **Why:** the PRD's decision tree is about access, not code. A single protocol keeps the agent code
 identical whether the action is real, sandbox, or stub, and the demo can state the boundary
-honestly.
+honestly (`sap_mode`/`sap_real` on `/health`, `real` on every action and DDS extension).
 
 **Rejected:** SAP Cloud SDK for JavaScript/Java (`@sap-cloud-sdk/http-client`, `odata-v4`) — solid
 tooling, but it would force a TypeScript integration service for one or two endpoints. Plain HTTP +
-Pydantic models generated from the published OData metadata is enough at this scope.
+Pydantic models mirroring the published OData metadata is enough at this scope.
 
 ### 5.8 Contracts: OpenAPI -> TypeScript
 
@@ -568,7 +576,7 @@ web app only receives `VITE_*` values at build time.
 | Legality & Entity | Simulated, labelled | `data/seed/` + legality specialist |
 | Supervisor | Real (Strands graph) | `python/core/.../agents/supervisor.py` |
 | Compliance & DDS Writer | Real (JSON/XML) | `python/core/.../dds.py` |
-| SAP actions | Sandbox or stub, disclosed | `python/integrations/.../sap/` with `SAP_MODE` |
+| SAP actions | Stub by default (schema-accurate); sandbox/live ready and disclosed per action | `python/integrations/.../sap/` + `apps/api/.../sap_actions.py` |
 | 2 live scenarios | Real data, full trace | seeded polygons in `data/seed/` + fixtures cache |
 | 50-record batch | Real GFW/FIRMS calls per record, synthetic legality | `apps/api` batch worker + `data/seed/` |
 
@@ -744,13 +752,30 @@ rows from the latest completed batch. Verification is offline at three levels (f
 design-signal API test, fixture-replay test with zero external calls, local CLI smoke over mock
 fixtures); real numbers wait on the §3 Day-1 keys.
 
+M7 landed (2026-09-11; stub path, sandbox live check post-access): the closed loop is real.
+`python/integrations/.../sap/` is now a package — `SapGateway` protocol, `StubSapService`
+with API-Hub-accurate `A_Supplier`/`A_BusinessPartner` payloads exposed by the `/mock-sap`
+router, and `HttpSapClient` for the Hub sandbox (APIKey) and live tenants (cached OAuth
+client-credentials), selected by `SAP_MODE` through a factory. `SapActionService` in the API
+maps final verdicts to ERP actions (compliant → approved; high_risk → blocked + purchasing
+block; HITL approve → approved, override → blocked) and runs for scenario runs, every batch
+record, and the decision path. Actions persist in the new `sap_actions` table (Alembic
+`fa63e54f2542`), replay into the stub at startup, stream as a `sap` trace step, and attach an
+`erpAction` extension to the released DDS. An ERP outage is recorded as `failed` without
+failing the run. The contract regenerated with `RunDetail.sap_action`, `SupplierDetail.sap`,
+batch `sap_actions` counts, and `/health` `sap_mode`/`sap_real`; the cockpit adds run and
+supplier ERP cards, an SAP mode badge, the `sap` trace icon, and ERP counts on the batch
+throughput card. The stub payload field names were checked against the S/4HANA
+`API_BUSINESS_PARTNER` docs (`PurchasingIsBlocked`, `PostingIsBlocked`,
+`PaymentIsBlockedForSupplier`, `BusinessPartnerIsBlocked`).
+
 ---
 
 ## 12. Open questions to revisit
 
 | Question | Impact | Trigger to revisit |
 | --- | --- | --- |
-| SAP access: API Hub sandbox or BTP trial obtained? | `SAP_MODE=sandbox` vs `stub` | Day 1 access check |
+| SAP access: API Hub sandbox or BTP trial obtained? | `SAP_MODE=sandbox` vs `stub` | Resolved 2026-09-11: no access in the build environment → `stub`; promote by setting `SAP_MODE` + credentials (no code change) |
 | Which Bedrock region and model IDs are enabled? | Config only | Day 1 model-access check |
 | Does GFW expose a bulk/async query endpoint for 50 polygons? | Batch wall-clock time | First 10-record pipeline run |
 | Is Neon acceptable for team dev, or install Postgres? | Dev setup friction | Team environment review |

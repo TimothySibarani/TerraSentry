@@ -14,6 +14,8 @@ export function healthQuery() {
 						status: health.status,
 						offline: health.offline,
 						fixturesLoaded: health.fixtures_loaded,
+						sapMode: health.sap_mode,
+						sapReal: health.sap_real,
 					})),
 					Effect.catch(() =>
 						Effect.succeed({
@@ -21,6 +23,8 @@ export function healthQuery() {
 							status: "unreachable",
 							offline: false,
 							fixturesLoaded: 0,
+							sapMode: "unknown",
+							sapReal: false,
 						}),
 					),
 				),
