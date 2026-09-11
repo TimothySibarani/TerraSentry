@@ -79,8 +79,8 @@
         "points": 50,
         "detail": "post-2021 tree cover loss 12.00 ha (2.40% of plot) in 2021-2025",
         "evidenceIds": [
-          "EV-global_forest_watch-5d522619ea10",
-          "EV-global_forest_watch-4109c1baa504",
+          "EV-global_forest_watch-41cfe8ef234d",
+          "EV-global_forest_watch-d83e2a23701f",
           "EV-deterministic_rubric-4349f4915c80"
         ]
       },
@@ -90,9 +90,9 @@
         "points": 30,
         "detail": "2 fire detection(s), 30.0 MW FRP, window 2026-09-01..2026-09-01; last detection 0d before window end",
         "evidenceIds": [
-          "EV-nasa_firms-b3676ef42822",
-          "EV-nasa_firms-bb31f39c5470",
-          "EV-nasa_firms-83b936214d9d",
+          "EV-nasa_firms-c16d5220cdff",
+          "EV-nasa_firms-c56af4db5fcc",
+          "EV-nasa_firms-8cc81ded1901",
           "EV-deterministic_rubric-0dfd2ba1b78c"
         ]
       },

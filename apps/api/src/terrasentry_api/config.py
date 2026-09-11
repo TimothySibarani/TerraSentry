@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/terrasentry"
 
     aws_region: str = "us-east-1"
-    bedrock_model_orchestrator: str = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
-    bedrock_model_extraction: str = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+    bedrock_model_orchestrator: str = ""
+    bedrock_model_extraction: str = ""
 
     gfw_api_key: str = ""
     gfw_api_base_url: str = "https://data-api.globalforestwatch.org"

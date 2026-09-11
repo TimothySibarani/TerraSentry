@@ -1,0 +1,86 @@
+"""Shared GFW/FIRMS fetch used by the reference pipeline and the agent tools.
+
+Architecture cross-cutting rule 5: the deterministic reference run and the M3
+agent path must call the same source code, so their structured outputs can be
+compared field for field. Nothing here invents values; the functions wrap the
+M1 clients and tolerate per-source failures exactly like the reference did.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+
+from pydantic import BaseModel, Field
+from terrasentry_integrations.errors import SourceError
+from terrasentry_integrations.sources.firms import FirmsClient, FirmsHotspotResult
+from terrasentry_integrations.sources.gfw import GfwClient, TreeCoverLossResult
+
+from terrasentry_core.seed.schemas import SeedPolygon
+
+
+class LossWindow(BaseModel):
+    """Resolved GFW tree-cover-loss query window.
+
+    The dataset lags one calendar year, so ``from_now`` resolves the window once
+    per run and callers pass it explicitly to keep multi-polygon runs consistent
+    across a year boundary.
+    """
+
+    start_year: int
+    end_year: int
+
+    @classmethod
+    def from_now(cls, years: int = 5, *, now: datetime | None = None) -> LossWindow:
+        if years < 1:
+            raise ValueError("years must be >= 1")
+        end_year = (now or datetime.now(tz=UTC)).year - 1
+        return cls(start_year=end_year - years + 1, end_year=end_year)
+
+
+class PolygonSources(BaseModel):
+    """One polygon's real source results plus any per-source failures."""
+
+    polygon_id: str
+    loss: TreeCoverLossResult | None = None
+    hotspots: FirmsHotspotResult | None = None
+    errors: list[str] = Field(default_factory=list)
+
+    @property
+    def complete(self) -> bool:
+        """True when both real sources answered for this polygon."""
+        return self.loss is not None and self.hotspots is not None
+
+
+async def fetch_polygon_sources(
+    polygon: SeedPolygon,
+    *,
+    gfw: GfwClient,
+    firms: FirmsClient,
+    window_days: int = 30,
+    loss_window: LossWindow | None = None,
+    refresh: bool = False,
+) -> PolygonSources:
+    """Fetch real GFW/FIRMS data for one polygon, tolerating per-source failures."""
+    resolved = loss_window or LossWindow.from_now()
+    sources = PolygonSources(polygon_id=polygon.id)
+    try:
+        sources.loss = await gfw.tree_cover_loss(
+            polygon.geometry,
+            start_year=resolved.start_year,
+            end_year=resolved.end_year,
+            refresh=refresh,
+        )
+    except SourceError as exc:
+        sources.errors.append(str(exc))
+    try:
+        sources.hotspots = await firms.hotspots_in_polygon(
+            polygon.geometry,
+            days=window_days,
+            refresh=refresh,
+        )
+    except SourceError as exc:
+        sources.errors.append(str(exc))
+    return sources
+
+
+__all__ = ["LossWindow", "PolygonSources", "fetch_polygon_sources"]

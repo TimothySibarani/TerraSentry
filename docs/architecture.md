@@ -54,7 +54,7 @@ the UI as a cockpit over a Python-owned API.
 | Database | PostgreSQL 16+ (Neon for dev, RDS/Aurora Serverless v2 for AWS) | `postgresql+asyncpg://` |
 | Source response cache | Redis with per-entry TTL (in-memory backend for tests) | `redis` (M1), facade in `python/integrations/.../cache.py` |
 | Agent framework | Strands Agents SDK on Bedrock; multi-agent graph | `strands-agents`, `boto3` |
-| Models | Claude Sonnet 4.5 (orchestrator/verifier), Claude Haiku 4.5 (extraction) | `BedrockModel(model_id=...)` |
+| Models | Role-based routing: one orchestrator/verifier model, one extraction model | `BedrockModel`; ids from `BEDROCK_MODEL_*` env |
 | Geo / math | Shapely, pyproj | `shapely`, `pyproj` |
 | HTTP sources | Async httpx with rate limiting, retry, and caching | `httpx`, `tenacity`, `aiolimiter` |
 | API-to-web contract | FastAPI OpenAPI -> generated TS types, Effect Schema at runtime | `openapi-typescript`, `effect/Schema` |
@@ -96,11 +96,11 @@ TerraSentry/
 ├── python/
 │   ├── core/                         terrasentry-core (uv member)
 │   │   └── src/terrasentry_core/
-│   │       ├── agents/               supervisor, specialists, verifier
+│   │       ├── agents/               supervisor, specialists, verifier, nodes, orchestrator
 │   │       ├── domain/               models, enums, verdict types
 │   │       ├── seed/                 (M1) deterministic synthetic seed generator
 │   │       ├── reference/            (M1) parity baseline over the same GFW/FIRMS tools
-│   │       ├── tools/                (planned) tool functions exposed to Strands
+│   │       ├── tools/                (M3) shared source/seed tools + run trace
 │   │       ├── evidence.py           citation ledger (M2)
 │   │       ├── scoring.py            deterministic rubric (M2)
 │   │       ├── dds.py                EUDR/TRACES V3-aligned payload builder (M2)
@@ -182,7 +182,7 @@ TerraSentry/
                   v                    +  external APIs    |
         +--------------------+         +-------------------+
         | Amazon Bedrock     |
-        | Claude Sonnet/Haiku|
+        | configured models  |
         +--------------------+
                   |
                   v  (stretch)
@@ -201,17 +201,31 @@ DDS payload is generated -> the run ends `complete` or `awaiting_review`. The UI
 **Agent graph (Strands):**
 
 ```
-supervisor ──tools──> geospatial_analyst
-           ──tools──> thermal_anomaly
-           ──tools──> legality_entity (synthetic data, disclosed)
-           ──tools──> verifier  (independent: re-derives and challenges claims)
-                     └──> dds_writer (only after verifier accepts, or human override)
+supervisor (orchestrator model, agents-as-tools)
+   ├── geospatial_analyst (extraction model) ── get_tree_cover_loss(polygon_id) ─┐
+   ├── thermal_analyst    (extraction model) ── get_fire_hotspots(polygon_id)    ├─ shared tools/
+   └── legality_analyst   (extraction model) ── get_legality_record/consignment  ┘  (ids only)
+        │
+        v
+   assessor (deterministic)  -> candidate Assessment + ledger + DDS draft
+        │
+        v
+   verifier (orchestrator model + deterministic checks) -> re-derives metrics,
+        │                                                  validates citations,
+        │                                                  challenges the summary
+        │ accepted edge only
+        v
+   dds_writer (deterministic) -> releases the DDS, or withholds it for
+                                 `awaiting_review` (human approve/override)
 ```
 
 Strands' **agents-as-tools** pattern gives the supervisor explicit delegation, and its **Graph**
-builder gives a deterministic verify-before-write edge. The verifier is a separate agent with a
-different prompt and no write access to the ledger, so "verification is a real step" is structurally
-true, not decorative.
+builder gives the verify-before-write edge: `dds_writer` only runs when the verifier's
+`VerificationReport.accepted` is true. The verifier is a separate agent with a different prompt and
+only read tools over the evidence ledger, so "verification is a real step" is structurally true,
+not decorative. Ambiguous verdicts keep the DDS in `pending_assessment` until a human decision is
+recorded through the M2 run-state machine. Everything the model sees comes from ids-only tools; the
+rubric always computes the score.
 
 ---
 
@@ -310,14 +324,16 @@ prototype as the reference implementation for parity tests).
 
 ### 5.6 AI models and routing
 
-| Job | Model | Rationale |
+| Job | Role | Rationale |
 | --- | --- | --- |
-| Supervisor decisions, verification, final synthesis | Claude Sonnet 4.5 | low volume, high judgement |
-| Extraction/normalisation (names, legal fields, units) | Claude Haiku 4.5 | high volume, low judgement, cheap |
+| Supervisor decisions, verification, final synthesis | `orchestrator` model | low volume, high judgement |
+| Extraction/normalisation (names, legal fields, units) | `extraction` model | high volume, low judgement, cheap |
 
-Model IDs are configuration (`BEDROCK_MODEL_ORCHESTRATOR`, `BEDROCK_MODEL_EXTRACTION`) and use
-cross-region inference profiles (`global.` prefix) so a region change does not break the demo.
-Verify model access and current IDs in the target account before build day (PRD risk table).
+The concrete Bedrock model for each role is configuration, not code:
+`BEDROCK_MODEL_ORCHESTRATOR` and `BEDROCK_MODEL_EXTRACTION` are required for the live agent path
+(`--model bedrock`) and accept plain model IDs or cross-region inference profiles, so changing the
+model is an `.env` edit. Verify model access and current IDs in the target account before build day
+(PRD risk table).
 
 **Non-negotiable:** the model never produces the risk score. `scoring.py` computes it from structured
 tool outputs; the model writes the explanation. Every claim in the dossier must pass through the
@@ -580,6 +596,8 @@ pnpm gen:api    # regenerate packages/api-client from the FastAPI schema
 uv run python -m terrasentry_integrations.preflight   # live source probe (needs API keys)
 uv run python -m terrasentry_core.reference            # live run, then cached
 uv run python -m terrasentry_core.reference --offline  # zero external calls
+uv run python -m terrasentry_core.agents --record REC-001 --model scripted
+uv run python -m terrasentry_core.agents --scenario high_risk_live --model bedrock  # live agents
 ```
 
 Before writing Effect code, read `node_modules/effect/AGENTS.md` (required by the repo `AGENTS.md`).
@@ -638,6 +656,20 @@ the GeoJSON >4 ha polygon rule) in both JSON and XML. `python -m terrasentry_cor
 an M1 reference run and writes per-record DDS/evidence artifacts plus a `summary.json` breakdown that
 M6 uses to calibrate thresholds against live data. 85 pytest tests green; the committed DDS golden
 fixture (`python/core/tests/fixtures/dds_reference.{json,xml}`) locks the shape.
+
+M3 landed (2026-09-11): the agent stack in `tools/` and `agents/`. `tools/sources.py` is the single
+GFW/FIRMS fetch now used by both `reference/` and the agent tools; `tools/agent_tools.py` exposes
+ids-only Strands tools plus read-only verifier tools; `agents/` adds Bedrock model routing
+(`ModelBundle`, `AgentSettings`), a deterministic `ScriptedModel`/`AutopilotResponder` for offline
+runs, the agents-as-tools supervisor, specialists, a verifier node that re-derives metrics and
+validates citations before an LLM review, and `RunOrchestrator` with the graph verify-before-write
+edge and the `awaiting_review`/resume HITL seam. `python -m terrasentry_core.agents` runs a record
+end-to-end (exit 0 complete / 2 awaiting review / 1 failed). Parity is asserted per record against
+the reference pipeline (identical `Assessment`, fingerprint, and DDS) on shared mock data; verifier
+catches and HITL are covered. Since parity compares live against cached runs, an M2 defect was
+fixed: `cached` is no longer part of the hashed evidence artifact (`EvidenceEntry.cached` outside
+the hash), so cached re-runs are fingerprint-identical. 108 Python tests green; the live Bedrock
+path waits on the §3 model-access gate and the `BEDROCK_MODEL_*` ids chosen for the environment.
 
 ---
 

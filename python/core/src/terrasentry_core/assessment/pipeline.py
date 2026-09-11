@@ -29,7 +29,7 @@ from terrasentry_core.domain.run_state import state_for_verdict
 from terrasentry_core.errors import CoreError
 from terrasentry_core.evidence import EvidenceEntry, build_source_ledger
 from terrasentry_core.reference.pipeline import PolygonReport, ReferenceRun
-from terrasentry_core.scoring import RUBRIC_VERSION, assess, fingerprint
+from terrasentry_core.scoring import RUBRIC_VERSION, RubricConfig, assess, fingerprint
 from terrasentry_core.seed.schemas import (
     AmbiguityReason,
     Archetype,
@@ -164,11 +164,12 @@ def assess_record(
     operator: OperatorRecord,
     *,
     retrieved_at: datetime | None = None,
+    config: RubricConfig | None = None,
 ) -> RecordAssessment:
     """Score one record and build its DDS, validating every citation."""
     input = to_input(report, record, operator)
     ledger = build_source_ledger(input, retrieved_at=retrieved_at)
-    assessment = assess(input, ledger)
+    assessment = assess(input, ledger, config=config)
     document = build_dds(input, assessment, ledger)
     validate_citations(document, ledger)
     return RecordAssessment(

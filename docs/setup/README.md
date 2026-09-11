@@ -14,7 +14,7 @@ Operational guides for getting every external dependency working without spendin
 Work top to bottom; record each result in `docs/milestones.md` §3.
 
 - [ ] Create AWS account (Free plan) + MFA + budget alert — [aws.md](./aws.md)
-- [ ] Submit Anthropic use-case form in Bedrock **once** (inherited by the org) — [aws.md](./aws.md)
+- [ ] Submit the Bedrock model-provider use-case form **once** (inherited by the org) — [aws.md](./aws.md)
 - [ ] Register GFW API key (Resource Watch → JWT → `POST /auth/apikey`) — [data-sources.md](./data-sources.md)
 - [ ] Request NASA FIRMS MAP_KEY (emailed) — [data-sources.md](./data-sources.md)
 - [ ] Check SAP Business Accelerator Hub sandbox and BTP trial access — [sap.md](./sap.md)

@@ -16,7 +16,7 @@ Prove, live, that the Supervisor→Specialist→Verifier agent pattern can (a) r
 | Thermal & Anomaly Agent | Real — NASA FIRMS API, live hotspot query |
 | Independent Verifier Agent | Real — LLM-based cross-check, no external dependency |
 | Legality & Entity Agent | Mocked — curated synthetic legality dataset, disclosed as such |
-| Supervisor Orchestrator | Real — tool-calling orchestration (Bedrock AgentCore or direct Claude tool-use) |
+| Supervisor Orchestrator | Real — tool-calling orchestration (Bedrock AgentCore or direct model tool-use) |
 | Compliance & DDS Writer | Real — generates structured JSON/XML DDS payload from agent outputs |
 | SAP Ariba / S/4HANA / Joule actions | Mocked — via BTP Integration Suite sandbox, or real if sandbox access is granted (see Risks) |
 | 2 live scenarios (Compliant, High Risk) | Full agent trace shown, narrated live |
@@ -51,7 +51,7 @@ This is the part most likely to be under-specified if you don't design it delibe
 | --- | --- | --- |
 | Global Forest Watch (Hansen GFC) | Public API has request-rate limits; batch of 50 concurrent polygon queries can throttle | Add small delay/backoff between calls, or batch via GFW's bulk/async query endpoint if available; test rate limit with 5 dummy calls before committing to 50 |
 | NASA FIRMS | Free-tier API keys have daily transaction caps | Register API key early (takes a few days sometimes to activate); cache results per polygon+date-range so re-runs during rehearsal don't burn quota |
-| Bedrock AgentCore / Claude tool-use | Token/request throughput on your account tier | Run the 50-record batch as a rehearsal at least once *before* demo day to confirm it completes without hitting quota mid-run live in front of judges |
+| Bedrock AgentCore / model tool-use | Token/request throughput on your account tier | Run the 50-record batch as a rehearsal at least once *before* demo day to confirm it completes without hitting quota mid-run live in front of judges |
 
 **Action item:** run a small-scale test (5-10 records) as early as possible in the build to validate the whole pipeline works end-to-end before committing engineering time to scaling it to 50 — this de-risks the most schedule-sensitive part of the MVP.
 

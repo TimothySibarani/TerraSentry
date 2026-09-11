@@ -52,3 +52,39 @@ class MissingAssessmentInputError(CoreError):
     def __init__(self, detail: str) -> None:
         super().__init__(detail)
         self.detail = detail
+
+
+class SeedLookupError(CoreError):
+    """A seed dataset lookup was requested for an id that is not present."""
+
+    def __init__(self, kind: str, value: str) -> None:
+        super().__init__(f"no seed {kind} matches {value!r}")
+        self.kind = kind
+        self.value = value
+
+
+class AgentRunError(CoreError):
+    """The agent run could not produce an assessment (verifier rejected, data gap)."""
+
+    def __init__(self, detail: str) -> None:
+        super().__init__(detail)
+        self.detail = detail
+
+
+class MissingModelError(CoreError):
+    """A live agent role was requested without a configured Bedrock model id."""
+
+    def __init__(self, variable: str) -> None:
+        super().__init__(
+            f"{variable} is not set; choose the Bedrock model for this role in .env "
+            "before running the live agent path"
+        )
+        self.variable = variable
+
+
+class InvalidReviewDecisionError(CoreError):
+    """A HITL decision was recorded for a run that is not awaiting review."""
+
+    def __init__(self, state: str) -> None:
+        super().__init__(f"run is in state {state!r} and cannot accept a review decision")
+        self.state = state

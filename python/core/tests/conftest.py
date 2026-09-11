@@ -7,11 +7,15 @@ what makes byte-for-byte determinism assertions possible.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from datetime import UTC, date, datetime
+from types import SimpleNamespace
 from typing import Any
 
+import agent_helpers
 import pytest
+import respx
 from terrasentry_core.domain.models import (
     AssessmentInput,
     Consignment,
@@ -26,8 +30,9 @@ from terrasentry_core.seed.schemas import (
     LegalityRecord,
     SeedPolygon,
 )
-from terrasentry_integrations.sources.firms import FireDetection, FirmsHotspotResult
-from terrasentry_integrations.sources.gfw import TreeCoverLossResult, TreeCoverLossYear
+from terrasentry_integrations.cache import MemoryCache
+from terrasentry_integrations.sources.firms import FireDetection, FirmsClient, FirmsHotspotResult
+from terrasentry_integrations.sources.gfw import GfwClient, TreeCoverLossResult, TreeCoverLossYear
 
 FIXED_TIME = datetime(2026, 9, 1, 12, 0, tzinfo=UTC)
 WINDOW_END = date(2026, 9, 1)
@@ -273,3 +278,27 @@ def factories() -> dict[str, Callable[..., Any]]:
         "batch_record": make_batch_record,
         "seed_consignment": make_seed_consignment,
     }
+
+
+@pytest.fixture
+def source_router():
+    """respx router with deterministic GFW/FIRMS responses for agent tests."""
+    with respx.mock(assert_all_called=False) as router:
+        router.post(agent_helpers.GFW_URL).mock(side_effect=agent_helpers.gfw_side_effect)
+        router.get(url__regex=re.compile(agent_helpers.FIRMS_REGEX)).mock(
+            side_effect=agent_helpers.firms_side_effect
+        )
+        yield router
+
+
+@pytest.fixture
+async def source_clients():
+    """Live clients with test credentials; HTTP must be mocked by the caller."""
+    cache = MemoryCache()
+    gfw = GfwClient(agent_helpers.settings(), cache=cache)
+    firms = FirmsClient(agent_helpers.settings(), cache=cache)
+    try:
+        yield SimpleNamespace(gfw=gfw, firms=firms, cache=cache)
+    finally:
+        await gfw.close()
+        await firms.close()

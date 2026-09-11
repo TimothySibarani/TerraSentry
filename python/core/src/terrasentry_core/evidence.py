@@ -41,6 +41,7 @@ class EvidenceEntry(BaseModel):
     source: EvidenceSource
     artifact: dict[str, Any] = Field(default_factory=dict)
     retrieved_at: datetime | None = None
+    cached: bool = False
     synthetic: bool = False
     disclosure: str | None = None
 
@@ -51,6 +52,14 @@ class EvidenceLedger:
     def __init__(self) -> None:
         self._entries: dict[str, EvidenceEntry] = {}
 
+    @classmethod
+    def from_entries(cls, entries: Iterable[EvidenceEntry]) -> EvidenceLedger:
+        """Rebuild a ledger from persisted entries (M4) or a record assessment."""
+        ledger = cls()
+        for entry in entries:
+            ledger._entries[entry.evidence_id] = entry
+        return ledger
+
     def record(
         self,
         *,
@@ -60,6 +69,7 @@ class EvidenceLedger:
         artifact: Mapping[str, Any] | None = None,
         unit: str | None = None,
         retrieved_at: datetime | None = None,
+        cached: bool = False,
         synthetic: bool = False,
         disclosure: str | None = None,
     ) -> EvidenceEntry:
@@ -87,6 +97,7 @@ class EvidenceLedger:
             source=source,
             artifact=artifact_dict,
             retrieved_at=retrieved_at,
+            cached=cached,
             synthetic=synthetic,
             disclosure=disclosure,
         )
@@ -204,10 +215,10 @@ def build_source_ledger(
                     "version": loss.version,
                     "geometry_hash": loss.geometry_hash,
                     "date_window": loss.date_window,
-                    "cached": loss.cached,
                 },
                 unit=unit,
                 retrieved_at=loss.fetched_at,
+                cached=loss.cached,
             )
 
     hotspots = input.hotspots
@@ -229,10 +240,10 @@ def build_source_ledger(
                     "source": hotspots.source,
                     "geometry_hash": hotspots.geometry_hash,
                     "date_window": hotspots.date_window,
-                    "cached": hotspots.cached,
                 },
                 unit=unit,
                 retrieved_at=hotspots.fetched_at,
+                cached=hotspots.cached,
             )
 
     supplier = input.supplier

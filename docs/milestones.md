@@ -63,7 +63,7 @@ M1 Integrations + cache  --->  M2 Deterministic core  --->  M3 Agent orchestrati
 | M0 Foundation & tooling | Done | W1 | — | `pnpm check` green, `pnpm dev` runs both apps, CI on push |
 | M1 Integrations + cache | Done | W1-W2 | M0 | 5-10 real polygon lookups, cached and rate-limited (verified with deterministic mocks; live numbers tracked in §3 key gates) |
 | M2 Deterministic core | Done | W2 | M1 | Reproducible score, cited evidence, valid DDS |
-| M3 Agent orchestration | Todo | W2-W3 | M2 | Reference-pipeline parity + verifier catch + HITL |
+| M3 Agent orchestration | Done | W2-W3 | M2 | Reference-pipeline parity + verifier catch + HITL |
 | M4 API + persistence | Todo | W3 | M3 | Run endpoints + SSE + batch worker, generated client |
 | M5 Cockpit | Todo | W3-W4 | M4 | Demo flow navigable, live trace, batch summary, map |
 | M6 Batch 50 + throughput | Todo | W4 | M4, M5 | 50 records complete, metrics + 30/12/8 breakdown |
@@ -80,7 +80,7 @@ These are PRD sections 5 and 6 action items. Do them before writing dependent co
 | --- | --- | --- | --- | --- | --- |
 | Check SAP API Business Hub / BTP trial access | Decides real vs stub SAP path and demo claim | TBD | Todo | Day 1 | Schema-accurate stub (PRD Option 2) |
 | Register NASA FIRMS MAP key | Key activation can take days; no key means no thermal agent | TBD | Todo | Day 1 | Cache demo fixtures (disclosed) |
-| Request Bedrock model access (Sonnet + Haiku) | Agents cannot run without model access in the account | TBD | Todo | Day 1 | Cross-region inference profile / alternate model |
+| Request Bedrock model access (orchestrator + extraction roles) | Agents cannot run without model access in the account | TBD | Todo | Day 1 | Cross-region inference profile / alternate model |
 | Verify GFW/Hansen API key and rate limit | Determines batch concurrency and wall-clock target | TBD | Todo | W1 | Backoff + reduced concurrency + bulk endpoint |
 | Confirm demo date and slot length | Anchors every target in this doc | TBD | Todo | Day 1 | Assume W5 and adjust |
 | AgentCore go/no-go | Stretch scope; affects M8 only | TBD | Todo | After M6 | Skip AgentCore, keep local Bedrock agents |
@@ -185,16 +185,36 @@ entry; a DDS fixture validates against the expected shape.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
-| Supervisor agent (agents-as-tools delegation) | Todo | TBD | `python/core/.../agents/` |
-| Geospatial and Thermal specialists | Todo | TBD | call M1 clients through tools |
-| Legality specialist (synthetic data, disclosed) | Todo | TBD | same tool contract as real sources |
-| Verifier agent with graph verify-before-write edge | Todo | TBD | independent prompt, no ledger writes |
-| Model routing (Sonnet orchestrator/verifier, Haiku extraction) | Todo | TBD | config from `.env` |
-| Parity tests against the M1 reference pipeline | Todo | TBD | divergence = agent bug |
-| HITL branch: `awaiting_review` + resume with decision | Todo | TBD | demonstrate once |
+| Supervisor agent (agents-as-tools delegation) | Done | — | `agents/supervisor.py`; specialists become delegatable tools |
+| Geospatial and Thermal specialists | Done | — | `agents/specialists.py`; ids-only tools over `tools/sources.py` |
+| Legality specialist (synthetic data, disclosed) | Done | — | same tool contract; disclosure travels on every payload |
+| Verifier agent with graph verify-before-write edge | Done | — | `agents/nodes.py`; deterministic re-derivation gate + LLM review; writer edge only on accept |
+| Model routing (orchestrator/verifier vs extraction roles) | Done | — | `agents/models.py` + `AgentSettings` from `.env`; model ids are required env, no repo default |
+| Parity tests against the M1 reference pipeline | Done | — | `test_agent_parity.py`; fingerprints, assessments, and DDS compared against the same source data |
+| HITL branch: `awaiting_review` + resume with decision | Done | — | `RunOrchestrator.resume`; DDS withheld until the decision is recorded |
 
 **Exit criteria:** agent output matches the reference pipeline on the demo polygons; the verifier
 catches at least one seeded inconsistency; the HITL branch pauses and resumes correctly.
+
+> **Completed 2026-09-11.** `python -m terrasentry_core.agents --record REC-001 --model scripted`
+> runs the whole graph offline: supervisor (agents-as-tools) gathers GFW/FIRMS/synthetic evidence
+> through shared ids-only tools, a deterministic assessor builds the M2 `RecordAssessment`, the
+> verifier re-derives every metric from the raw sources and validates every DDS citation before the
+> scripted LLM review, and a writer node releases the DDS only when the verifier accepts (the
+> literal graph verify-before-write edge). The verifier's deterministic checks are the hard gate:
+> `test_agent_verification.py` seeds a tampered metric, a dropped-evidence citation failure, and a
+> design/signal mismatch, all caught without a model. `test_agent_parity.py` runs the reference
+> pipeline and the agent graph over the same mocked GFW/FIRMS data and asserts identical
+> `Assessment` objects, fingerprints, and DDS documents per record. `test_agent_hitl.py` asserts an
+> ambiguous verdict returns `awaiting_review` with no released DDS, then `resume(approve|override)`
+> completes via the M2 state machine; the CLI mirrors this with exit codes 0/2/1. All tests run
+> without AWS using `ScriptedModel`/`AutopilotResponder`; the live Bedrock path is wired through
+> `ModelBundle.from_settings()` (model ids required in `.env`, no repo defaults) and needs the §3
+> model-access gate before it can be smoke-tested live. Fixing parity surfaced a real M2 determinism
+> defect: `cached` was part of the hashed evidence artifact, so a cached re-run produced different
+> evidence ids and fingerprints. Cache provenance now lives on `EvidenceEntry.cached` outside the
+> content hash (golden DDS fixture regenerated), so live and cached runs are fingerprint-identical,
+> which M6 depends on.
 
 ---
 
@@ -306,6 +326,7 @@ Append one line per meaningful update. Keep newest at the top.
 
 | Date | Milestone | Update |
 | --- | --- | --- |
+| 2026-09-11 | M3 | Agent orchestration landed: `tools/` shared source layer (`fetch_polygon_sources`, `SeedDatasets`, `TraceCollector`) now backs both the reference pipeline and the agent tools; `agents/` adds Bedrock model routing, an offline `ScriptedModel`/`AutopilotResponder`, specialists with ids-only tools, an agents-as-tools supervisor, a verifier node that re-derives metrics and validates citations before the LLM review, a deterministic assessor/writer, and `RunOrchestrator` with the graph verify-before-write edge plus the `awaiting_review`/resume HITL seam. CLI: `python -m terrasentry_core.agents --record/--scenario --model scripted|bedrock` with exit codes 0/2/1 and run/DDS/evidence artifacts. Tests add 23 agent cases (parity vs reference, verifier catch, HITL, graph flow, tools, scripted model, model routing, CLI); full Python suite 108 green, Ruff/Pyright clean. Also fixed an M2 determinism defect found by parity: cache provenance was inside the hashed evidence artifact, so cached re-runs fingerprint differently; `EvidenceEntry.cached` is now outside the hash and the golden DDS fixture is regenerated. Live Bedrock smoke remains gated on §3 Day-1 model access. |
 | 2026-09-11 | M2 | Deterministic core landed: domain models/enums/run-state machine, content-hashed evidence ledger, config-driven rubric with `fingerprint`, EUDR Information System V3-aligned DDS builder (JSON + SOAP `SubmitDdsRequest` XML) with mandatory citation validation, and the `python -m terrasentry_core.assessment` CLI that scores an M1 reference run and writes per-record DDS/evidence artifacts plus a `summary.json` confusion matrix for M6 calibration. Seed data extended deterministically with consignments, the synthetic EU operator, expected signal/ambiguity labels, concession-floor sanity, and a real permit-gap signal (HGU→oil palm, PBPH→wood; 4/4/4 high-risk signals; 3/3/2 ambiguity reasons). A full 50-record synthetic-signal harness reproduces the intended 30/12/8 breakdown and exercises all three detection paths. Core suite 66 tests (85 total) green; Ruff/Pyright clean; `pnpm check`/`pnpm test` green. DDS submission is out of scope and disclosed; live thresholds still need the §3 Day-1 keys. |
 | 2026-09-11 | M1 | Integration layer landed: GFW/Hansen + NASA FIRMS clients (per-source limiter, retry/backoff, typed errors), Redis response cache (`cache.py`, memory backend for tests), GFW async batch path, deterministic seed data (8 demo polygons + 30/12/8 batch with synthetic HGU/PBPH legality), reference pipeline, preflight probe. Setup runbooks added under `docs/setup/` (AWS free tier/credits + Bedrock, SAP BTP/Integration Suite/sandbox, data-source keys). 26 pytest tests green, Ruff/Pyright clean. M1 marked Done: cached zero-external-call re-runs are test-asserted; live latency/quota measurements delegated to the §3 Day-1 key gates (no credentials in the build environment). |
 | 2026-09-10 | M0 | UI foundation landed: shadcn base-mira, single DESIGN.md token file, branded proof page. Python toolchain verified (uv 0.12.12, uv.lock, ruff/pyright/pytest). Real OpenAPI client, CI workflow, compose.yaml. Local Docker builds deferred to CI (container egress blocked); commit user-owned. |

@@ -62,29 +62,31 @@ Use `AWS_PROFILE=terrasentry` if you keep multiple profiles; `.env` has an
 
 ## 4. Bedrock model access (the M3 blocker)
 
-Anthropic models require a one-time use-case form per account (or per AWS Organization).
+Pick the model you want for each agent role, request access to both, and set the ids in
+`.env`; nothing in the repo hardcodes a model.
 
-1. Set the region to **us-east-1** (Claude availability and cross-region profiles are
-   best there; all regions are improving, but be deliberate).
-2. **Bedrock → Model catalog → Anthropic → Claude Sonnet 4.5** → submit the use-case
-   details when prompted. Access is granted immediately after submission.
-3. Do the same for **Claude Haiku 4.5**.
-4. Confirm the model IDs match `.env.example`:
+1. Set the region deliberately (cross-region inference profiles are available in a subset
+   of regions; pick one and stay there).
+2. **Bedrock → Model catalog** → choose the model for orchestration and verification, then
+   choose the model for high-volume extraction. Open each one and submit the use-case
+   details if prompted; access is usually granted immediately after submission.
+3. Put the exact ids (or inference-profile ids) in `.env`:
 
 ```text
-BEDROCK_MODEL_ORCHESTRATOR=global.anthropic.claude-sonnet-4-5-20250929-v1:0
-BEDROCK_MODEL_EXTRACTION=global.anthropic.claude-haiku-4-5-20251001-v1:0
+BEDROCK_MODEL_ORCHESTRATOR=<your orchestration/verification model or profile id>
+BEDROCK_MODEL_EXTRACTION=<your extraction model or profile id>
 ```
 
-The `global.` prefix is a cross-region inference profile, which keeps the demo working if
-one region is throttled.
+A `global.` (or other cross-region) inference profile keeps the demo working if one region
+is throttled; use the console's "Inference profile" ids when available. The app fails with a
+clear `MissingModelError` if either variable is unset.
 
-5. Smoke-test from the CLI (this is the exact call Strands will make under the hood):
+4. Smoke-test from the CLI (this is the exact call Strands will make under the hood):
 
 ```bash
 aws bedrock-runtime converse \
   --region us-east-1 \
-  --model-id global.anthropic.claude-haiku-4-5-20251001-v1:0 \
+  --model-id "$BEDROCK_MODEL_EXTRACTION" \
   --messages '[{"role":"user","content":[{"text":"reply with the single word ok"}]}]'
 ```
 
@@ -92,9 +94,9 @@ Common failures:
 
 | Error | Cause | Fix |
 | --- | --- | --- |
-| `AccessDeniedException` mentioning use case | Anthropic form not submitted | Open an Anthropic model in the Bedrock console and submit the form |
-| `ValidationException: invalid model identifier` | Wrong region or model ID | Use us-east-1 and the IDs above |
-| `ThrottlingException` | Account-level quota or spike | Retry, lower concurrency, or switch the `global.` profile |
+| `AccessDeniedException` mentioning use case | Provider use-case form not submitted | Open the model in the Bedrock console and submit the form |
+| `ValidationException: invalid model identifier` | Wrong region or model id | Use the region you enabled and the exact id/profile from the console |
+| `ThrottlingException` | Account-level quota or spike | Retry, lower concurrency, or switch to a cross-region profile |
 | `UnrecognizedClientException` | Bad/expired access key | Recreate the IAM access key |
 
 ## 5. What this costs
@@ -102,13 +104,13 @@ Common failures:
 Bedrock is pay-per-token; there is no free model tier, but the credits cover the demo
 comfortably.
 
-- Claude Sonnet 4.5: roughly **$3 per million input tokens / $15 per million output**
-- Claude Haiku 4.5: roughly **$1 / $5** per million tokens
+- Cost depends on the models you choose; check Bedrock pricing for the current
+  per-million-token rates before the batch rehearsal.
 - A 50-record batch with retrieval + verification is on the order of a few hundred
   thousand tokens, so the batch costs a few dollars at most — and far less if the
   deterministic reference pipeline (which makes no model calls) is used for volume.
-- Prefer Haiku for extraction, Sonnet for supervision/verification, and cache every
-  external response so rehearsal runs cost nothing.
+- Prefer the cheaper model for extraction, the stronger model for supervision/verification,
+  and cache every external response so rehearsal runs cost nothing.
 
 ## 6. Guardrails for later milestones (M4/M8)
 

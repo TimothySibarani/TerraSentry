@@ -12,11 +12,11 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 from terrasentry_integrations.cache import CacheBackend
-from terrasentry_integrations.errors import SourceError
 from terrasentry_integrations.sources.firms import FirmsClient, FirmsHotspotResult
 from terrasentry_integrations.sources.gfw import GfwClient, TreeCoverLossResult
 
 from terrasentry_core.seed.schemas import SeedPolygon
+from terrasentry_core.tools.sources import LossWindow, fetch_polygon_sources
 
 
 class PolygonReport(BaseModel):
@@ -53,29 +53,29 @@ async def run_reference_pipeline(
 ) -> ReferenceRun:
     """Fetch real GFW/FIRMS data for every polygon, tolerating per-source failures."""
     started = datetime.now(tz=UTC)
-    end_year = started.year - 1
-    start_year = end_year - years + 1
+    loss_window = LossWindow.from_now(years, now=started)
 
     reports: list[PolygonReport] = []
     for polygon in polygons:
-        report = PolygonReport(
-            polygon_id=polygon.id,
-            label=polygon.label,
-            region=polygon.region,
-            archetype=polygon.archetype,
-            area_ha=polygon.area_ha,
+        sources = await fetch_polygon_sources(
+            polygon,
+            gfw=gfw,
+            firms=firms,
+            window_days=window_days,
+            loss_window=loss_window,
         )
-        try:
-            report.loss = await gfw.tree_cover_loss(
-                polygon.geometry, start_year=start_year, end_year=end_year
+        reports.append(
+            PolygonReport(
+                polygon_id=polygon.id,
+                label=polygon.label,
+                region=polygon.region,
+                archetype=polygon.archetype,
+                area_ha=polygon.area_ha,
+                loss=sources.loss,
+                hotspots=sources.hotspots,
+                errors=sources.errors,
             )
-        except SourceError as exc:
-            report.errors.append(str(exc))
-        try:
-            report.hotspots = await firms.hotspots_in_polygon(polygon.geometry, days=window_days)
-        except SourceError as exc:
-            report.errors.append(str(exc))
-        reports.append(report)
+        )
 
     finished = datetime.now(tz=UTC)
     return ReferenceRun(
