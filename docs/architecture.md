@@ -593,10 +593,9 @@ web app only receives `VITE_*` values at build time.
 
 ## 10. Getting started
 
-Prerequisites: Node >= 22 (corepack enabled), pnpm via corepack, `uv`, a Postgres connection
-string (Neon free tier is the zero-install option; Docker/apt Postgres also works), and Redis for
-the response cache (`docker compose up -d redis`, or `CACHE_BACKEND=memory` for a no-Docker smoke
-run).
+Prerequisites: Node >= 22 (corepack enabled), pnpm via corepack, `uv`, and Docker (for the local
+Postgres + Redis from `pnpm db:up`) or your own Postgres connection string in `DATABASE_URL`
+(Neon free tier is the zero-install option; set `CACHE_BACKEND=memory` for a no-Docker smoke run).
 
 ```bash
 corepack enable
@@ -604,7 +603,8 @@ pnpm install
 uv sync
 cp .env.example .env
 
-docker compose up -d redis   # response cache
+pnpm db:up      # Postgres + Redis containers
+pnpm db:upgrade # apply the Alembic audit schema
 pnpm dev        # web on :3000 and API on :8000
 pnpm check      # Biome + Ruff + tsc + Pyright
 pnpm test       # Vitest + @effect/vitest (api-client) + pytest

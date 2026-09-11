@@ -24,7 +24,7 @@ from terrasentry_integrations.sources.gfw import GfwClient
 
 from terrasentry_api.config import Settings
 from terrasentry_api.config import settings as default_settings
-from terrasentry_api.db import create_engine_and_session
+from terrasentry_api.db import check_database, create_engine_and_session
 from terrasentry_api.mock_sap import MockSapStore
 from terrasentry_api.runner import RunManager
 from terrasentry_api.seed_loader import seed_if_empty
@@ -68,6 +68,7 @@ async def build_services(settings: Settings = default_settings) -> AsyncIterator
     gfw = GfwClient(integration, cache=cache)
     firms = FirmsClient(integration, cache=cache)
     try:
+        await check_database(engine, settings.database_url)
         fixtures_loaded = 0
         if integration.cache_fixtures_dir:
             fixtures_loaded = await prime_fixtures(

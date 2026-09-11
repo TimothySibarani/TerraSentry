@@ -44,10 +44,9 @@ uv run python -m terrasentry_core.agents.preflight     # Bedrock gate check, nee
 ## API + database (M4)
 
 ```bash
-docker compose up -d postgres redis   # or a Neon connection string in DATABASE_URL
+pnpm db:up                            # postgres + redis containers (or a Neon DATABASE_URL)
 pnpm db:upgrade                       # alembic upgrade head
 pnpm dev                              # API :8000 + web :3000; AUTO_SEED fills suppliers/parcels
-
 # Smoke the run API (scripted model, warm the cache first for --offline-style speed):
 curl -s localhost:8000/runs -H 'content-type: application/json' \
   -d '{"record_id": "REC-001", "model": "scripted"}'

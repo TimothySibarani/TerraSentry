@@ -6,6 +6,7 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
+from terrasentry_api.config import settings
 from terrasentry_api.models import Base
 
 config = context.config
@@ -13,10 +14,11 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
-    # ConfigParser interpolates %; escape it so passwords with % survive.
-    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
+# Keep Alembic on the same URL as the API: shell env wins, then .env, then the
+# localhost default. The ini placeholder is never used.
+database_url = os.environ.get("DATABASE_URL") or settings.database_url
+# ConfigParser interpolates %; escape it so passwords with % survive.
+config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 target_metadata = Base.metadata
 

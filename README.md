@@ -33,16 +33,17 @@ data/                seed batch and cached fixtures
 
 ## Getting started
 
-Prerequisites: Node >= 22 with corepack, [uv](https://docs.astral.sh/uv/), a Postgres
-connection string (Neon free tier, Docker, or a local install all work), and Redis for the
-response cache (`docker compose up -d redis`).
+Prerequisites: Node >= 22 with corepack, [uv](https://docs.astral.sh/uv/), and Docker (for
+Postgres + Redis via `pnpm db:up`) or your own Postgres connection string (Neon free tier, local
+install) in `DATABASE_URL`.
 
 ```bash
 corepack enable
 pnpm install
 uv sync --all-packages
 cp .env.example .env
-docker compose up -d redis
+pnpm db:up      # Postgres + Redis containers (skip if using an external DATABASE_URL)
+pnpm db:upgrade # apply the Alembic audit schema
 
 pnpm dev        # web on :3000 and API on :8000
 ```
