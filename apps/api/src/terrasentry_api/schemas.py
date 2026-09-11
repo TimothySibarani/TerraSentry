@@ -26,6 +26,10 @@ from terrasentry_api.models import Supplier as SupplierRow
 ModelMode = Literal["scripted", "bedrock"]
 
 
+def _opt_float(value: Any) -> float | None:
+    return float(value) if isinstance(value, (int, float)) else None
+
+
 class HealthResponse(BaseModel):
     """Process health plus the offline-rehearsal state the cockpit badges."""
 
@@ -236,6 +240,13 @@ class BatchSummary(BaseModel):
     expected_breakdown: dict[str, int] = Field(default_factory=dict)
     wall_clock_seconds: float | None = None
     average_seconds_per_record: float | None = None
+    median_seconds_per_record: float | None = None
+    p95_seconds_per_record: float | None = None
+    throughput_records_per_second: float | None = None
+    total_record_seconds: float | None = None
+    cache_stats: dict[str, int] | None = None
+    confusion: dict[str, dict[str, int]] = Field(default_factory=dict)
+    batch_concurrency: int | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
     metrics: dict[str, Any] = Field(default_factory=dict)
@@ -249,18 +260,29 @@ class BatchSummary(BaseModel):
         breakdown: dict[str, int],
         average_seconds: float,
     ) -> BatchSummary:
+        metrics = run.metrics or {}
+        confusion = metrics.get("confusion")
+        cache_stats = metrics.get("cache_stats")
+        concurrency = metrics.get("batch_concurrency")
         return cls(
             run_id=run.id,
             state=run.state,
-            record_count=int(run.metrics.get("record_count", 0)) or sum(states.values()),
+            record_count=int(metrics.get("record_count", 0)) or sum(states.values()),
             states=states,
             verdict_breakdown=breakdown,
-            expected_breakdown=run.metrics.get("expected_breakdown", {}),
+            expected_breakdown=metrics.get("expected_breakdown", {}),
             wall_clock_seconds=run.elapsed_seconds,
             average_seconds_per_record=average_seconds,
+            median_seconds_per_record=_opt_float(metrics.get("median_seconds_per_record")),
+            p95_seconds_per_record=_opt_float(metrics.get("p95_seconds_per_record")),
+            throughput_records_per_second=_opt_float(metrics.get("throughput_records_per_second")),
+            total_record_seconds=_opt_float(metrics.get("total_record_seconds")),
+            cache_stats=cache_stats if isinstance(cache_stats, dict) else None,
+            confusion=confusion if isinstance(confusion, dict) else {},
+            batch_concurrency=int(concurrency) if isinstance(concurrency, (int, float)) else None,
             started_at=run.started_at,
             finished_at=run.finished_at,
-            metrics=run.metrics,
+            metrics=metrics,
         )
 
 

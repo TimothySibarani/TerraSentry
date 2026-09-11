@@ -1,3 +1,4 @@
+from datetime import date
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -29,6 +30,9 @@ class Settings(BaseSettings):
     sse_ping_seconds: int = 15
     firms_window_days: int = 30
     loss_window_years: int = 5
+    # ISO date; pins source date windows so prefetched fixtures stay valid for
+    # a later offline rehearsal (M6). Empty means "use the wall clock".
+    rehearsal_as_of: str = ""
 
     sap_mode: str = "stub"
     sap_base_url: str = ""
@@ -36,6 +40,13 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.api_cors_origins.split(",") if origin.strip()]
+
+    @property
+    def rehearsal_date(self) -> date | None:
+        """The pinned source date, or ``None`` to use the wall clock."""
+        if not self.rehearsal_as_of:
+            return None
+        return date.fromisoformat(self.rehearsal_as_of)
 
 
 @lru_cache

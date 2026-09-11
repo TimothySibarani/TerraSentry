@@ -11,7 +11,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any, cast
 
-from sqlalchemy import func, select
+from sqlalchemy import Nullable, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from terrasentry_core.agents.schemas import AgentRunResult, ReviewDecision
@@ -488,6 +488,58 @@ class RunStore:
             select(func.avg(Run.elapsed_seconds)).where(Run.parent_run_id == parent_run_id)
         )
         return round(float(average), 3) if average is not None else 0.0
+
+    async def batch_record_durations(self, parent_run_id: str) -> list[float]:
+        """Per-record durations, ascending, for percentile/throughput metrics."""
+        values = await self._session.scalars(
+            select(Run.elapsed_seconds)
+            .where(Run.parent_run_id == parent_run_id, Run.elapsed_seconds.is_not(None))
+            .order_by(Run.elapsed_seconds)
+        )
+        return [float(value) for value in values if value is not None]
+
+    async def batch_confusion(self, parent_run_id: str) -> dict[str, dict[str, int]]:
+        """Expected-archetype x verdict counts, mirroring the M2 confusion matrix."""
+        rows = await self._session.execute(
+            select(RunVerdict.expected_archetype, RunVerdict.verdict, func.count())
+            .join(Run, Run.id == RunVerdict.run_id)
+            .where(Run.parent_run_id == parent_run_id)
+            .group_by(RunVerdict.expected_archetype, RunVerdict.verdict)
+        )
+        verdicts = ("compliant", "high_risk", "ambiguous")
+        confusion: dict[str, dict[str, int]] = {
+            archetype: dict.fromkeys(verdicts, 0) for archetype in verdicts
+        }
+        for expected, verdict, count in rows.all():
+            expected_key = str(expected)
+            verdict_key = str(verdict)
+            if expected_key in confusion and verdict_key in confusion[expected_key]:
+                confusion[expected_key][verdict_key] = int(count)
+        return confusion
+
+    async def batch_progress(self, parent_run_id: str) -> dict[str, Any]:
+        """Cumulative settled counts for a batch, used by SSE snapshots."""
+        counts = await self.batch_state_counts(parent_run_id)
+        return {
+            "total": sum(counts.values()),
+            "completed": counts.get("complete", 0),
+            "failed": counts.get("failed", 0),
+            "awaiting_review": counts.get("awaiting_review", 0),
+            "verdict_breakdown": await self.batch_verdict_breakdown(parent_run_id),
+        }
+
+    async def list_batch_records(
+        self, parent_run_id: str, *, limit: int = 200
+    ) -> list[tuple[Run, RunVerdict | None]]:
+        """Child runs with their verdicts, in deterministic record order."""
+        rows = await self._session.execute(
+            select(Run, Nullable(RunVerdict))
+            .outerjoin(RunVerdict, RunVerdict.run_id == Run.id)
+            .where(Run.parent_run_id == parent_run_id)
+            .order_by(Run.record_id, Run.id)
+            .limit(limit)
+        )
+        return [(run, verdict) for run, verdict in rows.all()]
 
 
 __all__ = ["RunStore"]

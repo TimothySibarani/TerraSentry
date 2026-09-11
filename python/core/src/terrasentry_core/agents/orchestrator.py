@@ -13,7 +13,7 @@ machine, the verify-before-write edge, and the human-review hold. Callers
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from datetime import datetime
+from datetime import date, datetime
 from uuid import uuid4
 
 from strands.multiagent import GraphBuilder
@@ -37,7 +37,7 @@ from terrasentry_core.scoring import RubricConfig
 from terrasentry_core.seed.schemas import BatchRecord
 from terrasentry_core.tools.agent_tools import ToolContext
 from terrasentry_core.tools.datasets import SeedDatasets
-from terrasentry_core.tools.sources import LossWindow
+from terrasentry_core.tools.sources import resolve_loss_window
 from terrasentry_core.tools.trace import StepHook, TraceCollector, TraceKind, TraceStep, utc_now
 
 _NODE_KINDS: dict[str, TraceKind] = {
@@ -68,6 +68,7 @@ class RunOrchestrator:
         models: ModelBundle | None = None,
         window_days: int = 30,
         years: int = 5,
+        as_of: date | None = None,
         rubric: RubricConfig | None = None,
         clock: Callable[[], datetime] = utc_now,
         on_step: StepHook | None = None,
@@ -78,6 +79,7 @@ class RunOrchestrator:
         self._models = models
         self._window_days = window_days
         self._years = years
+        self._as_of = as_of
         self._rubric = rubric
         self._clock = clock
         self._on_step = on_step
@@ -102,7 +104,8 @@ class RunOrchestrator:
             datasets=self._datasets,
             trace=trace,
             window_days=self._window_days,
-            loss_window=LossWindow.from_now(self._years, now=started),
+            loss_window=resolve_loss_window(self._years, as_of=self._as_of, now=started),
+            as_of=self._as_of,
             retrieved_at=started,
             refresh=refresh,
         )

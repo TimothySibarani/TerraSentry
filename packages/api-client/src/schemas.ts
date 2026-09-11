@@ -200,6 +200,16 @@ export const BatchSummary = Schema.Struct({
   expected_breakdown: Schema.Record(Schema.String, Schema.Int),
   wall_clock_seconds: Schema.NullOr(Schema.Number),
   average_seconds_per_record: Schema.NullOr(Schema.Number),
+  median_seconds_per_record: Schema.NullOr(Schema.Number),
+  p95_seconds_per_record: Schema.NullOr(Schema.Number),
+  throughput_records_per_second: Schema.NullOr(Schema.Number),
+  total_record_seconds: Schema.NullOr(Schema.Number),
+  cache_stats: Schema.NullOr(Schema.Record(Schema.String, Schema.Int)),
+  confusion: Schema.Record(
+    Schema.String,
+    Schema.Record(Schema.String, Schema.Int),
+  ),
+  batch_concurrency: Schema.NullOr(Schema.Int),
   started_at: Schema.NullOr(Schema.DateTimeUtcFromString),
   finished_at: Schema.NullOr(Schema.DateTimeUtcFromString),
   metrics: Schema.Record(Schema.String, Schema.Unknown),
@@ -300,6 +310,16 @@ export type SapStatusRequest = typeof SapStatusRequest.Type;
 export const SapBlockRequest = Schema.Struct({ blocked: Schema.Boolean });
 export type SapBlockRequest = typeof SapBlockRequest.Type;
 
+const ProgressData = Schema.Struct({
+  run_id: Schema.String,
+  total: Schema.Int,
+  completed: Schema.Int,
+  failed: Schema.Int,
+  awaiting_review: Schema.Int,
+  verdict_breakdown: Schema.Record(Schema.String, Schema.Int),
+  elapsed_seconds: Schema.optionalKey(Schema.NullOr(Schema.Number)),
+});
+
 const SnapshotData = Schema.Struct({
   run_id: Schema.String,
   kind: Schema.String,
@@ -309,20 +329,12 @@ const SnapshotData = Schema.Struct({
   verdict: Schema.NullOr(Verdict),
   score: Schema.NullOr(Schema.Int),
   dds_released: Schema.Boolean,
+  progress: Schema.optionalKey(ProgressData),
 });
 
 const StateData = Schema.Struct({
   run_id: Schema.String,
   state: RunState,
-});
-
-const ProgressData = Schema.Struct({
-  run_id: Schema.String,
-  total: Schema.Int,
-  completed: Schema.Int,
-  failed: Schema.Int,
-  awaiting_review: Schema.Int,
-  verdict_breakdown: Schema.Record(Schema.String, Schema.Int),
 });
 
 export const RunEvent = Schema.Union([

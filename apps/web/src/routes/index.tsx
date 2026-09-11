@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClockIcon, LayersIcon, ListChecksIcon, WifiIcon } from "lucide-react";
 
+import { type KpiRow, KpiTable } from "#/components/kpi-table";
 import { MetricCard } from "#/components/metric-card";
 import { PageHeader } from "#/components/page-header";
 import { RunStateBadge, VerdictBadge } from "#/components/status-badge";
@@ -51,6 +52,79 @@ function Dashboard() {
 			? "Rehearsal data"
 			: "Live API"
 		: "Offline";
+
+	const confusion = latestBatch?.confusion ?? {};
+	const confusionTotal = Object.values(confusion).reduce(
+		(sum, row) =>
+			sum + Object.values(row).reduce((rowSum, count) => rowSum + count, 0),
+		0,
+	);
+	const matched = Object.entries(confusion).reduce(
+		(sum, [archetype, row]) => sum + (row[archetype] ?? 0),
+		0,
+	);
+	const designMatch = confusionTotal > 0 ? matched / confusionTotal : null;
+	const cache = latestBatch?.cache_stats;
+	const failed = latestBatch?.states.failed ?? 0;
+
+	const kpiRows: KpiRow[] = [
+		{
+			metric: "Batch wall clock (50 records)",
+			target: "Demo slot; pre-run if longer",
+			value: latestBatch ? formatDuration(latestBatch.wall_clock_seconds) : "—",
+			source: latestBatch?.run_id ?? "Run the rehearsal",
+		},
+		{
+			metric: "Average per supplier",
+			target: "< 2 min (PRD §5)",
+			value: latestBatch
+				? formatDuration(latestBatch.average_seconds_per_record)
+				: "—",
+			source: "Per-record elapsed",
+		},
+		{
+			metric: "Throughput",
+			target: "Recorded baseline",
+			value: latestBatch
+				? `${formatNumber(latestBatch.throughput_records_per_second)} rec/s`
+				: "—",
+			source: "Batch metrics",
+		},
+		{
+			metric: "Design match (30/12/8)",
+			target: "100% exact",
+			value: designMatch === null ? "—" : `${Math.round(designMatch * 100)}%`,
+			source: "Confusion diagonal",
+		},
+		{
+			metric: "HITL branch under load",
+			target: "8 ambiguous held",
+			value: latestBatch
+				? formatNumber(latestBatch.states.awaiting_review ?? 0)
+				: "—",
+			source: "Run states",
+		},
+		{
+			metric: "Verifier coverage",
+			target: "100% accepted",
+			value: latestBatch ? (failed === 0 ? "100%" : `${failed} failed`) : "—",
+			source: "Run states",
+		},
+		{
+			metric: "Offline replay",
+			target: "0 external calls",
+			value: cache
+				? `${formatNumber(cache.hits)} hits / ${formatNumber(cache.misses)} misses`
+				: "—",
+			source: "Cache stats",
+		},
+		{
+			metric: "Cycle acceleration",
+			target: "98% vs manual",
+			value: "Pending baseline",
+			source: "docs/kpi.md",
+		},
+	];
 
 	return (
 		<div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
@@ -127,6 +201,19 @@ function Dashboard() {
 					}
 				/>
 			</div>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>KPI table</CardTitle>
+					<CardDescription>
+						Mirrors docs/kpi.md; measured from the latest completed batch —
+						never projections.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<KpiTable rows={kpiRows} />
+				</CardContent>
+			</Card>
 
 			<div className="grid gap-6 lg:grid-cols-5">
 				<Card className="lg:col-span-3">

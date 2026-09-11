@@ -12,10 +12,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
+import statistics
 from collections import Counter
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
 from uuid import uuid4
 
@@ -34,6 +36,7 @@ from terrasentry_core.seed.schemas import BatchRecord
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.sources import LossWindow, fetch_polygon_sources
 from terrasentry_core.tools.trace import StepHook, TraceCollector, TraceKind, TraceStep, utc_now
+from terrasentry_integrations.cache import CacheBackend
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
 
@@ -44,6 +47,25 @@ logger = logging.getLogger(__name__)
 
 RunEvent = dict[str, Any]
 _TERMINAL = {RunState.COMPLETE, RunState.FAILED, RunState.AWAITING_REVIEW}
+
+
+def nearest_rank_percentile(sorted_values: Sequence[float], fraction: float) -> float:
+    """Nearest-rank percentile over an ascending sample (no interpolation).
+
+    Deliberately deterministic and dependency-free: the M6 numbers must be
+    reproducible from the same inputs, not sensitive to float interpolation.
+    """
+    if not sorted_values:
+        return 0.0
+    rank = max(1, math.ceil(fraction * len(sorted_values)))
+    return round(sorted_values[min(rank, len(sorted_values)) - 1], 3)
+
+
+def _elapsed_since(started: datetime | None, now: datetime) -> float | None:
+    if started is None:
+        return None
+    start = started if started.tzinfo is not None else started.replace(tzinfo=UTC)
+    return round((now - start).total_seconds(), 3)
 
 
 class RunBroadcaster:
@@ -83,6 +105,7 @@ class RunManager:
         firms: FirmsClient,
         rubric: RubricConfig | None = None,
         clock: Callable[[], datetime] = utc_now,
+        cache: CacheBackend | None = None,
     ) -> None:
         self._settings = settings
         self._session_factory = session_factory
@@ -91,6 +114,7 @@ class RunManager:
         self._firms = firms
         self._rubric = rubric
         self._clock = clock
+        self._cache = cache
         self._broadcaster = RunBroadcaster()
         self._tasks: set[asyncio.Task[None]] = set()
         self._decision_locks: dict[str, asyncio.Lock] = {}
@@ -291,6 +315,7 @@ class RunManager:
         }
         lock = asyncio.Lock()
         semaphore = asyncio.Semaphore(max(1, self._settings.batch_concurrency))
+        cache_before = self._cache.stats().as_dict() if self._cache is not None else None
 
         async def one(record: BatchRecord) -> None:
             async with semaphore:
@@ -304,6 +329,7 @@ class RunManager:
                     progress["failed"] += 1
                 if verdict is not None:
                     progress["verdict_breakdown"][verdict] += 1
+                progress["elapsed_seconds"] = _elapsed_since(started, self._clock())
                 self._broadcaster.publish(batch_run_id, {"event": "progress", "data": dict(progress)})
 
         results = await asyncio.gather(*(one(record) for record in records), return_exceptions=True)
@@ -325,6 +351,7 @@ class RunManager:
             finished=finished,
             expected=dict(expected),
             record_count=len(records),
+            cache_before=cache_before,
         )
         await self._set_state(
             batch_run_id,
@@ -343,14 +370,20 @@ class RunManager:
         trace = TraceCollector(clock=self._clock)
         await self._set_state(run_id, RunState.RUNNING, started_at=started)
         verdict: str | None = None
+        pinned = self._settings.rehearsal_date
         try:
             sources = await fetch_polygon_sources(
                 record.polygon,
                 gfw=self._gfw,
                 firms=self._firms,
                 window_days=self._settings.firms_window_days,
-                loss_window=LossWindow.from_now(self._settings.loss_window_years, now=started),
+                # Pinned rehearsals let the fetch derive the window from ``as_of``
+                # so prefetch and offline run share cache keys across days.
+                loss_window=None
+                if pinned is not None
+                else LossWindow.from_now(self._settings.loss_window_years, now=started),
                 refresh=refresh,
+                as_of=pinned,
             )
             report = PolygonReport(
                 polygon_id=record.polygon.id,
@@ -504,22 +537,40 @@ class RunManager:
         finished: datetime,
         expected: dict[str, int],
         record_count: int,
+        cache_before: dict[str, int] | None = None,
     ) -> dict[str, Any]:
         async with self._session_factory() as session:
             store = RunStore(session)
             counts = await store.batch_state_counts(batch_run_id)
             breakdown = await store.batch_verdict_breakdown(batch_run_id)
             average = await store.batch_average_seconds(batch_run_id)
-        return {
+            durations = await store.batch_record_durations(batch_run_id)
+            confusion = await store.batch_confusion(batch_run_id)
+        wall_clock = round((finished - started).total_seconds(), 3)
+        metrics: dict[str, Any] = {
             "record_count": record_count,
             "expected_breakdown": expected,
             "verdict_breakdown": breakdown,
             "state_counts": counts,
-            "wall_clock_seconds": round((finished - started).total_seconds(), 3),
+            "wall_clock_seconds": wall_clock,
             "average_seconds_per_record": average,
+            "median_seconds_per_record": round(statistics.median(durations), 3) if durations else 0.0,
+            "p95_seconds_per_record": nearest_rank_percentile(durations, 0.95),
+            "throughput_records_per_second": round(record_count / wall_clock, 3) if wall_clock > 0 else 0.0,
+            "total_record_seconds": round(sum(durations), 3),
+            "confusion": confusion,
+            "batch_concurrency": max(1, self._settings.batch_concurrency),
         }
+        if cache_before is not None and self._cache is not None:
+            cache_after = self._cache.stats().as_dict()
+            metrics["cache_stats"] = {
+                key: cache_after.get(key, 0) - cache_before.get(key, 0)
+                for key in ("hits", "misses", "writes", "offline_misses")
+            }
+        return metrics
 
     async def _snapshot(self, run_id: str) -> tuple[dict[str, Any], list[TraceStep], bool]:
+        progress: dict[str, Any] | None = None
         async with self._session_factory() as session:
             store = RunStore(session)
             run = await store.get_run(run_id)
@@ -528,6 +579,11 @@ class RunManager:
             verdict = await store.get_verdict(run_id)
             dds = await store.get_dds(run_id)
             rows = await store.list_steps(run_id)
+            if run.kind == "batch":
+                progress = await store.batch_progress(run_id)
+                progress["run_id"] = run_id
+                progress["total"] = int(run.metrics.get("record_count", 0)) or progress["total"]
+                progress["elapsed_seconds"] = _elapsed_since(run.started_at, self._clock())
         steps = [
             TraceStep(
                 step_id=row.step_id,
@@ -549,6 +605,8 @@ class RunManager:
             "score": verdict.score if verdict is not None else None,
             "dds_released": bool(dds.released) if dds is not None else False,
         }
+        if progress is not None:
+            payload["progress"] = progress
         return payload, steps, run.state in _TERMINAL
 
     # -- misc ---------------------------------------------------------------------
@@ -573,6 +631,7 @@ class RunManager:
             models=models,
             window_days=self._settings.firms_window_days,
             years=self._settings.loss_window_years,
+            as_of=self._settings.rehearsal_date,
             rubric=self._rubric,
             clock=self._clock,
             on_step=on_step,

@@ -113,6 +113,41 @@
             ],
             "title": "Average Seconds Per Record"
           },
+          "batch_concurrency": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Concurrency"
+          },
+          "cache_stats": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cache Stats"
+          },
+          "confusion": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "title": "Confusion",
+            "type": "object"
+          },
           "expected_breakdown": {
             "additionalProperties": {
               "type": "integer"
@@ -132,10 +167,32 @@
             ],
             "title": "Finished At"
           },
+          "median_seconds_per_record": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Seconds Per Record"
+          },
           "metrics": {
             "additionalProperties": true,
             "title": "Metrics",
             "type": "object"
+          },
+          "p95_seconds_per_record": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P95 Seconds Per Record"
           },
           "record_count": {
             "title": "Record Count",
@@ -166,6 +223,28 @@
             },
             "title": "States",
             "type": "object"
+          },
+          "throughput_records_per_second": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Throughput Records Per Second"
+          },
+          "total_record_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Record Seconds"
           },
           "verdict_breakdown": {
             "additionalProperties": {

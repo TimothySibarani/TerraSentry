@@ -365,16 +365,32 @@ export interface components {
         BatchSummary: {
             /** Average Seconds Per Record */
             average_seconds_per_record?: number | null;
+            /** Batch Concurrency */
+            batch_concurrency?: number | null;
+            /** Cache Stats */
+            cache_stats?: {
+                [key: string]: number;
+            } | null;
+            /** Confusion */
+            confusion?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            };
             /** Expected Breakdown */
             expected_breakdown?: {
                 [key: string]: number;
             };
             /** Finished At */
             finished_at?: string | null;
+            /** Median Seconds Per Record */
+            median_seconds_per_record?: number | null;
             /** Metrics */
             metrics?: {
                 [key: string]: unknown;
             };
+            /** P95 Seconds Per Record */
+            p95_seconds_per_record?: number | null;
             /** Record Count */
             record_count: number;
             /** Run Id */
@@ -386,6 +402,10 @@ export interface components {
             states?: {
                 [key: string]: number;
             };
+            /** Throughput Records Per Second */
+            throughput_records_per_second?: number | null;
+            /** Total Record Seconds */
+            total_record_seconds?: number | null;
             /** Verdict Breakdown */
             verdict_breakdown?: {
                 [key: string]: number;

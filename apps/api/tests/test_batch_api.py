@@ -8,6 +8,7 @@ from typing import Any
 import api_helpers
 import terrasentry_api.runner as runner_module
 from fastapi.testclient import TestClient
+from terrasentry_api.runner import nearest_rank_percentile
 from terrasentry_core.tools.sources import PolygonSources
 
 
@@ -29,6 +30,18 @@ def test_batch_completes_with_the_design_breakdown(client: TestClient, source_ro
     assert summary["wall_clock_seconds"] >= 0
     assert summary["average_seconds_per_record"] >= 0
     assert summary["expected_breakdown"] == {"compliant": 2, "high_risk": 1, "ambiguous": 1}
+    assert summary["median_seconds_per_record"] is not None
+    assert summary["p95_seconds_per_record"] is not None
+    assert summary["total_record_seconds"] >= 0
+    assert summary["throughput_records_per_second"] is not None
+    assert summary["batch_concurrency"] == 2
+    assert summary["confusion"] == {
+        "compliant": {"compliant": 2, "high_risk": 0, "ambiguous": 0},
+        "high_risk": {"compliant": 0, "high_risk": 1, "ambiguous": 0},
+        "ambiguous": {"compliant": 0, "high_risk": 0, "ambiguous": 1},
+    }
+    assert summary["cache_stats"] is not None
+    assert summary["cache_stats"]["writes"] >= 1
 
     records = client.get(f"/batch-runs/{batch_run_id}/records")
     assert records.status_code == 200
@@ -36,6 +49,8 @@ def test_batch_completes_with_the_design_breakdown(client: TestClient, source_ro
     assert len(rows) == 4
     assert all(row["step_count"] > 0 for row in rows)
     assert {row["state"] for row in rows} == {"complete", "awaiting_review"}
+    assert all(row["elapsed_seconds"] is not None for row in rows)
+    assert all(row["elapsed_seconds"] >= 0 for row in rows)
 
 
 def test_batch_validation(client: TestClient) -> None:
@@ -61,6 +76,34 @@ def test_batch_stream_emits_progress(client: TestClient, monkeypatch: Any) -> No
     assert progress, "expected progress events while the batch is in flight"
     assert progress[-1]["data"]["total"] == 4
     assert sum(progress[-1]["data"]["verdict_breakdown"].values()) == 4
+    assert progress[-1]["data"]["elapsed_seconds"] >= 0
+
+
+def test_batch_snapshot_replays_progress(client: TestClient, source_router: object) -> None:
+    """A late subscriber sees cumulative counts without waiting for a new frame."""
+    batch_run_id = _start_batch(client, 4)
+    api_helpers.wait_for_state(client, batch_run_id, {"complete"}, path="/batch-runs")
+
+    events = api_helpers.read_sse(client, f"/batch-runs/{batch_run_id}/stream")
+    snapshot = events[0]["data"]
+    assert snapshot["kind"] == "batch"
+    assert snapshot["progress"]["total"] == 4
+    assert snapshot["progress"]["completed"] == 3
+    assert snapshot["progress"]["awaiting_review"] == 1
+    assert snapshot["progress"]["failed"] == 0
+    assert snapshot["progress"]["verdict_breakdown"] == {
+        "compliant": 2,
+        "high_risk": 1,
+        "ambiguous": 1,
+    }
+    assert snapshot["progress"]["elapsed_seconds"] >= 0
+
+
+def test_nearest_rank_percentile() -> None:
+    assert nearest_rank_percentile([], 0.95) == 0.0
+    assert nearest_rank_percentile([1.0, 2.0, 3.0, 4.0], 0.5) == 2.0
+    assert nearest_rank_percentile([1.0, 2.0, 3.0, 4.0], 0.95) == 4.0
+    assert nearest_rank_percentile([5.0], 0.95) == 5.0
 
 
 def test_batch_concurrency_is_bounded(client: TestClient, monkeypatch: Any) -> None:

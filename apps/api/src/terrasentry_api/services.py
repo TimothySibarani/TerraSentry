@@ -60,20 +60,25 @@ ServicesFactory = Callable[[], AbstractAsyncContextManager[AppServices]]
 
 
 @asynccontextmanager
-async def build_services(settings: Settings = default_settings) -> AsyncIterator[AppServices]:
-    """Build the real services: Postgres engine, Redis cache, live source clients."""
-    integration = get_integration_settings()
+async def build_services(
+    settings: Settings = default_settings,
+    integration: IntegrationSettings | None = None,
+) -> AsyncIterator[AppServices]:
+    """Build the real services: Postgres engine, Redis cache, live source clients.
+
+    ``integration`` is an optional override so the rehearsal CLI can force an
+    offline cache/fixture directory without mutating process env.
+    """
+    resolved = integration or get_integration_settings()
     engine, session_factory = create_engine_and_session(settings.database_url)
-    cache = build_cache(integration, offline=integration.cache_offline)
-    gfw = GfwClient(integration, cache=cache)
-    firms = FirmsClient(integration, cache=cache)
+    cache = build_cache(resolved, offline=resolved.cache_offline)
+    gfw = GfwClient(resolved, cache=cache)
+    firms = FirmsClient(resolved, cache=cache)
     try:
         await check_database(engine, settings.database_url)
         fixtures_loaded = 0
-        if integration.cache_fixtures_dir:
-            fixtures_loaded = await prime_fixtures(
-                cache, Path(integration.cache_fixtures_dir)
-            )
+        if resolved.cache_fixtures_dir:
+            fixtures_loaded = await prime_fixtures(cache, Path(resolved.cache_fixtures_dir))
         datasets = SeedDatasets.load(
             batch_path=Path(settings.seed_data_dir) / "batch_50.json",
             operator_path=Path(settings.seed_data_dir) / "operator.json",
@@ -87,10 +92,11 @@ async def build_services(settings: Settings = default_settings) -> AsyncIterator
             datasets=datasets,
             gfw=gfw,
             firms=firms,
+            cache=cache,
         )
         services = AppServices(
             settings=settings,
-            integration=integration,
+            integration=resolved,
             engine=engine,
             session_factory=session_factory,
             cache=cache,
@@ -99,7 +105,7 @@ async def build_services(settings: Settings = default_settings) -> AsyncIterator
             datasets=datasets,
             run_manager=run_manager,
             mock_sap=MockSapStore(record.supplier_id for record in datasets.records),
-            offline=integration.cache_offline,
+            offline=resolved.cache_offline,
             fixtures_loaded=fixtures_loaded,
         )
     except BaseException:

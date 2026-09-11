@@ -38,13 +38,15 @@ from terrasentry_core.seed.schemas import (
     SeedPolygon,
 )
 from terrasentry_core.tools.datasets import SeedDatasets
-from terrasentry_integrations.cache import MemoryCache
+from terrasentry_integrations.cache import CacheBackend, MemoryCache
 from terrasentry_integrations.settings import IntegrationSettings
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
 
 GFW_URL = "https://data-api.globalforestwatch.org/dataset/umd_tree_cover_loss/v1.13/query/json"
 FIRMS_REGEX = r"https://firms\.modaps\.eosdis\.nasa\.gov/api/area/csv/TESTKEY/VIIRS_SNPP_NRT/.*"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+SEED_DIR = REPO_ROOT / "data" / "seed"
 POLYGON_GEOMETRY: dict[str, Any] = {
     "type": "Polygon",
     "coordinates": [[[101.0, 0.0], [101.02, 0.0], [101.02, 0.02], [101.0, 0.02], [101.0, 0.0]]],
@@ -183,12 +185,22 @@ async def _create_all(engine: AsyncEngine) -> None:
         await connection.run_sync(Base.metadata.create_all)
 
 
+def load_seed_datasets() -> SeedDatasets:
+    """The committed 50-record seed, used by the M6 full-batch tests."""
+    return SeedDatasets.load(
+        batch_path=SEED_DIR / "batch_50.json",
+        operator_path=SEED_DIR / "operator.json",
+    )
+
+
 def test_services_factory(
     tmp_path: Path,
     datasets: SeedDatasets | None = None,
     *,
     batch_concurrency: int = 2,
     auto_seed: bool = True,
+    cache: CacheBackend | None = None,
+    offline: bool = False,
 ) -> ServicesFactory:
     """A lifespan-compatible factory that never touches Postgres or Redis."""
     resolved = datasets or build_datasets()
@@ -205,9 +217,9 @@ def test_services_factory(
         )
         engine, session_factory = create_engine_and_session(settings.database_url)
         await _create_all(engine)
-        cache = MemoryCache()
-        gfw = GfwClient(integration, cache=cache)
-        firms = FirmsClient(integration, cache=cache)
+        cache_backend = cache or MemoryCache()
+        gfw = GfwClient(integration, cache=cache_backend)
+        firms = FirmsClient(integration, cache=cache_backend)
         if settings.auto_seed:
             async with session_factory() as session:
                 await seed_if_empty(RunStore(session), resolved)
@@ -217,18 +229,20 @@ def test_services_factory(
             datasets=resolved,
             gfw=gfw,
             firms=firms,
+            cache=cache_backend,
         )
         services = AppServices(
             settings=settings,
             integration=integration,
             engine=engine,
             session_factory=session_factory,
-            cache=cache,
+            cache=cache_backend,
             gfw=gfw,
             firms=firms,
             datasets=resolved,
             run_manager=manager,
             mock_sap=MockSapStore(record.supplier_id for record in resolved.records),
+            offline=offline,
         )
         try:
             yield services
@@ -284,7 +298,9 @@ def read_sse(
 __all__ = [
     "FIRMS_REGEX",
     "GFW_URL",
+    "SEED_DIR",
     "build_datasets",
+    "load_seed_datasets",
     "make_operator",
     "make_record",
     "read_sse",

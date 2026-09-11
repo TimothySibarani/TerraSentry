@@ -5,8 +5,8 @@ parcels against real satellite and geospatial sources (Hansen GFC, NASA FIRMS), 
 deterministic rubric, and produces explainable, audit-ready due-diligence verdicts with a full agent
 trace.
 
-**Status:** M1 integrations + cache complete; live source probe gated on Day-1 API keys — see
-[docs/milestones.md](./docs/milestones.md) for progress.
+**Status:** M6 batch/throughput landed offline; the live rehearsal and the two live scenarios are
+gated on Day-1 API keys — see [docs/milestones.md](./docs/milestones.md) for progress.
 
 ## Stack
 
@@ -55,7 +55,13 @@ Data-source keys (GFW, FIRMS) and cloud access are covered in
 uv run python -m terrasentry_integrations.preflight   # live credential/latency/quota probe
 uv run python -m terrasentry_core.reference            # live run, then cached
 uv run python -m terrasentry_core.reference --offline  # zero external calls
+pnpm rehearsal:prefetch                                # live 50-record cache prefetch + fixtures
+pnpm rehearsal:run                                     # offline replay -> KPI report in data/runs/
 ```
+
+The rehearsal procedure, including `--as-of` window pinning for stable fixtures, is in
+[docs/setup/rehearsal.md](./docs/setup/rehearsal.md); measured numbers live in
+[docs/kpi.md](./docs/kpi.md).
 
 Quality gates:
 
@@ -77,6 +83,8 @@ docker compose up --build   # Postgres + API + web
 - [docs/architecture.md](./docs/architecture.md) — decisions, runtime architecture, stack rationale
 - [docs/prd.md](./docs/prd.md) — MVP scope and acceptance criteria
 - [docs/milestones.md](./docs/milestones.md) — milestone tracker and gates
-- [docs/setup/README.md](./docs/setup/README.md) — API keys, AWS free tier/Bedrock, SAP trial/sandbox
+- [docs/kpi.md](./docs/kpi.md) — empirical KPI table and how to reproduce it
+- [docs/setup/README.md](./docs/setup/README.md) — API keys, AWS free tier/Bedrock, SAP trial/sandbox,
+  batch rehearsal
 - [DESIGN.md](./DESIGN.md) — design tokens and visual language
 - [AGENTS.md](./AGENTS.md) — coding standards and agent instructions

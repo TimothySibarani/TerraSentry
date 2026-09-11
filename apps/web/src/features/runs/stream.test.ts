@@ -103,6 +103,7 @@ describe("run stream reducer", () => {
 						high_risk: 1,
 						ambiguous: 1,
 					},
+					elapsed_seconds: 42.5,
 				},
 			}),
 		);
@@ -112,7 +113,38 @@ describe("run stream reducer", () => {
 			failed: 0,
 			awaitingReview: 1,
 			verdictBreakdown: { compliant: 10, high_risk: 1, ambiguous: 1 },
+			elapsedSeconds: 42.5,
 		});
+	});
+
+	it("seeds progress from a batch snapshot for late subscribers", () => {
+		const state = applyRunEvent(
+			createRunStreamState(),
+			decodeEvent({
+				event: "snapshot",
+				data: {
+					run_id: "batch-1",
+					kind: "batch",
+					state: "complete",
+					record_id: null,
+					parent_run_id: null,
+					verdict: null,
+					score: null,
+					dds_released: false,
+					progress: {
+						run_id: "batch-1",
+						total: 50,
+						completed: 42,
+						failed: 0,
+						awaiting_review: 8,
+						verdict_breakdown: { compliant: 30, high_risk: 12, ambiguous: 8 },
+						elapsed_seconds: 131.2,
+					},
+				},
+			}),
+		);
+		expect(state.progress?.awaitingReview).toBe(8);
+		expect(state.progress?.elapsedSeconds).toBe(131.2);
 	});
 
 	it("treats a terminal state frame as end-of-stream", () => {

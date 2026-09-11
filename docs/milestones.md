@@ -66,7 +66,7 @@ M1 Integrations + cache  --->  M2 Deterministic core  --->  M3 Agent orchestrati
 | M3 Agent orchestration | Done | W2-W3 | M2 | Reference-pipeline parity + verifier catch + HITL |
 | M4 API + persistence | Done | W3 | M3 | Run endpoints + SSE + batch worker, generated client |
 | M5 Cockpit | Done | W3-W4 | M4 | Demo flow navigable, live trace, batch summary, map |
-| M6 Batch 50 + throughput | Todo | W4 | M4, M5 | 50 records complete, metrics + 30/12/8 breakdown |
+| M6 Batch 50 + throughput | In progress | W4 | M4, M5 | 50 records complete, metrics + 30/12/8 breakdown (offline verified; live numbers blocked on §3) |
 | M7 SAP closed loop | Todo | W2-W4 | M0, Day 1 access | Vendor status flip visible end-to-end |
 | M8 Hardening + demo | Todo | W4-W5 | M6, M7 | All MVP Definition of Done boxes checked |
 
@@ -300,13 +300,31 @@ error states instead of blank screens.
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
 | Synthetic seed generator: 30 compliant / 12 high-risk / 8 ambiguous | Done | — | Landed early in M1: `python -m terrasentry_core.seed`; real forest coordinates in Sumatra/Kalimantan/Riau; committed `data/seed/batch_50.json` |
-| Per-record elapsed time and status persistence | Todo | TBD | match intended distribution |
-| Aggregate metrics: wall clock, avg per record, breakdown | Todo | TBD | displayed in M5 batch view |
-| Pre-fetch demo cache and run a full rehearsal | Todo | TBD | PRD risk mitigation |
-| Record results in this doc and in the KPI table | Todo | TBD | replaces projected numbers |
+| Per-record elapsed time and status persistence | Done | — | `Run.elapsed_seconds`/`state` persisted per child run; now asserted for all 50 in `apps/api/tests/test_batch_full.py` |
+| Aggregate metrics: wall clock, avg per record, breakdown | Done | — | Extended with median/p95, throughput, `confusion`, `cache_stats`, `batch_concurrency`; parent `Run.metrics` → `BatchSummary` → dashboard/batch view |
+| Pre-fetch demo cache and run a full rehearsal | Blocked | TBD | `python -m terrasentry_api.rehearsal prefetch|run` landed with `--as-of` window pinning, fixtures round-trip and report JSON; the live pre-fetch needs §3 GFW/FIRMS keys |
+| Record results in this doc and in the KPI table | In progress | TBD | `docs/kpi.md` + dashboard KPI table landed with method and offline evidence; live column pending §3 |
 
 **Exit criteria:** 50 records complete within the demo window (or the pre-recorded plan is
 confirmed); the breakdown matches the 30/12/8 design; numbers are reproducible from cached data.
+
+> **Landed 2026-09-11; live pre-fetch blocked on §3.** `python -m terrasentry_api.rehearsal`
+> now owns the operational path: `prefetch` makes the live GFW/FIRMS calls, exports fixtures and
+> reports per-record latency; `run --offline` primes the cache, executes the batch through the
+> production `RunManager` against Postgres and writes a JSON report with wall clock, avg/median/p95,
+> throughput, confusion, state counts and cache deltas. `--as-of` pins the FIRMS end date and GFW
+> year window for both commands so fixtures stay valid across days. `RunManager` metrics gained
+> `median_seconds_per_record`, `p95_seconds_per_record`, `throughput_records_per_second`,
+> `total_record_seconds`, `confusion` and `cache_stats` (cache delta); `BatchSummary` and the SSE
+> `progress` frames carry live `elapsed_seconds`, and a batch `snapshot` now replays cumulative
+> counts so a late subscriber sees progress immediately. The cockpit adds a batch Throughput card
+> (records/s, median, p95, design match, cache) and a dashboard KPI table mirroring `docs/kpi.md`
+> with a "never projections" rule. Verified offline at three levels: the full-50 design-signal test
+> (30/12/8 exact, per-record persistence, every new metric), an offline fixture replay asserting
+> zero external calls and identical verdicts, and a local CLI run over mock fixtures against
+> Postgres/Redis (50 records, 30/12/8, 100 cache hits, 0 misses, 0.872 s wall clock — an
+> operational smoke, not a live performance number). The remaining work is exactly the §3
+> dependency: real keys, then record the live column in `docs/kpi.md` and close the milestone.
 
 ---
 
@@ -364,6 +382,7 @@ Append one line per meaningful update. Keep newest at the top.
 
 | Date | Milestone | Update |
 | --- | --- | --- |
+| 2026-09-11 | M6 | Batch throughput landed (live pre-fetch blocked on §3): `python -m terrasentry_api.rehearsal` adds `prefetch` (live GFW/FIRMS → fixtures + latency report) and `run --offline` (production `RunManager` over Postgres → JSON report), with `--as-of` pinning FIRMS/GFW windows so fixtures survive across days. Batch metrics now include `median_seconds_per_record`, `p95_seconds_per_record`, `throughput_records_per_second`, `total_record_seconds`, `confusion` and a `cache_stats` delta, all exposed on `BatchSummary`; SSE `progress` carries `elapsed_seconds` and batch `snapshot` replays cumulative counts for late subscribers. The `REHEARSAL_AS_OF` pin is threaded through both the batch runner and the scenario `RunOrchestrator`/`ToolContext`, so the two live scenarios and the batch replay from the same fixtures without a day-relative cache miss. Cockpit: batch Throughput card (records/s, median, p95, design match, cache) and a dashboard KPI table mirroring the new `docs/kpi.md`. Evidence: full-50 design-signal API test asserts 30/12/8 exact + per-record state/elapsed persistence + every metric; offline fixture replay asserts zero external calls and identical verdicts; local CLI smoke over mock fixtures against Postgres/Redis produced a 50-record 30/12/8 report (0.872 s wall clock, 100 cache hits, 0 misses) — operational smoke only, live numbers pending the §3 keys. |
 | 2026-09-11 | M5 | Cockpit landed: sidebar app shell with URL-synced filters/tabs and seven routes (dashboard, suppliers list/detail, runs list/detail, batch list/detail), `components/data-table.tsx` over TanStack Table v9, `status-badge`/`verdict-breakdown`/`metric-card`/`map-view` components, and route-level error/not-found/pending states. `useRunStream`/`useBatchStream` consume SSE through the Effect `Stream` API with `takeUntil` on terminal state + reconnect and query invalidation; run detail tabs cover Trace (live merge, dedupe by step id), Assessment (findings, verifier challenges, disclosures), Evidence ledger, Map (dynamic MapLibre import, `VITE_MAP_STYLE_URL` or offline dark style; polygon + hotspot layers), and DDS (JSON/XML + download), with `ReviewDialog` for HITL approve/override and an explicit withheld-DDS state. Prerequisites fixed: scenario runs now publish a terminal `done` event, `ApiClientError` carries HTTP status, `decodeRunEventStream` is exported, and `GET /health` reports `{ offline, fixtures_loaded }`. Offline rehearsals: `terrasentry_integrations.fixtures` export/prime CLI, `CACHE_OFFLINE`/`CACHE_FIXTURES_DIR`, API startup priming, and a rehearsal badge in the shell. `apps/web` gains vitest + happy-dom (26 tests); `pnpm check`, `pnpm test`, and `pnpm build` green. Live keys remain the §3 gate. |
 | 2026-09-11 | M4 | API + persistence landed: SQLAlchemy 2.0 audit store (`suppliers`, `parcels`, `runs`, `run_steps`, `evidence`, `verdicts`, `dds_documents`) with an Alembic async migration verified up/down against Postgres and a CI `alembic check` drift gate; lifespan-built `AppServices` (engine, Redis cache, shared GFW/FIRMS clients, `RunManager`, mock SAP) with idempotent auto-seed of the synthetic suppliers/parcels. Routers: suppliers, runs (202 start, detail, evidence, SSE, decision), batch (202 start, metrics, records, SSE), dds (JSON/XML with 409 while withheld), mock sap (vendor status/block). The in-process worker runs scenarios through the M3 graph and batch records through the deterministic assess + verifier path with an asyncio semaphore (`BATCH_CONCURRENCY`) over the shared rate-limited clients; steps persist and stream live (`snapshot`/`step`/`state`/`progress`/`done`), and HITL release reconstructs the M3 result from Postgres (decisions are serialised per run; SSE responses carry a send timeout and no-store/nosniff headers). `RunOrchestrator` gained an `on_step` hook + injectable `run_id` (CLI/parity unchanged; new hook tests). `pnpm gen:api` regenerated the contract; the Effect client now decodes every response with `Schema`, exposes REST methods plus `streamRun`/`streamBatchRun` over `Stream` + `Sse`, and has 13 vitest cases. 18 API tests (SQLite + respx; lifecycle, SSE replay, HITL, batch breakdown/bounded concurrency, error paths); full Python suite 147 green, Ruff/Pyright/Biome/tsc clean. Live-key end-to-end remains gated on §3. |
 | 2026-09-11 | M3 | Live Bedrock path hardened per Bedrock best practice: adaptive retries + explicit connect/read timeouts and validated agent settings, opt-in prompt caching (`BEDROCK_PROMPT_CACHE=off|auto|anthropic`, documented as below the Sonnet/Haiku minimums), and a new `python -m terrasentry_core.agents.preflight` gate check that pings both roles through the same Strands path and maps AWS errors to fixes. AWS runbook now uses a least-privilege Bedrock policy and SSO/role guidance instead of `AmazonBedrockFullAccess`. 126 Python tests green, Ruff/Pyright clean. Live smoke still gated on the §3 account access. |

@@ -1,7 +1,7 @@
-import type { RunSummary } from "@terrasentry/api-client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createColumnHelper } from "@tanstack/react-table";
+import type { RunSummary } from "@terrasentry/api-client";
 import { ArrowLeftIcon } from "lucide-react";
 import { useMemo } from "react";
 
@@ -138,6 +138,24 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 			(summary.states.awaiting_review ?? 0);
 	const percent = total > 0 ? Math.round((settled / total) * 100) : 0;
 	const breakdown = progress?.verdictBreakdown ?? summary.verdict_breakdown;
+	const live = stream.status === "live";
+	const wallClock = progress?.elapsedSeconds ?? summary.wall_clock_seconds;
+	const average =
+		live && progress?.elapsedSeconds != null && settled > 0
+			? progress.elapsedSeconds / settled
+			: summary.average_seconds_per_record;
+	const confusion = summary.confusion ?? {};
+	const confusionTotal = Object.values(confusion).reduce(
+		(sum, row) =>
+			sum + Object.values(row).reduce((rowSum, count) => rowSum + count, 0),
+		0,
+	);
+	const matched = Object.entries(confusion).reduce(
+		(sum, [archetype, row]) => sum + (row[archetype] ?? 0),
+		0,
+	);
+	const designMatch = confusionTotal > 0 ? matched / confusionTotal : null;
+	const cache = summary.cache_stats;
 
 	return (
 		<div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -181,16 +199,20 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 						value={percent}
 						aria-label={`${percent}% of records settled`}
 					/>
-					<div className="grid gap-4 sm:grid-cols-4">
+					<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 						<MetricCard
 							label="Wall clock"
-							value={formatDuration(summary.wall_clock_seconds)}
-							hint="Total elapsed batch time"
+							value={formatDuration(wallClock)}
+							hint={live ? "Live batch elapsed" : "Total elapsed batch time"}
 						/>
 						<MetricCard
 							label="Avg / record"
-							value={formatDuration(summary.average_seconds_per_record)}
-							hint="Mean per-record elapsed time"
+							value={formatDuration(average)}
+							hint={
+								live
+									? "Elapsed ÷ settled records"
+									: "Mean per-record elapsed time"
+							}
 						/>
 						<MetricCard
 							label="Awaiting review"
@@ -207,6 +229,47 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 							hint="Records that did not settle"
 						/>
 					</div>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Throughput</CardTitle>
+					<CardDescription>
+						Empirical numbers from this run — the same fields backed by the
+						rehearsal report.
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="flex flex-col gap-4">
+					<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+						<MetricCard
+							label="Throughput"
+							value={formatNumber(summary.throughput_records_per_second)}
+							hint="Records per second"
+						/>
+						<MetricCard
+							label="Median / record"
+							value={formatDuration(summary.median_seconds_per_record)}
+							hint="p50 per-record elapsed"
+						/>
+						<MetricCard
+							label="P95 / record"
+							value={formatDuration(summary.p95_seconds_per_record)}
+							hint="Nearest-rank p95"
+						/>
+						<MetricCard
+							label="Design match"
+							value={
+								designMatch === null ? "—" : `${Math.round(designMatch * 100)}%`
+							}
+							hint="Expected archetype mapped to its verdict"
+						/>
+					</div>
+					<p className="text-caption-mono-sm text-muted-foreground">
+						{cache
+							? `Cache: ${cache.hits ?? 0} hits · ${cache.misses ?? 0} misses · ${cache.writes ?? 0} writes · ${cache.offline_misses ?? 0} offline misses`
+							: "Cache: —"}
+					</p>
 				</CardContent>
 			</Card>
 

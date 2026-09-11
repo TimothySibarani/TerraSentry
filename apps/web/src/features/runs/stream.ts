@@ -20,6 +20,25 @@ export interface BatchProgress {
 	failed: number;
 	awaitingReview: number;
 	verdictBreakdown: Record<string, number>;
+	elapsedSeconds: number | null;
+}
+
+function toBatchProgress(data: {
+	total: number;
+	completed: number;
+	failed: number;
+	awaiting_review: number;
+	verdict_breakdown: Record<string, number>;
+	elapsed_seconds?: number | null;
+}): BatchProgress {
+	return {
+		total: data.total,
+		completed: data.completed,
+		failed: data.failed,
+		awaitingReview: data.awaiting_review,
+		verdictBreakdown: data.verdict_breakdown,
+		elapsedSeconds: data.elapsed_seconds ?? null,
+	};
 }
 
 export interface RunStreamState {
@@ -65,6 +84,9 @@ export function applyRunEvent(
 				verdict: event.data.verdict,
 				score: event.data.score,
 				ddsReleased: event.data.dds_released,
+				progress: event.data.progress
+					? toBatchProgress(event.data.progress)
+					: state.progress,
 				eventCount: state.eventCount + 1,
 			};
 		case "step":
@@ -83,13 +105,7 @@ export function applyRunEvent(
 		case "progress":
 			return {
 				...state,
-				progress: {
-					total: event.data.total,
-					completed: event.data.completed,
-					failed: event.data.failed,
-					awaitingReview: event.data.awaiting_review,
-					verdictBreakdown: event.data.verdict_breakdown,
-				},
+				progress: toBatchProgress(event.data),
 				eventCount: state.eventCount + 1,
 			};
 	}

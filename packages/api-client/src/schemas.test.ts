@@ -2,7 +2,13 @@ import { assert, describe, it } from "@effect/vitest";
 import { DateTime, Effect, Schema, Stream } from "effect";
 
 import { decodeRunEventStream } from "./client";
-import { HealthResponse, RunDetail, RunEvent, RunSummary } from "./schemas";
+import {
+  BatchSummary,
+  HealthResponse,
+  RunDetail,
+  RunEvent,
+  RunSummary,
+} from "./schemas";
 
 describe("HealthResponse", () => {
   it.effect("decodes the API health payload", () =>
@@ -95,6 +101,46 @@ describe("RunSummary", () => {
   );
 });
 
+const batchSummary = {
+  run_id: "batch-1",
+  state: "complete",
+  record_count: 50,
+  states: { complete: 42, awaiting_review: 8, failed: 0 },
+  verdict_breakdown: { compliant: 30, high_risk: 12, ambiguous: 8 },
+  expected_breakdown: { compliant: 30, high_risk: 12, ambiguous: 8 },
+  wall_clock_seconds: 123.4,
+  average_seconds_per_record: 9.8,
+  median_seconds_per_record: 9.1,
+  p95_seconds_per_record: 15.2,
+  throughput_records_per_second: 0.405,
+  total_record_seconds: 490.0,
+  cache_stats: { hits: 350, misses: 0, writes: 0, offline_misses: 0 },
+  confusion: {
+    compliant: { compliant: 30, high_risk: 0, ambiguous: 0 },
+    high_risk: { compliant: 0, high_risk: 12, ambiguous: 0 },
+    ambiguous: { compliant: 0, high_risk: 0, ambiguous: 8 },
+  },
+  batch_concurrency: 4,
+  started_at: "2026-09-11T10:00:00Z",
+  finished_at: "2026-09-11T10:02:03Z",
+  metrics: {},
+};
+
+describe("BatchSummary", () => {
+  it.effect("decodes throughput metrics, confusion, and cache stats", () =>
+    Effect.gen(function* () {
+      const summary =
+        yield* Schema.decodeUnknownEffect(BatchSummary)(batchSummary);
+      assert.strictEqual(summary.record_count, 50);
+      assert.strictEqual(summary.median_seconds_per_record, 9.1);
+      assert.strictEqual(summary.throughput_records_per_second, 0.405);
+      assert.strictEqual(summary.confusion.ambiguous?.ambiguous, 8);
+      assert.strictEqual(summary.cache_stats?.offline_misses, 0);
+      assert.strictEqual(summary.batch_concurrency, 4);
+    }),
+  );
+});
+
 describe("RunDetail", () => {
   it.effect("decodes the full dossier with a withheld/pending shape", () =>
     Effect.gen(function* () {
@@ -144,7 +190,7 @@ describe("RunEvent", () => {
     }),
   );
 
-  it.effect("decodes a progress event", () =>
+  it.effect("decodes a progress event with live timing", () =>
     Effect.gen(function* () {
       const event = yield* Schema.decodeUnknownEffect(RunEvent)({
         event: "progress",
@@ -155,11 +201,45 @@ describe("RunEvent", () => {
           failed: 0,
           awaiting_review: 1,
           verdict_breakdown: { compliant: 10, high_risk: 1, ambiguous: 1 },
+          elapsed_seconds: 42.5,
         },
       });
       assert.strictEqual(event.event, "progress");
       if (event.event === "progress") {
         assert.strictEqual(event.data.total, 50);
+        assert.strictEqual(event.data.elapsed_seconds, 42.5);
+      }
+    }),
+  );
+
+  it.effect("decodes a batch snapshot that replays progress", () =>
+    Effect.gen(function* () {
+      const event = yield* Schema.decodeUnknownEffect(RunEvent)({
+        event: "snapshot",
+        data: {
+          run_id: "batch-1",
+          kind: "batch",
+          state: "complete",
+          record_id: null,
+          parent_run_id: null,
+          verdict: null,
+          score: null,
+          dds_released: false,
+          progress: {
+            run_id: "batch-1",
+            total: 50,
+            completed: 42,
+            failed: 0,
+            awaiting_review: 8,
+            verdict_breakdown: { compliant: 30, high_risk: 12, ambiguous: 8 },
+            elapsed_seconds: 131.2,
+          },
+        },
+      });
+      assert.strictEqual(event.event, "snapshot");
+      if (event.event === "snapshot") {
+        assert.strictEqual(event.data.progress?.awaiting_review, 8);
+        assert.strictEqual(event.data.progress?.elapsed_seconds, 131.2);
       }
     }),
   );

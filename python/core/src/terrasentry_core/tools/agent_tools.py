@@ -9,7 +9,7 @@ a step to the run trace so the cockpit can show it later (M5).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
 
 from strands import tool
@@ -36,6 +36,7 @@ class ToolContext:
     trace: TraceCollector
     window_days: int = 30
     loss_window: LossWindow = field(default_factory=LossWindow.from_now)
+    as_of: date | None = None
     retrieved_at: datetime | None = None
     refresh: bool = False
     candidate: RecordAssessment | None = None
@@ -55,6 +56,7 @@ class ToolContext:
             window_days=self.window_days,
             loss_window=self.loss_window,
             refresh=refresh or self.refresh,
+            as_of=self.as_of,
         )
         self._sources[polygon_id] = sources
         return sources
@@ -242,10 +244,7 @@ def build_verifier_tools(context: ToolContext) -> list[AgentTool]:
         if candidate is None:
             return []
         context.trace.add("verifier", "list_evidence_claims", "ledger inspection")
-        return [
-            {"evidence_id": entry.evidence_id, "claim": entry.claim}
-            for entry in candidate.evidence
-        ]
+        return [{"evidence_id": entry.evidence_id, "claim": entry.claim} for entry in candidate.evidence]
 
     @tool
     async def get_evidence_entry(evidence_id: str) -> dict[str, Any]:

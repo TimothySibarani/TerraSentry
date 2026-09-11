@@ -506,8 +506,11 @@ queued -> running -> complete
 generated around real forest coordinates in Sumatra, Kalimantan, and Riau). An in-process asyncio
 worker processes records with bounded concurrency and per-source limiters, persisting per-record
 elapsed time and status. `GET /batch-runs/{id}/stream` emits progress over SSE; the final summary
-reports wall-clock time, average per record, and the pass/fail/ambiguous breakdown. When moving to
-AWS, the same worker runs as a container consuming SQS — the API contract does not change.
+reports wall-clock time, average/median/p95 per record, throughput, the expected-vs-actual
+confusion matrix, and the cache-stats delta for the run. `python -m terrasentry_api.rehearsal`
+drives the same worker headlessly for recorded KPI runs (`docs/kpi.md`,
+`docs/setup/rehearsal.md`). When moving to AWS, the same worker runs as a container consuming SQS
+— the API contract does not change.
 
 ### Live agent trace
 
@@ -727,6 +730,19 @@ support lives in `terrasentry_integrations.fixtures` (`export`/`prime` CLI over 
 vitest + happy-dom suite (26 tests); `pnpm check`, `pnpm test`, and the Nitro build are green.
 Live-key end-to-end still needs the §3 gates; fixture files are recorded at the M6 rehearsal because
 FIRMS cache windows are date-relative.
+
+M6 landed (2026-09-11; live pre-fetch blocked on §3): throughput is now a measured artifact rather
+than a projection. `apps/api/src/terrasentry_api/rehearsal.py` provides `prefetch` (live
+GFW/FIRMS calls for the seed batch, exported as cache fixtures) and `run --offline` (production
+`RunManager` over Postgres, then a JSON report), with `--as-of` pinning the FIRMS end date and GFW
+year window so a prefetch and a later offline rehearsal resolve the same cache keys.
+`RunManager._batch_metrics` now records median/p95 per-record time, throughput, total worker
+seconds, a 3x3 expected-vs-verdict confusion matrix and the cache-stats delta, surfaced on
+`BatchSummary`; SSE `progress` frames carry live `elapsed_seconds` and batch `snapshot` replays
+cumulative counts. `docs/kpi.md` is the KPI source of truth and the dashboard renders the same
+rows from the latest completed batch. Verification is offline at three levels (full-50
+design-signal API test, fixture-replay test with zero external calls, local CLI smoke over mock
+fixtures); real numbers wait on the §3 Day-1 keys.
 
 ---
 

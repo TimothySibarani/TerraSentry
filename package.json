@@ -20,6 +20,8 @@
     "db:upgrade": "uv run alembic -c apps/api/alembic.ini upgrade head",
     "db:check": "uv run alembic -c apps/api/alembic.ini check",
     "gen:api": "uv run python -m terrasentry_api.export_openapi > packages/api-client/openapi.json && pnpm --filter @terrasentry/api-client gen",
+    "rehearsal:prefetch": "uv run python -m terrasentry_api.rehearsal prefetch",
+    "rehearsal:run": "uv run python -m terrasentry_api.rehearsal run --offline",
     "check": "pnpm lint && pnpm lint:py && pnpm typecheck && pnpm typecheck:py"
   },
   "devDependencies": {

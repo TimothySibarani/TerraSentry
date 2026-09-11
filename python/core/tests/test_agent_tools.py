@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any
+from datetime import date
+from typing import Any, cast
 
 import agent_helpers
+import terrasentry_core.tools.agent_tools as agent_tools
 from shapely.geometry import shape
 from terrasentry_core.assessment.pipeline import assess_record
 from terrasentry_core.reference.pipeline import PolygonReport
 from terrasentry_core.tools.agent_tools import ToolContext, build_source_tools, build_verifier_tools
+from terrasentry_core.tools.sources import PolygonSources
 from terrasentry_core.tools.trace import TraceCollector
 
 FIXED_TIME = agent_helpers.FIXED_TIME
@@ -67,6 +70,29 @@ async def test_polygon_sources_are_fetched_once_per_run(source_router, source_cl
 
     assert source_router.routes[0].call_count == 1
     assert len(context.collected_sources) == 1
+
+
+async def test_polygon_sources_forwards_the_pinned_as_of(monkeypatch: Any) -> None:
+    captured: dict[str, Any] = {}
+
+    async def fake_fetch(polygon: Any, **kwargs: Any) -> PolygonSources:
+        captured.update(kwargs)
+        return PolygonSources(polygon_id=polygon.id)
+
+    monkeypatch.setattr(agent_tools, "fetch_polygon_sources", fake_fetch)
+    context = ToolContext(
+        gfw=cast(Any, None),
+        firms=cast(Any, None),
+        datasets=agent_helpers.datasets(),
+        trace=TraceCollector(clock=lambda: FIXED_TIME),
+        as_of=date(2026, 9, 11),
+    )
+    record = context.datasets.get_record("REC-001")
+
+    sources = await context.polygon_sources(record.polygon.id)
+
+    assert sources.polygon_id == record.polygon.id
+    assert captured["as_of"] == date(2026, 9, 11)
 
 
 async def test_verifier_tools_are_read_only(source_router, source_clients) -> None:

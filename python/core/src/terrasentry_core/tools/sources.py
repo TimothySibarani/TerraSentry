@@ -8,7 +8,7 @@ M1 clients and tolerate per-source failures exactly like the reference did.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from pydantic import BaseModel, Field
 from terrasentry_integrations.errors import MissingCredentialError, SourceError
@@ -37,6 +37,15 @@ class LossWindow(BaseModel):
         return cls(start_year=end_year - years + 1, end_year=end_year)
 
 
+def resolve_loss_window(
+    years: int = 5, *, as_of: date | None = None, now: datetime | None = None
+) -> LossWindow:
+    """Resolve a loss window, honouring a pinned ``as_of`` date when given."""
+    if as_of is not None:
+        return LossWindow.from_now(years, now=datetime(as_of.year, 1, 1, tzinfo=UTC))
+    return LossWindow.from_now(years, now=now)
+
+
 class PolygonSources(BaseModel):
     """One polygon's real source results plus any per-source failures."""
 
@@ -58,10 +67,17 @@ async def fetch_polygon_sources(
     firms: FirmsClient,
     window_days: int = 30,
     loss_window: LossWindow | None = None,
+    loss_years: int = 5,
     refresh: bool = False,
+    as_of: date | None = None,
 ) -> PolygonSources:
-    """Fetch real GFW/FIRMS data for one polygon, tolerating per-source failures."""
-    resolved = loss_window or LossWindow.from_now()
+    """Fetch real GFW/FIRMS data for one polygon, tolerating per-source failures.
+
+    ``as_of`` pins the FIRMS end date and (when no explicit ``loss_window`` is
+    given) the GFW year window, so a live prefetch and a later offline rehearsal
+    resolve the same cache keys even on different days.
+    """
+    resolved = loss_window if loss_window is not None else resolve_loss_window(loss_years, as_of=as_of)
     sources = PolygonSources(polygon_id=polygon.id)
     try:
         sources.loss = await gfw.tree_cover_loss(
@@ -76,6 +92,7 @@ async def fetch_polygon_sources(
         sources.hotspots = await firms.hotspots_in_polygon(
             polygon.geometry,
             days=window_days,
+            end_date=as_of,
             refresh=refresh,
         )
     except (SourceError, MissingCredentialError) as exc:
@@ -83,4 +100,9 @@ async def fetch_polygon_sources(
     return sources
 
 
-__all__ = ["LossWindow", "PolygonSources", "fetch_polygon_sources"]
+__all__ = [
+    "LossWindow",
+    "PolygonSources",
+    "fetch_polygon_sources",
+    "resolve_loss_window",
+]

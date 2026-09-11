@@ -7,6 +7,7 @@ Operational guides for getting every external dependency working without spendin
 | [data-sources.md](./data-sources.md) | GFW/Hansen key, NASA FIRMS MAP_KEY, Redis cache | M1 |
 | [aws.md](./aws.md) | AWS account, free credits, IAM, Bedrock model access, later services | M3 (Bedrock), M8 (deploy) |
 | [sap.md](./sap.md) | BTP trial, Integration Suite, Business Accelerator Hub sandbox, stub fallback | M7 |
+| [rehearsal.md](./rehearsal.md) | M6 batch prefetch, offline re-run, KPI report | M6, M8 |
 | [../../data/seed/README.md](../../data/seed/README.md) | Synthetic seed datasets and how to regenerate them | M1, M2, M6 |
 
 ## Day-1 checklist
