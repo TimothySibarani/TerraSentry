@@ -12,9 +12,11 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ModelRole = Literal["orchestrator", "extraction"]
+PromptCacheMode = Literal["off", "auto", "anthropic"]
 
 
 class AgentSettings(BaseSettings):
@@ -24,8 +26,11 @@ class AgentSettings(BaseSettings):
     aws_profile: str = ""
     bedrock_model_orchestrator: str = ""
     bedrock_model_extraction: str = ""
-    agent_temperature: float = 0.0
-    agent_max_tokens: int = 2048
+    agent_temperature: float = Field(default=0.0, ge=0.0, le=1.0)
+    agent_max_tokens: int = Field(default=2048, gt=0)
+    agent_retry_max_attempts: int = Field(default=5, ge=1, le=10)
+    agent_read_timeout_seconds: int = Field(default=120, gt=0)
+    bedrock_prompt_cache: PromptCacheMode = "off"
 
     def model_for(self, role: ModelRole) -> str:
         if role == "orchestrator":
@@ -51,5 +56,5 @@ def get_agent_settings() -> AgentSettings:
     return AgentSettings()
 
 
-__all__ = ["AgentSettings", "ModelRole", "get_agent_settings"]
+__all__ = ["AgentSettings", "ModelRole", "PromptCacheMode", "get_agent_settings"]
 

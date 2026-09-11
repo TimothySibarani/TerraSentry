@@ -1938,6 +1938,7 @@ version = "0.1.0"
 source = { editable = "python/core" }
 dependencies = [
     { name = "boto3" },
+    { name = "botocore" },
     { name = "pydantic" },
     { name = "pyproj" },
     { name = "shapely" },
@@ -1954,6 +1955,7 @@ agentcore = [
 requires-dist = [
     { name = "bedrock-agentcore", marker = "extra == 'agentcore'", specifier = ">=0.1" },
     { name = "boto3", specifier = ">=1.35" },
+    { name = "botocore", specifier = ">=1.35" },
     { name = "pydantic", specifier = ">=2.10" },
     { name = "pyproj", specifier = ">=3.7" },
     { name = "shapely", specifier = ">=2.1" },

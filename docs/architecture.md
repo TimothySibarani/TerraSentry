@@ -96,7 +96,7 @@ TerraSentry/
 ├── python/
 │   ├── core/                         terrasentry-core (uv member)
 │   │   └── src/terrasentry_core/
-│   │       ├── agents/               supervisor, specialists, verifier, nodes, orchestrator
+│   │       ├── agents/               supervisor, specialists, verifier, nodes, orchestrator, preflight
 │   │       ├── domain/               models, enums, verdict types
 │   │       ├── seed/                 (M1) deterministic synthetic seed generator
 │   │       ├── reference/            (M1) parity baseline over the same GFW/FIRMS tools
@@ -334,6 +334,15 @@ The concrete Bedrock model for each role is configuration, not code:
 (`--model bedrock`) and accept plain model IDs or cross-region inference profiles, so changing the
 model is an `.env` edit. Verify model access and current IDs in the target account before build day
 (PRD risk table).
+
+The live client follows Bedrock best practice: adaptive retries (`AGENT_RETRY_MAX_ATTEMPTS`,
+default 5) with explicit connect (10s) and read (`AGENT_READ_TIMEOUT_SECONDS`, default 120s)
+timeouts, and an explicit `max_tokens` so Bedrock does not reserve the model maximum. Prompt caching
+is opt-in (`BEDROCK_PROMPT_CACHE=off|auto|anthropic`) and defaults off because the roles' static
+prefixes are below the model minimums (Claude Sonnet 4.5: 1,024 tokens, Haiku 4.5: 4,096), where
+cache points are silently ignored; `anthropic` is the explicit mode for opaque ARN inference
+profiles. `python -m terrasentry_core.agents.preflight` pings both roles through the same Strands path
+and maps AWS failures to fixes, which is the §3 model-access gate check.
 
 **Non-negotiable:** the model never produces the risk score. `scoring.py` computes it from structured
 tool outputs; the model writes the explanation. Every claim in the dossier must pass through the
@@ -597,6 +606,7 @@ uv run python -m terrasentry_integrations.preflight   # live source probe (needs
 uv run python -m terrasentry_core.reference            # live run, then cached
 uv run python -m terrasentry_core.reference --offline  # zero external calls
 uv run python -m terrasentry_core.agents --record REC-001 --model scripted
+uv run python -m terrasentry_core.agents.preflight              # live Bedrock gate check (both roles)
 uv run python -m terrasentry_core.agents --scenario high_risk_live --model bedrock  # live agents
 ```
 
@@ -670,6 +680,10 @@ catches and HITL are covered. Since parity compares live against cached runs, an
 fixed: `cached` is no longer part of the hashed evidence artifact (`EvidenceEntry.cached` outside
 the hash), so cached re-runs are fingerprint-identical. 108 Python tests green; the live Bedrock
 path waits on the §3 model-access gate and the `BEDROCK_MODEL_*` ids chosen for the environment.
+Follow-up (2026-09-11): the runtime client now uses adaptive retries and explicit timeouts, prompt
+caching is an opt-in `BEDROCK_PROMPT_CACHE` knob (off by default, below current prompt thresholds),
+and `python -m terrasentry_core.agents.preflight` pings both roles and serves the §3 gate.
+126 Python tests green.
 
 ---
 

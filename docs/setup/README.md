@@ -15,6 +15,7 @@ Work top to bottom; record each result in `docs/milestones.md` §3.
 
 - [ ] Create AWS account (Free plan) + MFA + budget alert — [aws.md](./aws.md)
 - [ ] Submit the Bedrock model-provider use-case form **once** (inherited by the org) — [aws.md](./aws.md)
+- [ ] Set `BEDROCK_MODEL_*` in `.env` and verify both roles — [aws.md](./aws.md)
 - [ ] Register GFW API key (Resource Watch → JWT → `POST /auth/apikey`) — [data-sources.md](./data-sources.md)
 - [ ] Request NASA FIRMS MAP_KEY (emailed) — [data-sources.md](./data-sources.md)
 - [ ] Check SAP Business Accelerator Hub sandbox and BTP trial access — [sap.md](./sap.md)
@@ -37,6 +38,7 @@ docker compose up -d redis      # cache (CI uses fakeredis instead)
 uv run python -m terrasentry_integrations.preflight   # live probe, needs keys
 uv run python -m terrasentry_core.reference            # live reference run, then cached
 uv run python -m terrasentry_core.reference --offline  # zero external calls
+uv run python -m terrasentry_core.agents.preflight     # Bedrock gate check, needs model ids
 ```
 
 ## The free-stuff strategy in one paragraph

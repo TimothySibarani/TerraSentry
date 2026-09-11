@@ -39,23 +39,63 @@ is needed. Do not build the product on an AWS Educate Starter Account.
 
 ## 3. Create a CLI identity
 
-Never use root credentials for code.
+Never use root credentials for code. Use IAM Identity Center (SSO) for people and IAM
+roles for workloads; a long-lived access key is the fallback for a single hackathon
+account, and it should be scoped and rotated.
 
-1. **IAM → Users → Create user** → name `terrasentry-dev` → no console access.
-2. Attach `AmazonBedrockFullAccess` for now. Deployment will use narrower task roles in
-   M8; revisit then.
+The app only needs to invoke the two configured models, so do **not** attach
+`AmazonBedrockFullAccess`. Create a policy from this template, replacing
+`<account-id>`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeConfiguredModels",
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+      "Resource": [
+        "arn:aws:bedrock:*::foundation-model/*",
+        "arn:aws:bedrock:*:<account-id>:inference-profile/*"
+      ]
+    },
+    {
+      "Sid": "DiscoverModels",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:ListFoundationModels",
+        "bedrock:GetFoundationModel",
+        "bedrock:ListInferenceProfiles",
+        "bedrock:GetInferenceProfile"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+Narrow `InvokeConfiguredModels` to the exact model/profile ARNs once you have picked
+them. Cross-region profiles are allowed for all regions here because the profile may
+route to a foundation model outside your home region.
+
+1. **IAM → Policies → Create policy** with the JSON above.
+2. **IAM → Users → Create user** → name `terrasentry-dev` → no console access →
+   attach only that policy.
 3. **Create access key → CLI**, download the CSV, and store it in the team password
-   manager.
+   manager. Rotate it before the demo and delete it afterwards. (If your account can
+   use IAM Identity Center, run `aws configure sso` instead and skip the key.)
 4. Install the AWS CLI v2 and configure it:
 
 ```bash
-aws configure
-# Access key / secret from the CSV
+aws configure            # or: aws configure sso
 # region: us-east-1
 # output: json
 
-aws sts get-caller-identity        # should return the IAM user ARN
+aws sts get-caller-identity        # should return the user/role ARN
 ```
+
+Enable **CloudTrail** (management events are free) so every Bedrock call is auditable.
 
 Use `AWS_PROFILE=terrasentry` if you keep multiple profiles; `.env` has an
 `AWS_PROFILE=` slot for this.
@@ -81,13 +121,29 @@ A `global.` (or other cross-region) inference profile keeps the demo working if 
 is throttled; use the console's "Inference profile" ids when available. The app fails with a
 clear `MissingModelError` if either variable is unset.
 
-4. Smoke-test from the CLI (this is the exact call Strands will make under the hood):
+4. Verify with the repo preflight: it builds both roles exactly like the agent runtime
+   (adaptive retries, timeouts) and pings each model with a 16-token output cap:
+
+```bash
+uv run python -m terrasentry_core.agents.preflight
+```
+
+   Exit code 0 means the live path is ready. If it fails, the raw Converse call is a
+   useful layer-1 connectivity check:
 
 ```bash
 aws bedrock-runtime converse \
   --region us-east-1 \
   --model-id "$BEDROCK_MODEL_EXTRACTION" \
+  --inference-config '{"maxTokens": 16}' \
   --messages '[{"role":"user","content":[{"text":"reply with the single word ok"}]}]'
+```
+
+   Discover the exact ids when the console is unclear:
+
+```bash
+aws bedrock list-foundation-models --query "modelSummaries[].modelId" --output text
+aws bedrock list-inference-profiles --query "inferenceProfileSummaries[].inferenceProfileId" --output text
 ```
 
 Common failures:
@@ -95,9 +151,11 @@ Common failures:
 | Error | Cause | Fix |
 | --- | --- | --- |
 | `AccessDeniedException` mentioning use case | Provider use-case form not submitted | Open the model in the Bedrock console and submit the form |
+| `AccessDeniedException` without use case | IAM policy missing invoke actions | Attach the policy from section 3 |
 | `ValidationException: invalid model identifier` | Wrong region or model id | Use the region you enabled and the exact id/profile from the console |
-| `ThrottlingException` | Account-level quota or spike | Retry, lower concurrency, or switch to a cross-region profile |
-| `UnrecognizedClientException` | Bad/expired access key | Recreate the IAM access key |
+| `ValidationException: ... on-demand throughput isn't supported` | Model requires an inference profile | Use the `us.`/`eu.`/`global.` profile id from `list-inference-profiles` |
+| `ThrottlingException` | Account-level quota or spike | Adaptive retries are already on; lower concurrency, switch to a cross-region profile, or request a quota increase |
+| `UnrecognizedClientException` | Bad/expired access key | Recreate or rotate the IAM access key |
 
 ## 5. What this costs
 
@@ -111,6 +169,17 @@ comfortably.
   deterministic reference pipeline (which makes no model calls) is used for volume.
 - Prefer the cheaper model for extraction, the stronger model for supervision/verification,
   and cache every external response so rehearsal runs cost nothing.
+- `AGENT_MAX_TOKENS` is set explicitly on purpose: Bedrock reserves
+  `input + max_tokens` quota per request, so an unset max defaults to the model maximum
+  and can throttle the batch many times earlier. Right-size it with CloudWatch
+  `OutputTokenCount` once the 50-record rehearsal has run.
+- Prompt caching stays off (`BEDROCK_PROMPT_CACHE=off`) because the agents' static
+  prefixes are below the model minimums (Sonnet 4.5: 1,024 tokens; Haiku 4.5: 4,096),
+  where cache points are silently ignored. Flip it to `auto` (or `anthropic` for opaque
+  ARN profile ids) only if prompts grow past the minimum and are reused; cache writes
+  cost 25% more, cache reads 90% less.
+- The Bedrock `flex` service tier is the batch-cost lever for M6 if wall-clock allows
+  it; the demo path stays on the default tier.
 
 ## 6. Guardrails for later milestones (M4/M8)
 
@@ -127,6 +196,10 @@ comfortably.
 **Teardown checklist after any cloud demo:** delete ALB, ECS services/clusters, RDS,
 NAT gateways, ECR images, and any idle CloudWatch alarms. Check **Billing → Cost Explorer**
 the next day for stragglers.
+
+**Model invocation logging:** off by default. If you enable it, CloudWatch Logs/S3
+capture full prompts and responses — fine for the synthetic seed data, but for real
+supplier documents encrypt the destination with KMS, restrict access, or leave it off.
 
 ## 7. Troubleshooting
 

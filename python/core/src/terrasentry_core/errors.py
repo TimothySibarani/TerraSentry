@@ -88,3 +88,11 @@ class InvalidReviewDecisionError(CoreError):
     def __init__(self, state: str) -> None:
         super().__init__(f"run is in state {state!r} and cannot accept a review decision")
         self.state = state
+
+
+class ModelConfigurationError(CoreError):
+    """The Bedrock model could not be configured (unknown profile, bad client settings)."""
+
+    def __init__(self, detail: str) -> None:
+        super().__init__(detail)
+        self.detail = detail
