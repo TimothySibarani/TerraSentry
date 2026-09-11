@@ -24,38 +24,12 @@ from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
 
 from terrasentry_core.agents.artifacts import write_agent_run
-from terrasentry_core.agents.models import ModelBundle
+from terrasentry_core.agents.factory import MODEL_MODES, model_bundle_for
 from terrasentry_core.agents.orchestrator import RunOrchestrator
 from terrasentry_core.agents.schemas import AgentRunResult, ReviewDecision
-from terrasentry_core.agents.scripted import AutopilotResponder, ScriptedModel
-from terrasentry_core.agents.verification import VerificationReport
 from terrasentry_core.domain.enums import Decision, RunState
 from terrasentry_core.errors import CoreError
-from terrasentry_core.seed.schemas import BatchRecord
 from terrasentry_core.tools.datasets import DEFAULT_BATCH_PATH, DEFAULT_OPERATOR_PATH, SeedDatasets
-
-
-def _scripted_models(record: BatchRecord) -> ModelBundle:
-    responder = AutopilotResponder.for_record(
-        record,
-        structured_outputs={
-            VerificationReport: VerificationReport(
-                accepted=True,
-                checked_claims=["llm.scripted"],
-                notes=["scripted verifier: deterministic checks are the gate"],
-            )
-        },
-    )
-    return ModelBundle(
-        orchestrator=ScriptedModel(responder=responder),
-        extraction=ScriptedModel(responder=responder),
-    )
-
-
-def _models_for(model_name: str, record: BatchRecord) -> ModelBundle:
-    if model_name == "bedrock":
-        return ModelBundle.from_settings()
-    return _scripted_models(record)
 
 
 def _print_result(result: AgentRunResult, written: list[Path]) -> None:
@@ -95,11 +69,7 @@ async def _run(args: argparse.Namespace) -> int:
         batch_path=Path(args.batch),
         operator_path=Path(args.operator),
     )
-    record = (
-        datasets.get_record(args.record)
-        if args.record
-        else datasets.record_for_scenario(args.scenario)
-    )
+    record = datasets.get_record(args.record) if args.record else datasets.record_for_scenario(args.scenario)
     cache = build_cache(settings, offline=args.offline)
     gfw = GfwClient(settings, cache=cache)
     firms = FirmsClient(settings, cache=cache)
@@ -108,7 +78,7 @@ async def _run(args: argparse.Namespace) -> int:
             gfw=gfw,
             firms=firms,
             datasets=datasets,
-            models=_models_for(args.model, record),
+            models=model_bundle_for(args.model, record),
             window_days=args.window,
             years=args.years,
         )
@@ -139,7 +109,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument("--record", help="seed record id, for example REC-001")
     target.add_argument("--scenario", help="demo scenario name, for example high_risk_live")
-    parser.add_argument("--model", choices=["scripted", "bedrock"], default="scripted")
+    parser.add_argument("--model", choices=list(MODEL_MODES), default="scripted")
     parser.add_argument("--batch", default=str(DEFAULT_BATCH_PATH), help="seed batch dataset")
     parser.add_argument("--operator", default=str(DEFAULT_OPERATOR_PATH), help="synthetic EU operator")
     parser.add_argument("--window", type=int, default=30, help="FIRMS lookback window in days")

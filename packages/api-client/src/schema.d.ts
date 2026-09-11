@@ -4,6 +4,115 @@
  */
 
 export interface paths {
+    "/batch-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Batch Runs */
+        get: operations["list_batch_runs_batch_runs_get"];
+        put?: never;
+        /**
+         * Create Batch
+         * @description Queue a batch; records run concurrently on the deterministic assess path.
+         */
+        post: operations["create_batch_batch_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/batch-runs/{batch_run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Batch Run */
+        get: operations["get_batch_run_batch_runs__batch_run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/batch-runs/{batch_run_id}/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Batch Records */
+        get: operations["list_batch_records_batch_runs__batch_run_id__records_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/batch-runs/{batch_run_id}/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream Batch Run
+         * @description SSE stream of ``progress`` events and a terminal ``done`` event.
+         */
+        get: operations["stream_batch_run_batch_runs__batch_run_id__stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dds/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dds */
+        get: operations["get_dds_dds__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dds/{run_id}/xml": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dds Xml */
+        get: operations["get_dds_xml_dds__run_id__xml_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -21,10 +130,800 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mock-sap/vendors/{vendor_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Vendor */
+        get: operations["get_vendor_mock_sap_vendors__vendor_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mock-sap/vendors/{vendor_id}/purchasing-block": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Purchasing Block */
+        put: operations["set_purchasing_block_mock_sap_vendors__vendor_id__purchasing_block_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mock-sap/vendors/{vendor_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Vendor Status */
+        put: operations["update_vendor_status_mock_sap_vendors__vendor_id__status_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Runs */
+        get: operations["list_runs_runs_get"];
+        put?: never;
+        /**
+         * Create Run
+         * @description Start the supervisor -> specialists -> verifier graph for one seed record.
+         */
+        post: operations["create_run_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run */
+        get: operations["get_run_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decide Run
+         * @description Approve or override an ambiguous run and release (or keep) its DDS.
+         */
+        post: operations["decide_run_runs__run_id__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Evidence */
+        get: operations["get_evidence_runs__run_id__evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream Run
+         * @description SSE stream of ``snapshot``, ``step``, ``state``, and ``done`` events.
+         */
+        get: operations["stream_run_runs__run_id__stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Suppliers */
+        get: operations["list_suppliers_suppliers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/suppliers/{supplier_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Supplier */
+        get: operations["get_supplier_suppliers__supplier_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        /**
+         * Assessment
+         * @description Reproducible outcome of the rubric for one supplier/parcel.
+         */
+        Assessment: {
+            /** Citations */
+            citations?: {
+                [key: string]: string[];
+            };
+            /** Data Gaps */
+            data_gaps?: string[];
+            /** Disclosures */
+            disclosures?: string[];
+            /** Findings */
+            findings?: components["schemas"]["Finding"][];
+            /** Polygon Id */
+            polygon_id: string;
+            /** Record Id */
+            record_id?: string | null;
+            risk_level: components["schemas"]["RiskLevel"];
+            /** Rubric Version */
+            rubric_version: string;
+            /** Score */
+            score: number;
+            /** Supplier Id */
+            supplier_id: string;
+            verdict: components["schemas"]["Verdict"];
+        };
+        /**
+         * BatchCreate
+         * @description Queue a deterministic batch run over the seed records.
+         */
+        BatchCreate: {
+            /**
+             * Refresh
+             * @default false
+             */
+            refresh: boolean;
+            /**
+             * Size
+             * @default 50
+             */
+            size: number;
+        };
+        /**
+         * BatchSummary
+         * @description Aggregate throughput view over one batch parent run.
+         */
+        BatchSummary: {
+            /** Average Seconds Per Record */
+            average_seconds_per_record?: number | null;
+            /** Expected Breakdown */
+            expected_breakdown?: {
+                [key: string]: number;
+            };
+            /** Finished At */
+            finished_at?: string | null;
+            /** Metrics */
+            metrics?: {
+                [key: string]: unknown;
+            };
+            /** Record Count */
+            record_count: number;
+            /** Run Id */
+            run_id: string;
+            /** Started At */
+            started_at?: string | null;
+            state: components["schemas"]["RunState"];
+            /** States */
+            states?: {
+                [key: string]: number;
+            };
+            /** Verdict Breakdown */
+            verdict_breakdown?: {
+                [key: string]: number;
+            };
+            /** Wall Clock Seconds */
+            wall_clock_seconds?: number | null;
+        };
+        /**
+         * DdsMeta
+         * @description Presence and release state of the DDS; the document lives at /dds/{run_id}.
+         */
+        DdsMeta: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Released */
+            released: boolean;
+            /** Schema Version */
+            schema_version: string;
+        };
+        /**
+         * DecisionCreate
+         * @description Record the human decision on an ``awaiting_review`` run.
+         */
+        DecisionCreate: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approve" | "override";
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /**
+             * Reviewer
+             * @default human
+             */
+            reviewer: string;
+        };
+        /**
+         * EvidenceEntry
+         * @description One auditable claim backing a score, a DDS field, or a narrative sentence.
+         */
+        EvidenceEntry: {
+            /** Artifact */
+            artifact?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Cached
+             * @default false
+             */
+            cached: boolean;
+            /** Claim */
+            claim: string;
+            /** Disclosure */
+            disclosure?: string | null;
+            /** Evidence Id */
+            evidence_id: string;
+            /** Retrieved At */
+            retrieved_at?: string | null;
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            source: components["schemas"]["EvidenceSource"];
+            /**
+             * Synthetic
+             * @default false
+             */
+            synthetic: boolean;
+            /** Unit */
+            unit?: string | null;
+            /** Value */
+            value: unknown;
+        };
+        /**
+         * EvidenceSource
+         * @description Where a ledger entry came from.
+         * @enum {string}
+         */
+        EvidenceSource: "global_forest_watch" | "nasa_firms" | "legality_dataset" | "concession_dataset" | "consignment_dataset" | "operator_dataset" | "deterministic_rubric";
+        /**
+         * Finding
+         * @description One deterministic signal, with the evidence ids that support it.
+         */
+        Finding: {
+            code: components["schemas"]["FindingCode"];
+            /** Detail */
+            detail: string;
+            /** Evidence Ids */
+            evidence_ids?: string[];
+            level: components["schemas"]["FindingLevel"];
+            /** Metrics */
+            metrics?: {
+                [key: string]: number | string;
+            };
+            /**
+             * Mitigating
+             * @default false
+             */
+            mitigating: boolean;
+            /** Points */
+            points: number;
+        };
+        /**
+         * FindingCode
+         * @description Deterministic signals the rubric evaluates.
+         * @enum {string}
+         */
+        FindingCode: "deforestation_loss" | "fire_cluster" | "legal_permit" | "area_mismatch" | "certification";
+        /**
+         * FindingLevel
+         * @description Strength of a signal: a flag is above threshold, borderline is near it.
+         * @enum {string}
+         */
+        FindingLevel: "clear" | "borderline" | "flag";
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** ParcelOut */
+        ParcelOut: {
+            /** Archetype */
+            archetype: string;
+            /** Area Ha */
+            area_ha: number;
+            /** Centroid Lat */
+            centroid_lat: number;
+            /** Centroid Lon */
+            centroid_lon: number;
+            /** Geometry */
+            geometry: {
+                [key: string]: unknown;
+            };
+            /** Is Demo */
+            is_demo: boolean;
+            /** Label */
+            label: string;
+            /** Polygon Id */
+            polygon_id: string;
+            /** Province */
+            province: string;
+            /** Region */
+            region: string;
+            /** Scenario */
+            scenario?: string | null;
+            /** Supplier Id */
+            supplier_id: string;
+        };
+        /** ReviewOut */
+        ReviewOut: {
+            /** Decision */
+            decision: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /** Reviewer */
+            reviewer: string;
+        };
+        /**
+         * RiskLevel
+         * @description EUDR risk language derived from the verdict.
+         * @enum {string}
+         */
+        RiskLevel: "negligible" | "non_negligible";
+        /**
+         * RunCreate
+         * @description Start one scenario run for a seed record or a named demo scenario.
+         */
+        RunCreate: {
+            /** Model */
+            model?: ("scripted" | "bedrock") | null;
+            /** Record Id */
+            record_id?: string | null;
+            /**
+             * Refresh
+             * @default false
+             */
+            refresh: boolean;
+            /** Scenario */
+            scenario?: string | null;
+        };
+        /**
+         * RunDetail
+         * @description Full dossier: trace, verification, assessment, review, and DDS metadata.
+         */
+        RunDetail: {
+            assessment?: components["schemas"]["VerdictOut"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            dds?: components["schemas"]["DdsMeta"] | null;
+            /** Disclosures */
+            disclosures?: string[];
+            /** Elapsed Seconds */
+            elapsed_seconds?: number | null;
+            /** Error */
+            error?: string | null;
+            /** Expected Archetype */
+            expected_archetype?: string | null;
+            /** Finished At */
+            finished_at?: string | null;
+            /** Kind */
+            kind: string;
+            /** Metrics */
+            metrics?: {
+                [key: string]: unknown;
+            };
+            /** Model */
+            model: string;
+            /** Parent Run Id */
+            parent_run_id?: string | null;
+            pending_assessment?: components["schemas"]["VerdictOut"] | null;
+            /** Polygon Id */
+            polygon_id?: string | null;
+            /** Record Id */
+            record_id?: string | null;
+            review?: components["schemas"]["ReviewOut"] | null;
+            /** Run Id */
+            run_id: string;
+            /** Score */
+            score?: number | null;
+            /** Started At */
+            started_at?: string | null;
+            state: components["schemas"]["RunState"];
+            /**
+             * Step Count
+             * @default 0
+             */
+            step_count: number;
+            /** Steps */
+            steps?: components["schemas"]["TraceStep"][];
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Supplier Id */
+            supplier_id?: string | null;
+            verdict?: components["schemas"]["Verdict"] | null;
+            verification?: components["schemas"]["VerificationReport"] | null;
+        };
+        /**
+         * RunState
+         * @description Lifecycle of an assessment run (architecture run-state machine).
+         * @enum {string}
+         */
+        RunState: "queued" | "running" | "needs_more_data" | "awaiting_review" | "complete" | "failed";
+        /**
+         * RunSummary
+         * @description One run row as it appears in list views and the cockpit table.
+         */
+        RunSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Elapsed Seconds */
+            elapsed_seconds?: number | null;
+            /** Error */
+            error?: string | null;
+            /** Expected Archetype */
+            expected_archetype?: string | null;
+            /** Finished At */
+            finished_at?: string | null;
+            /** Kind */
+            kind: string;
+            /** Metrics */
+            metrics?: {
+                [key: string]: unknown;
+            };
+            /** Model */
+            model: string;
+            /** Parent Run Id */
+            parent_run_id?: string | null;
+            /** Polygon Id */
+            polygon_id?: string | null;
+            /** Record Id */
+            record_id?: string | null;
+            /** Run Id */
+            run_id: string;
+            /** Score */
+            score?: number | null;
+            /** Started At */
+            started_at?: string | null;
+            state: components["schemas"]["RunState"];
+            /**
+             * Step Count
+             * @default 0
+             */
+            step_count: number;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Supplier Id */
+            supplier_id?: string | null;
+            verdict?: components["schemas"]["Verdict"] | null;
+        };
+        /** SapBlockIn */
+        SapBlockIn: {
+            /** Blocked */
+            blocked: boolean;
+        };
+        /** SapStatusIn */
+        SapStatusIn: {
+            /** Status */
+            status: string;
+        };
+        /** SapVendorOut */
+        SapVendorOut: {
+            /** Purchasing Block */
+            purchasing_block: boolean;
+            /** Status */
+            status: string;
+            /** Vendor Id */
+            vendor_id: string;
+        };
+        /** SupplierDetail */
+        SupplierDetail: {
+            /** Beneficial Owners */
+            beneficial_owners?: string[];
+            /** Certifications */
+            certifications?: string[];
+            /** Concession Area Ha */
+            concession_area_ha: number;
+            /**
+             * Disclosure
+             * @default
+             */
+            disclosure: string;
+            /** Group */
+            group: string;
+            /** Hgu Number */
+            hgu_number?: string | null;
+            /** Kabupaten */
+            kabupaten: string;
+            /** Legal Name */
+            legal_name: string;
+            /** Nib */
+            nib: string;
+            /** Npwp */
+            npwp: string;
+            /** Parcels */
+            parcels?: components["schemas"]["ParcelOut"][];
+            /** Pbp Number */
+            pbp_number?: string | null;
+            /** Permit Status */
+            permit_status: string;
+            /** Province */
+            province: string;
+            /** Sanctions */
+            sanctions?: string[];
+            /** Supplier Id */
+            supplier_id: string;
+            /** Synthetic */
+            synthetic: boolean;
+            /** Trading Name */
+            trading_name: string;
+        };
+        /** SupplierOut */
+        SupplierOut: {
+            /** Beneficial Owners */
+            beneficial_owners?: string[];
+            /** Certifications */
+            certifications?: string[];
+            /** Concession Area Ha */
+            concession_area_ha: number;
+            /**
+             * Disclosure
+             * @default
+             */
+            disclosure: string;
+            /** Group */
+            group: string;
+            /** Hgu Number */
+            hgu_number?: string | null;
+            /** Kabupaten */
+            kabupaten: string;
+            /** Legal Name */
+            legal_name: string;
+            /** Nib */
+            nib: string;
+            /** Npwp */
+            npwp: string;
+            /** Pbp Number */
+            pbp_number?: string | null;
+            /** Permit Status */
+            permit_status: string;
+            /** Province */
+            province: string;
+            /** Sanctions */
+            sanctions?: string[];
+            /** Supplier Id */
+            supplier_id: string;
+            /** Synthetic */
+            synthetic: boolean;
+            /** Trading Name */
+            trading_name: string;
+        };
+        /**
+         * TraceStep
+         * @description One visible step of a run: a delegation, a tool call, a check, a write.
+         */
+        TraceStep: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "run" | "agent" | "tool" | "verifier" | "writer" | "review" | "state";
+            /** Name */
+            name: string;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+            /** Step Id */
+            step_id: string;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
+        /**
+         * Verdict
+         * @description Outcome of the deterministic rubric for one supplier/parcel.
+         * @enum {string}
+         */
+        Verdict: "compliant" | "high_risk" | "ambiguous";
+        /**
+         * VerdictOut
+         * @description The deterministic assessment of one record, pending or released.
+         */
+        VerdictOut: {
+            assessment: components["schemas"]["Assessment"];
+            /** Expected Ambiguity */
+            expected_ambiguity?: string | null;
+            /** Expected Archetype */
+            expected_archetype: string;
+            /** Expected Signal */
+            expected_signal?: string | null;
+            /** Fingerprint */
+            fingerprint: string;
+            /** Pending */
+            pending: boolean;
+            /** Polygon Id */
+            polygon_id: string;
+            /** Record Id */
+            record_id: string;
+            run_state: components["schemas"]["RunState"];
+            /** Supplier Id */
+            supplier_id: string;
+        };
+        /**
+         * VerificationChallenge
+         * @description One issue the verifier raised, with what it expected and observed.
+         */
+        VerificationChallenge: {
+            /** Detail */
+            detail: string;
+            /** Evidence Ids */
+            evidence_ids?: string[];
+            /** Expected */
+            expected?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "missing_source" | "metric_mismatch" | "citation_failure" | "design_mismatch" | "llm_review";
+            /** Observed */
+            observed?: string | null;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "info" | "warning" | "error";
+            /**
+             * Source
+             * @default deterministic
+             */
+            source: string;
+        };
+        /**
+         * VerificationReport
+         * @description Outcome of the independent verification step; only accepted runs write.
+         */
+        VerificationReport: {
+            /** Accepted */
+            accepted: boolean;
+            /** Challenges */
+            challenges?: components["schemas"]["VerificationChallenge"][];
+            /** Checked Claims */
+            checked_claims?: string[];
+            /**
+             * Llm Reviewed
+             * @default false
+             */
+            llm_reviewed: boolean;
+            /** Model Id */
+            model_id?: string | null;
+            /** Notes */
+            notes?: string[];
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -33,6 +932,228 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_batch_runs_batch_runs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_batch_batch_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_batch_run_batch_runs__batch_run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_batch_records_batch_runs__batch_run_id__records_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_batch_run_batch_runs__batch_run_id__stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dds_dds__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dds_xml_dds__run_id__xml_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;
@@ -51,6 +1172,365 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    get_vendor_mock_sap_vendors__vendor_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vendor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SapVendorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_purchasing_block_mock_sap_vendors__vendor_id__purchasing_block_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vendor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SapBlockIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SapVendorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_vendor_status_mock_sap_vendors__vendor_id__status_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vendor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SapStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SapVendorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_runs_runs_get: {
+        parameters: {
+            query?: {
+                kind?: string | null;
+                parent_run_id?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_run_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_run_runs__run_id__decision_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_evidence_runs__run_id__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_run_runs__run_id__stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_suppliers_suppliers_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_supplier_suppliers__supplier_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                supplier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

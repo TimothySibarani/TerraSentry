@@ -64,7 +64,7 @@ M1 Integrations + cache  --->  M2 Deterministic core  --->  M3 Agent orchestrati
 | M1 Integrations + cache | Done | W1-W2 | M0 | 5-10 real polygon lookups, cached and rate-limited (verified with deterministic mocks; live numbers tracked in §3 key gates) |
 | M2 Deterministic core | Done | W2 | M1 | Reproducible score, cited evidence, valid DDS |
 | M3 Agent orchestration | Done | W2-W3 | M2 | Reference-pipeline parity + verifier catch + HITL |
-| M4 API + persistence | Todo | W3 | M3 | Run endpoints + SSE + batch worker, generated client |
+| M4 API + persistence | Done | W3 | M3 | Run endpoints + SSE + batch worker, generated client |
 | M5 Cockpit | Todo | W3-W4 | M4 | Demo flow navigable, live trace, batch summary, map |
 | M6 Batch 50 + throughput | Todo | W4 | M4, M5 | 50 records complete, metrics + 30/12/8 breakdown |
 | M7 SAP closed loop | Todo | W2-W4 | M0, Day 1 access | Vendor status flip visible end-to-end |
@@ -224,15 +224,31 @@ catches at least one seeded inconsistency; the HITL branch pauses and resumes co
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
-| SQLAlchemy models + Alembic migrations | Todo | TBD | suppliers, parcels, runs, steps, evidence, verdicts, dds |
-| Routers: suppliers, runs, batch, dds, mock SAP | Todo | TBD | `apps/api/src/terrasentry_api/routers/` |
-| SSE stream for run steps | Todo | TBD | `GET /runs/{id}/stream` via `sse-starlette` |
-| Batch worker with bounded concurrency + per-source limiters | Todo | TBD | in-process asyncio; SQS later |
-| `pnpm gen:api` snapshot + client regeneration | Todo | TBD | OpenAPI drift check in CI |
-| API tests (TestClient, SSE, error paths) | Todo | TBD | pytest |
+| SQLAlchemy models + Alembic migrations | Done | — | `models.py` (suppliers, parcels, runs, run_steps, evidence, verdicts, dds_documents) + `apps/api/alembic/` initial migration, verified up/down against Postgres |
+| Routers: suppliers, runs, batch, dds, mock SAP | Done | — | `apps/api/src/terrasentry_api/routers/`; 202 async start, 404/409/422 error mapping |
+| SSE stream for run steps | Done | — | `GET /runs/{id}/stream` and `/batch-runs/{id}/stream` via `sse-starlette`; `snapshot`/`step`/`state`/`progress`/`done` frames |
+| Batch worker with bounded concurrency + per-source limiters | Done | — | in-process asyncio `Semaphore`, shared GFW/FIRMS clients; deterministic assess + verifier path (M6 measures it) |
+| `pnpm gen:api` snapshot + client regeneration | Done | — | contract regenerated; Effect schemas, REST methods, and `streamRun`/`streamBatchRun` over `Stream` + `Sse` |
+| API tests (TestClient, SSE, error paths) | Done | — | 18 API tests on SQLite + respx-mocked sources; CI adds a Postgres `alembic upgrade head` + `alembic check` job |
+| Auto-seed suppliers/parcels + lifespan services | Done | — | idempotent seed from `data/seed`, shared clients/cache, graceful shutdown |
 
 **Exit criteria:** one live scenario runs start-to-finish through the API; the web client compiles
 against the regenerated schema; run traces persist and stream.
+
+> **Completed 2026-09-11.** `POST /runs` starts the M3 graph in the background and `POST
+> /batch-runs` queues the deterministic per-record pipeline; both persist the run, each streamed
+> step, the evidence ledger, the verdict/pending assessment, and the released or withheld DDS
+> through `RunStore` on Postgres. `GET /runs/{id}/stream` follows `snapshot` -> `step`* ->
+> `state`/`done` (batch streams emit `progress`); an ambiguous verdict stays `awaiting_review`,
+> with the DDS answering 409 until `POST /runs/{id}/decision` records the human decision and
+> releases it. `RunOrchestrator` gained an `on_step` hook and injectable `run_id` so the API can
+> persist/broadcast steps while a run is in flight; the CLI and M3 parity tests are unchanged.
+> Tests cover the full lifecycle, SSE replay, HITL release, batch breakdown/metrics, bounded
+> batch concurrency, DDS JSON/XML, suppliers, and the mock-SAP vendor flip. The migration is
+> applied and drift-checked against Postgres locally and in CI; API tests run on SQLite with
+> `aiosqlite`. The live end-to-end demo still needs the §3 keys (GFW/FIRMS) and Bedrock model
+> access, exactly as M1/M3 closed; with `AGENT_MODEL=scripted` the whole path is replayable
+> offline once the response cache is warm.
 
 ---
 
@@ -326,6 +342,7 @@ Append one line per meaningful update. Keep newest at the top.
 
 | Date | Milestone | Update |
 | --- | --- | --- |
+| 2026-09-11 | M4 | API + persistence landed: SQLAlchemy 2.0 audit store (`suppliers`, `parcels`, `runs`, `run_steps`, `evidence`, `verdicts`, `dds_documents`) with an Alembic async migration verified up/down against Postgres and a CI `alembic check` drift gate; lifespan-built `AppServices` (engine, Redis cache, shared GFW/FIRMS clients, `RunManager`, mock SAP) with idempotent auto-seed of the synthetic suppliers/parcels. Routers: suppliers, runs (202 start, detail, evidence, SSE, decision), batch (202 start, metrics, records, SSE), dds (JSON/XML with 409 while withheld), mock sap (vendor status/block). The in-process worker runs scenarios through the M3 graph and batch records through the deterministic assess + verifier path with an asyncio semaphore (`BATCH_CONCURRENCY`) over the shared rate-limited clients; steps persist and stream live (`snapshot`/`step`/`state`/`progress`/`done`), and HITL release reconstructs the M3 result from Postgres (decisions are serialised per run; SSE responses carry a send timeout and no-store/nosniff headers). `RunOrchestrator` gained an `on_step` hook + injectable `run_id` (CLI/parity unchanged; new hook tests). `pnpm gen:api` regenerated the contract; the Effect client now decodes every response with `Schema`, exposes REST methods plus `streamRun`/`streamBatchRun` over `Stream` + `Sse`, and has 13 vitest cases. 18 API tests (SQLite + respx; lifecycle, SSE replay, HITL, batch breakdown/bounded concurrency, error paths); full Python suite 147 green, Ruff/Pyright/Biome/tsc clean. Live-key end-to-end remains gated on §3. |
 | 2026-09-11 | M3 | Live Bedrock path hardened per Bedrock best practice: adaptive retries + explicit connect/read timeouts and validated agent settings, opt-in prompt caching (`BEDROCK_PROMPT_CACHE=off|auto|anthropic`, documented as below the Sonnet/Haiku minimums), and a new `python -m terrasentry_core.agents.preflight` gate check that pings both roles through the same Strands path and maps AWS errors to fixes. AWS runbook now uses a least-privilege Bedrock policy and SSO/role guidance instead of `AmazonBedrockFullAccess`. 126 Python tests green, Ruff/Pyright clean. Live smoke still gated on the §3 account access. |
 | 2026-09-11 | M3 | Agent orchestration landed: `tools/` shared source layer (`fetch_polygon_sources`, `SeedDatasets`, `TraceCollector`) now backs both the reference pipeline and the agent tools; `agents/` adds Bedrock model routing, an offline `ScriptedModel`/`AutopilotResponder`, specialists with ids-only tools, an agents-as-tools supervisor, a verifier node that re-derives metrics and validates citations before the LLM review, a deterministic assessor/writer, and `RunOrchestrator` with the graph verify-before-write edge plus the `awaiting_review`/resume HITL seam. CLI: `python -m terrasentry_core.agents --record/--scenario --model scripted|bedrock` with exit codes 0/2/1 and run/DDS/evidence artifacts. Tests add 23 agent cases (parity vs reference, verifier catch, HITL, graph flow, tools, scripted model, model routing, CLI); full Python suite 108 green, Ruff/Pyright clean. Also fixed an M2 determinism defect found by parity: cache provenance was inside the hashed evidence artifact, so cached re-runs fingerprint differently; `EvidenceEntry.cached` is now outside the hash and the golden DDS fixture is regenerated. Live Bedrock smoke remains gated on §3 Day-1 model access. |
 | 2026-09-11 | M2 | Deterministic core landed: domain models/enums/run-state machine, content-hashed evidence ledger, config-driven rubric with `fingerprint`, EUDR Information System V3-aligned DDS builder (JSON + SOAP `SubmitDdsRequest` XML) with mandatory citation validation, and the `python -m terrasentry_core.assessment` CLI that scores an M1 reference run and writes per-record DDS/evidence artifacts plus a `summary.json` confusion matrix for M6 calibration. Seed data extended deterministically with consignments, the synthetic EU operator, expected signal/ambiguity labels, concession-floor sanity, and a real permit-gap signal (HGU→oil palm, PBPH→wood; 4/4/4 high-risk signals; 3/3/2 ambiguity reasons). A full 50-record synthetic-signal harness reproduces the intended 30/12/8 breakdown and exercises all three detection paths. Core suite 66 tests (85 total) green; Ruff/Pyright clean; `pnpm check`/`pnpm test` green. DDS submission is out of scope and disclosed; live thresholds still need the §3 Day-1 keys. |

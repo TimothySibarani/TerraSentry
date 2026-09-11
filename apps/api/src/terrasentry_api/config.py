@@ -4,6 +4,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """API-owned configuration.
+
+    Source credentials, cache settings, and Bedrock model ids have canonical
+    homes in ``terrasentry_integrations.settings`` and
+    ``terrasentry_core.agents.settings``; they are intentionally not duplicated
+    here. ``sap_*`` is reserved for the M7 closed loop.
+    """
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_env: str = "local"
@@ -12,21 +20,15 @@ class Settings(BaseSettings):
     api_cors_origins: str = "http://localhost:3000"
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/terrasentry"
+    auto_seed: bool = True
+    seed_data_dir: str = "data/seed"
 
-    aws_region: str = "us-east-1"
-    bedrock_model_orchestrator: str = ""
-    bedrock_model_extraction: str = ""
-
-    gfw_api_key: str = ""
-    gfw_api_base_url: str = "https://data-api.globalforestwatch.org"
-    gfw_api_origin: str = "http://localhost"
-    gfw_tcl_version: str = "v1.13"
-    firms_map_key: str = ""
-    firms_source: str = "VIIRS_SNPP_NRT"
-
-    cache_backend: str = "redis"
-    redis_url: str = "redis://localhost:6379/0"
-    cache_ttl_seconds: int = 7_776_000
+    agent_model: str = "scripted"
+    run_timeout_seconds: int = 900
+    batch_concurrency: int = 4
+    sse_ping_seconds: int = 15
+    firms_window_days: int = 30
+    loss_window_years: int = 5
 
     sap_mode: str = "stub"
     sap_base_url: str = ""

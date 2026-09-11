@@ -41,6 +41,25 @@ uv run python -m terrasentry_core.reference --offline  # zero external calls
 uv run python -m terrasentry_core.agents.preflight     # Bedrock gate check, needs model ids
 ```
 
+## API + database (M4)
+
+```bash
+docker compose up -d postgres redis   # or a Neon connection string in DATABASE_URL
+pnpm db:upgrade                       # alembic upgrade head
+pnpm dev                              # API :8000 + web :3000; AUTO_SEED fills suppliers/parcels
+
+# Smoke the run API (scripted model, warm the cache first for --offline-style speed):
+curl -s localhost:8000/runs -H 'content-type: application/json' \
+  -d '{"record_id": "REC-001", "model": "scripted"}'
+curl -sN localhost:8000/runs/<run_id>/stream          # snapshot/step/state/done SSE
+
+pnpm db:check                         # alembic check: fail on model/migration drift
+uv run pytest apps/api/tests          # SQLite + mocked sources, no Docker needed
+```
+
+Set `AGENT_MODEL=bedrock` (with `BEDROCK_MODEL_*` from [aws.md](./aws.md)) to run the live agent
+path; the batch worker is deterministic and needs no model access.
+
 ## The free-stuff strategy in one paragraph
 
 Use a normal AWS account on the Free plan ($100 on sign-up plus up to $100 for completing

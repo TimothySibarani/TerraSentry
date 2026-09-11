@@ -121,7 +121,13 @@ def _extract_download_rows(response: httpx.Response) -> list[dict[str, Any]]:
 
 
 class GfwClient:
-    """Queries Hansen GFC tree cover loss statistics from the GFW Data API."""
+    """Queries Hansen GFC tree cover loss statistics from the GFW Data API.
+
+    Missing credentials no longer block construction: the API builds its source
+    clients at startup so health/suppliers keep working without keys, and the
+    typed :class:`MissingCredentialError` is raised on a cache miss instead.
+    A warm cache can therefore serve a credential-free offline demo.
+    """
 
     def __init__(
         self,
@@ -130,8 +136,9 @@ class GfwClient:
         cache: CacheBackend,
         http: SourceHttpClient | None = None,
     ) -> None:
-        if not settings.has_gfw_key:
-            raise MissingCredentialError("gfw", "GFW_API_KEY")
+        self._missing_credentials: MissingCredentialError | None = (
+            None if settings.has_gfw_key else MissingCredentialError("gfw", "GFW_API_KEY")
+        )
         if not _SAFE_DATASET.match(settings.gfw_tcl_dataset):
             raise ValueError(f"invalid GFW dataset identifier: {settings.gfw_tcl_dataset!r}")
         if not _SAFE_VERSION.match(settings.gfw_tcl_version):
@@ -152,6 +159,11 @@ class GfwClient:
                 },
             )
         )
+
+    def require_credentials(self) -> None:
+        """Raise the deferred credential failure, called on a cache miss."""
+        if self._missing_credentials is not None:
+            raise self._missing_credentials
 
     async def close(self) -> None:
         await self._http.close()
@@ -188,6 +200,7 @@ class GfwClient:
             if cached is not None:
                 return TreeCoverLossResult.model_validate(cached.payload).model_copy(update={"cached": True})
 
+        self.require_credentials()
         sql = self.loss_sql(start_year, end_year)
         path = f"/dataset/{self._dataset}/{self._version}/query/json"
         response = await self._http.post(path, json={"sql": sql, "geometry": geometry})
@@ -251,6 +264,7 @@ class GfwClient:
             if cached is not None:
                 return BatchLossResult.model_validate(cached.payload).model_copy(update={"cached": True})
 
+        self.require_credentials()
         sql = self.loss_sql(start_year, end_year)
         path = f"/dataset/{self._dataset}/{self._version}/query/batch"
         response = await self._http.post(

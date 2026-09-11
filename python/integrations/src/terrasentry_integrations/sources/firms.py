@@ -147,7 +147,12 @@ def dedupe_detections(detections: list[FireDetection]) -> list[FireDetection]:
 
 
 class FirmsClient:
-    """Fetches fire detections for a polygon within a date window."""
+    """Fetches fire detections for a polygon within a date window.
+
+    Missing credentials do not block construction (the API builds its clients in
+    the lifespan); the typed :class:`MissingCredentialError` is raised on a
+    cache miss so a warm cache still serves a credential-free demo.
+    """
 
     def __init__(
         self,
@@ -156,8 +161,9 @@ class FirmsClient:
         cache: CacheBackend,
         http: SourceHttpClient | None = None,
     ) -> None:
-        if not settings.has_firms_key:
-            raise MissingCredentialError("firms", "FIRMS_MAP_KEY")
+        self._missing_credentials: MissingCredentialError | None = (
+            None if settings.has_firms_key else MissingCredentialError("firms", "FIRMS_MAP_KEY")
+        )
         self._settings = settings
         self._cache = cache
         self._map_key = settings.firms_map_key
@@ -171,6 +177,11 @@ class FirmsClient:
                 time_period=600.0,
             )
         )
+
+    def require_credentials(self) -> None:
+        """Raise the deferred credential failure, called on a cache miss."""
+        if self._missing_credentials is not None:
+            raise self._missing_credentials
 
     async def close(self) -> None:
         await self._http.close()
@@ -194,6 +205,7 @@ class FirmsClient:
             if cached is not None:
                 return FirmsHotspotResult.model_validate(cached.payload).model_copy(update={"cached": True})
 
+        self.require_credentials()
         polygon = polygon_from_geometry(geometry)
         bbox = polygon.bounds
         detections: list[FireDetection] = []

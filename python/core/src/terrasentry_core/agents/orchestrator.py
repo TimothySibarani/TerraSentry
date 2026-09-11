@@ -38,7 +38,7 @@ from terrasentry_core.seed.schemas import BatchRecord
 from terrasentry_core.tools.agent_tools import ToolContext
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.sources import LossWindow
-from terrasentry_core.tools.trace import TraceCollector, TraceKind, TraceStep, utc_now
+from terrasentry_core.tools.trace import StepHook, TraceCollector, TraceKind, TraceStep, utc_now
 
 _NODE_KINDS: dict[str, TraceKind] = {
     "supervisor": "agent",
@@ -70,6 +70,7 @@ class RunOrchestrator:
         years: int = 5,
         rubric: RubricConfig | None = None,
         clock: Callable[[], datetime] = utc_now,
+        on_step: StepHook | None = None,
     ) -> None:
         self._gfw = gfw
         self._firms = firms
@@ -79,13 +80,20 @@ class RunOrchestrator:
         self._years = years
         self._rubric = rubric
         self._clock = clock
+        self._on_step = on_step
 
-    async def run(self, record_id: str, *, refresh: bool = False) -> AgentRunResult:
+    async def run(
+        self,
+        record_id: str,
+        *,
+        refresh: bool = False,
+        run_id: str | None = None,
+    ) -> AgentRunResult:
         """Run the graph for one seed record and return its state and artifacts."""
         started = self._clock()
         record = self._datasets.get_record(record_id)
-        run_id = f"agent-{started:%Y%m%dT%H%M%S}-{uuid4().hex[:6]}"
-        trace = TraceCollector(clock=self._clock)
+        resolved_run_id = run_id or f"agent-{started:%Y%m%dT%H%M%S}-{uuid4().hex[:6]}"
+        trace = TraceCollector(clock=self._clock, on_step=self._on_step)
         trace.add("state", "queued", record_id)
         trace.add("state", "running", f"{record_id}: {record.polygon.id}")
         context = ToolContext(
@@ -102,15 +110,22 @@ class RunOrchestrator:
         graph = self._build_graph(record, context, models)
 
         try:
-            async for event in graph.stream_async(self._task(record), invocation_state={"run_id": run_id}):
+            async for event in graph.stream_async(
+                self._task(record), invocation_state={"run_id": resolved_run_id}
+            ):
                 await self._record_event(event, trace)
         except Exception as exc:
             trace.add("state", "failed", f"{type(exc).__name__}: {exc}")
             return self._result(
-                run_id, record, started, trace, state=RunState.FAILED, summary=f"run failed: {exc}"
+                resolved_run_id,
+                record,
+                started,
+                trace,
+                state=RunState.FAILED,
+                summary=f"run failed: {exc}",
             )
 
-        return self._finish(run_id, record, started, trace, context, refresh=refresh)
+        return self._finish(resolved_run_id, record, started, trace, context, refresh=refresh)
 
     async def resume(self, result: AgentRunResult, decision: ReviewDecision) -> AgentRunResult:
         """Record the human decision on an awaiting run and release the DDS."""
@@ -127,6 +142,8 @@ class RunOrchestrator:
             detail=decision.note or f"human decision by {decision.reviewer}",
             at=finished,
         )
+        if self._on_step is not None:
+            self._on_step(step)
         return result.model_copy(
             update={
                 "state": state,
@@ -171,9 +188,7 @@ class RunOrchestrator:
         builder.add_edge("verifier", "dds_writer", condition=_verification_accepted)
         return builder.build()
 
-    def _assess_node(
-        self, record: BatchRecord, context: ToolContext
-    ) -> Callable[[], Awaitable[str]]:
+    def _assess_node(self, record: BatchRecord, context: ToolContext) -> Callable[[], Awaitable[str]]:
         async def assess() -> str:
             sources = await context.polygon_sources(record.polygon.id)
             polygon = record.polygon
@@ -205,9 +220,7 @@ class RunOrchestrator:
 
         return assess
 
-    def _commit_node(
-        self, record: BatchRecord, context: ToolContext
-    ) -> Callable[[], Awaitable[str]]:
+    def _commit_node(self, record: BatchRecord, context: ToolContext) -> Callable[[], Awaitable[str]]:
         async def commit() -> str:
             candidate = context.candidate
             if candidate is None:

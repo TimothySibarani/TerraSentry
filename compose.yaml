@@ -45,6 +45,10 @@ services:
       REDIS_URL: redis://redis:6379/0
       API_CORS_ORIGINS: http://localhost:3000
       SAP_MODE: ${SAP_MODE:-stub}
+      AGENT_MODEL: ${AGENT_MODEL:-scripted}
+      AUTO_SEED: ${AUTO_SEED:-true}
+      SEED_DATA_DIR: ${SEED_DATA_DIR:-data/seed}
+      BATCH_CONCURRENCY: ${BATCH_CONCURRENCY:-4}
     ports:
       - "8000:8000"
     depends_on:

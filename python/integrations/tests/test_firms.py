@@ -2,8 +2,10 @@ from datetime import date
 from typing import Any
 
 import httpx
+import pytest
 import respx
 from terrasentry_integrations.cache import MemoryCache
+from terrasentry_integrations.errors import MissingCredentialError
 from terrasentry_integrations.settings import IntegrationSettings
 from terrasentry_integrations.sources.firms import FirmsClient, parse_detections
 
@@ -71,3 +73,13 @@ async def test_hotspots_chunks_window_and_filters_polygon() -> None:
     assert first.call_count == 1
     assert second.call_count == 1
     assert cache.stats().writes == 1
+
+
+async def test_constructs_without_a_key_and_fails_on_cache_miss() -> None:
+    """The API builds source clients in its lifespan; credentials are checked at fetch time."""
+    client = FirmsClient(IntegrationSettings(firms_map_key=""), cache=MemoryCache())
+    try:
+        with pytest.raises(MissingCredentialError):
+            await client.hotspots_in_polygon(POLYGON, days=1)
+    finally:
+        await client.close()

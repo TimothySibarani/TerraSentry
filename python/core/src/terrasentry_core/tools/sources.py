@@ -11,7 +11,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
-from terrasentry_integrations.errors import SourceError
+from terrasentry_integrations.errors import MissingCredentialError, SourceError
 from terrasentry_integrations.sources.firms import FirmsClient, FirmsHotspotResult
 from terrasentry_integrations.sources.gfw import GfwClient, TreeCoverLossResult
 
@@ -70,7 +70,7 @@ async def fetch_polygon_sources(
             end_year=resolved.end_year,
             refresh=refresh,
         )
-    except SourceError as exc:
+    except (SourceError, MissingCredentialError) as exc:
         sources.errors.append(str(exc))
     try:
         sources.hotspots = await firms.hotspots_in_polygon(
@@ -78,7 +78,7 @@ async def fetch_polygon_sources(
             days=window_days,
             refresh=refresh,
         )
-    except SourceError as exc:
+    except (SourceError, MissingCredentialError) as exc:
         sources.errors.append(str(exc))
     return sources
 

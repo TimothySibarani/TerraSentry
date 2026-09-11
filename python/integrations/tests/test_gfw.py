@@ -2,8 +2,10 @@ import json
 from typing import Any
 
 import httpx
+import pytest
 import respx
 from terrasentry_integrations.cache import MemoryCache
+from terrasentry_integrations.errors import MissingCredentialError
 from terrasentry_integrations.settings import IntegrationSettings
 from terrasentry_integrations.sources.gfw import GfwClient
 
@@ -92,3 +94,13 @@ async def test_tree_cover_loss_batch_polls_and_downloads() -> None:
     assert result.status == "success"
     assert result.rows == [{"fid": "PLY-001", "loss_ha": 5.5}]
     assert cache.stats().writes == 1
+
+
+async def test_constructs_without_a_key_and_fails_on_cache_miss() -> None:
+    """The API builds source clients in its lifespan; credentials are checked at fetch time."""
+    client = GfwClient(IntegrationSettings(gfw_api_key=""), cache=MemoryCache())
+    try:
+        with pytest.raises(MissingCredentialError):
+            await client.tree_cover_loss(POLYGON, start_year=2021, end_year=2022)
+    finally:
+        await client.close()

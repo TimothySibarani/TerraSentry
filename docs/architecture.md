@@ -72,16 +72,24 @@ the UI as a cockpit over a Python-owned API.
 TerraSentry/
 ├── apps/
 │   ├── api/                          Python service (uv workspace member)
-│   │   ├── Dockerfile                container image for AWS
+│   │   ├── Dockerfile                container image for AWS (runs migrations then uvicorn)
 │   │   ├── package.json              Turbo/PNPM shim so `pnpm dev` and `pnpm test` include Python
 │   │   ├── pyproject.toml            terrasentry-api
+│   │   ├── alembic.ini + alembic/    async migration environment (M4)
 │   │   ├── src/terrasentry_api/
-│   │   │   ├── main.py               FastAPI app factory
+│   │   │   ├── main.py               FastAPI app factory + lifespan + error mapping
 │   │   │   ├── config.py             pydantic-settings
 │   │   │   ├── db.py                 async engine + session factory
+│   │   │   ├── models.py             SQLAlchemy audit schema (M4)
+│   │   │   ├── store.py              deep persistence module for runs/steps/evidence/verdicts/DDS
+│   │   │   ├── runner.py             background run manager + SSE broadcaster (M4)
+│   │   │   ├── services.py           lifespan-owned app services + dependencies (M4)
+│   │   │   ├── schemas.py            API request/response models (M4)
+│   │   │   ├── seed_loader.py        idempotent seed upsert (M4)
+│   │   │   ├── mock_sap.py           in-memory SAP stub for the M7 gateway
 │   │   │   ├── export_openapi.py     dumps OpenAPI for the TS client
-│   │   │   └── routers/              health.py today; suppliers/runs/batch/dds/mock_sap next
-│   │   └── tests/
+│   │   │   └── routers/              health, suppliers, runs, batch, dds, mock_sap
+│   │   └── tests/                    TestClient suites on SQLite + respx
 │   └── web/                          TanStack Start cockpit (pnpm workspace member)
 │       ├── Dockerfile                Nitro production image
 │       ├── package.json              @terrasentry/web
@@ -648,7 +656,6 @@ Pending (needs credentials, Docker egress, or later workstreams):
 
 - Local Docker image builds: container egress is blocked in the scaffold environment, so both images
   are built by the CI `docker` job instead; the full `docker compose up` smoke test is still pending.
-- Database creation and Alembic migrations.
 - Component tests in the web app; MapLibre/Amazon Location map addition.
 - CDK stacks beyond the empty app shell.
 
@@ -680,6 +687,21 @@ catches and HITL are covered. Since parity compares live against cached runs, an
 fixed: `cached` is no longer part of the hashed evidence artifact (`EvidenceEntry.cached` outside
 the hash), so cached re-runs are fingerprint-identical. 108 Python tests green; the live Bedrock
 path waits on the §3 model-access gate and the `BEDROCK_MODEL_*` ids chosen for the environment.
+
+M4 landed (2026-09-11): the API and persistence layer. `apps/api/src/terrasentry_api/models.py`
+defines the audit schema (suppliers, parcels, runs, run_steps, evidence, verdicts, dds_documents)
+with the Alembic async environment in `apps/api/alembic/`; `db.py` builds the async engine in the
+lifespan-owned `services.py` (`AppServices`), which also constructs the shared cache and GFW/FIRMS
+clients and the `RunManager`. `store.py` is the deep persistence module; `runner.py` executes
+scenarios through `RunOrchestrator` (with the new `on_step` hook and injectable `run_id`) and batch
+records through the deterministic assess + `code_checks` path under an asyncio semaphore, persisting
+and broadcasting steps live. Routers cover suppliers, runs (start/detail/evidence/stream/decision),
+batch (start/summary/records/stream), DDS JSON/XML, and a mock SAP vendor store. SSE uses
+`sse-starlette` (`snapshot`/`step`/`state`/`progress`/`done`). `pnpm gen:api` regenerated the
+contract; the Effect client validates every payload with `Schema` and exposes REST methods plus
+`streamRun`/`streamBatchRun` over `Stream` + `Sse`. API tests run on SQLite via `aiosqlite` with
+respx-mocked sources; CI adds a Postgres service job that runs `alembic upgrade head` and
+`alembic check`. Live end-to-end still needs the §3 keys and Bedrock model access.
 Follow-up (2026-09-11): the runtime client now uses adaptive retries and explicit timeouts, prompt
 caching is an opt-in `BEDROCK_PROMPT_CACHE` knob (off by default, below current prompt thresholds),
 and `python -m terrasentry_core.agents.preflight` pings both roles and serves the §3 gate.

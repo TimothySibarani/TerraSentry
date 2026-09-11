@@ -14,6 +14,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 TraceKind = Literal["run", "agent", "tool", "verifier", "writer", "review", "state"]
+StepHook = Callable[["TraceStep"], None]
 
 
 def utc_now() -> datetime:
@@ -32,10 +33,21 @@ class TraceStep(BaseModel):
 
 
 class TraceCollector:
-    """Append-only collector with stable step ids and an injectable clock."""
+    """Append-only collector with stable step ids and an injectable clock.
 
-    def __init__(self, *, clock: Callable[[], datetime] = utc_now) -> None:
+    ``on_step`` is an optional synchronous hook invoked after every append. The
+    M4 API uses it to persist and broadcast steps as they happen; the hook must
+    not block (the API only enqueues).
+    """
+
+    def __init__(
+        self,
+        *,
+        clock: Callable[[], datetime] = utc_now,
+        on_step: StepHook | None = None,
+    ) -> None:
         self._clock = clock
+        self._on_step = on_step
         self._steps: list[TraceStep] = []
 
     def add(
@@ -55,6 +67,8 @@ class TraceCollector:
             payload=payload or {},
         )
         self._steps.append(step)
+        if self._on_step is not None:
+            self._on_step(step)
         return step
 
     @property
@@ -68,4 +82,4 @@ class TraceCollector:
         return [step.name for step in self._steps if step.kind == kind]
 
 
-__all__ = ["TraceCollector", "TraceKind", "TraceStep", "utc_now"]
+__all__ = ["StepHook", "TraceCollector", "TraceKind", "TraceStep", "utc_now"]

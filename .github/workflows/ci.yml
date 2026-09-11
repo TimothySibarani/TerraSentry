@@ -73,6 +73,37 @@ jobs:
             packages/api-client/openapi.json \
             packages/api-client/src/schema.d.ts
 
+  migrations:
+    name: Alembic migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: terrasentry
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d terrasentry"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/terrasentry
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Sync workspace
+        run: uv sync --locked --all-packages
+      - name: Upgrade to head
+        run: uv run alembic -c apps/api/alembic.ini upgrade head
+      - name: Fail on model/migration drift
+        run: uv run alembic -c apps/api/alembic.ini check
+
   docker:
     name: Docker images
     runs-on: ubuntu-latest

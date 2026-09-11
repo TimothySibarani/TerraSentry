@@ -16,6 +16,8 @@
     "format:py": "uv run ruff format .",
     "typecheck:py": "uv run pyright",
     "test:py": "uv run pytest",
+    "db:upgrade": "uv run alembic -c apps/api/alembic.ini upgrade head",
+    "db:check": "uv run alembic -c apps/api/alembic.ini check",
     "gen:api": "uv run python -m terrasentry_api.export_openapi > packages/api-client/openapi.json && pnpm --filter @terrasentry/api-client gen",
     "check": "pnpm lint && pnpm lint:py && pnpm typecheck && pnpm typecheck:py"
   },
