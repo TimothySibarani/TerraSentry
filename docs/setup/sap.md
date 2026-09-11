@@ -15,7 +15,7 @@ as free access allows, and makes the fallback explicit so the demo never overcla
 | **1a. Business Accelerator Hub sandbox** | Free SAP account calling sandbox endpoints at `sandbox.api.sap.com` with an `APIKey` header | Free | "Calls SAP's published API contract against SAP's own sandbox" | ~30 min |
 | **1b. BTP trial + Integration Suite** | Real BTP tenant, 90-day trial; Integration Suite trial (30 days, shared tenant) can expose an OData/REST endpoint backed by integration flows | Free | "Real BTP tenant and integration runtime" | ~half day |
 | **2. Schema-accurate stub** | Our FastAPI router serving API Hub-accurate payloads, selected by `SAP_MODE=stub` | Free | "Implemented against SAP's real API contract, backed by a stub because no live tenant was available" | Already scaffolded |
-| **3. AWS-only status write** | Generic DynamoDB/Postgres status flip, no SAP shapes | Free | No SAP claim; weakest sponsor relevance | Small |
+| **3. AWS-only status write** | Generic DynamoDB/Postgres status flip, no SAP shapes | Free | No SAP claim; no ERP-integration story | Small |
 
 **Recommendation:** try 1a on Day 1. If sandbox APIs cover vendor status or purchasing
 block, use `SAP_MODE=sandbox`. If BTP/Integration Suite access lands quickly, use 1b for
