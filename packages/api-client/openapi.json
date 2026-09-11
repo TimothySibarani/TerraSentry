@@ -202,6 +202,13 @@
             "title": "Run Id",
             "type": "string"
           },
+          "sap_actions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Sap Actions",
+            "type": "object"
+          },
           "started_at": {
             "anyOf": [
               {
@@ -513,7 +520,7 @@
         "type": "object"
       },
       "HealthResponse": {
-        "description": "Process health plus the offline-rehearsal state the cockpit badges.",
+        "description": "Process health plus the offline-rehearsal and SAP-mode state the cockpit badges.",
         "properties": {
           "fixtures_loaded": {
             "default": 0,
@@ -523,6 +530,16 @@
           "offline": {
             "default": false,
             "title": "Offline",
+            "type": "boolean"
+          },
+          "sap_mode": {
+            "default": "stub",
+            "title": "Sap Mode",
+            "type": "string"
+          },
+          "sap_real": {
+            "default": false,
+            "title": "Sap Real",
             "type": "boolean"
           },
           "status": {
@@ -705,7 +722,7 @@
         "type": "object"
       },
       "RunDetail": {
-        "description": "Full dossier: trace, verification, assessment, review, and DDS metadata.",
+        "description": "Full dossier: trace, verification, assessment, review, SAP action, and DDS metadata.",
         "properties": {
           "assessment": {
             "anyOf": [
@@ -853,6 +870,16 @@
           "run_id": {
             "title": "Run Id",
             "type": "string"
+          },
+          "sap_action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SapActionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "score": {
             "anyOf": [
@@ -1123,6 +1150,78 @@
         "title": "RunSummary",
         "type": "object"
       },
+      "SapActionOut": {
+        "description": "One recorded ERP action from the M7 closed loop.",
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "external_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Reference"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "performed_at": {
+            "format": "date-time",
+            "title": "Performed At",
+            "type": "string"
+          },
+          "purchasing_block": {
+            "title": "Purchasing Block",
+            "type": "boolean"
+          },
+          "real": {
+            "title": "Real",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "supplier_id": {
+            "title": "Supplier Id",
+            "type": "string"
+          },
+          "vendor_id": {
+            "title": "Vendor Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "supplier_id",
+          "vendor_id",
+          "mode",
+          "status",
+          "purchasing_block",
+          "real",
+          "performed_at"
+        ],
+        "title": "SapActionOut",
+        "type": "object"
+      },
       "SapBlockIn": {
         "properties": {
           "blocked": {
@@ -1262,6 +1361,16 @@
             },
             "title": "Sanctions",
             "type": "array"
+          },
+          "sap": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupplierSapOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "supplier_id": {
             "title": "Supplier Id",
@@ -1403,6 +1512,95 @@
         "title": "SupplierOut",
         "type": "object"
       },
+      "SupplierPatch": {
+        "description": "The subset of ``A_Supplier`` an update may carry.",
+        "properties": {
+          "PaymentIsBlockedForSupplier": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paymentisblockedforsupplier"
+          },
+          "PostingIsBlocked": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postingisblocked"
+          },
+          "PurchasingIsBlocked": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchasingisblocked"
+          }
+        },
+        "title": "SupplierPatch",
+        "type": "object"
+      },
+      "SupplierSapOut": {
+        "description": "Current ERP state for one supplier plus its most recent action, if any.",
+        "properties": {
+          "disclosure": {
+            "title": "Disclosure",
+            "type": "string"
+          },
+          "last_action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SapActionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "purchasing_block": {
+            "title": "Purchasing Block",
+            "type": "boolean"
+          },
+          "real": {
+            "title": "Real",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "vendor_id": {
+            "title": "Vendor Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "vendor_id",
+          "status",
+          "purchasing_block",
+          "mode",
+          "real",
+          "disclosure"
+        ],
+        "title": "SupplierSapOut",
+        "type": "object"
+      },
       "TraceStep": {
         "description": "One visible step of a run: a delegation, a tool call, a check, a write.",
         "properties": {
@@ -1424,7 +1622,8 @@
               "verifier",
               "writer",
               "review",
-              "state"
+              "state",
+              "sap"
             ],
             "title": "Kind",
             "type": "string"
@@ -2031,6 +2230,146 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/mock-sap/A_BusinessPartner('{vendor_id}')": {
+      "get": {
+        "operationId": "get_business_partner_entity_mock_sap_A_BusinessPartner___vendor_id____get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vendor_id",
+            "required": true,
+            "schema": {
+              "title": "Vendor Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Business Partner Entity Mock Sap A Businesspartner   Vendor Id    Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Business Partner Entity",
+        "tags": [
+          "mock-sap"
+        ]
+      }
+    },
+    "/mock-sap/A_Supplier('{vendor_id}')": {
+      "get": {
+        "operationId": "get_supplier_entity_mock_sap_A_Supplier___vendor_id____get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vendor_id",
+            "required": true,
+            "schema": {
+              "title": "Vendor Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Supplier Entity Mock Sap A Supplier   Vendor Id    Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Supplier Entity",
+        "tags": [
+          "mock-sap"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_supplier_entity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vendor_id",
+            "required": true,
+            "schema": {
+              "title": "Vendor Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Patch Supplier Entity",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Supplier Entity",
+        "tags": [
+          "mock-sap"
         ]
       }
     },

@@ -7,6 +7,7 @@ import { ErrorState } from "#/components/error-state";
 import { MapView, type MapTone } from "#/components/map/map-view";
 import { MetricCard } from "#/components/metric-card";
 import { PageHeader } from "#/components/page-header";
+import { SupplierSapCard } from "#/components/sap-panel";
 import { Badge } from "#/components/ui/badge";
 import {
 	Card,
@@ -188,6 +189,8 @@ function SupplierDetailPage() {
 					</CardContent>
 				</Card>
 			</div>
+
+			<SupplierSapCard sap={record.sap} />
 
 			<Card>
 				<CardHeader>

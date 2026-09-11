@@ -156,6 +156,8 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 	);
 	const designMatch = confusionTotal > 0 ? matched / confusionTotal : null;
 	const cache = summary.cache_stats;
+	const sap = summary.sap_actions ?? {};
+	const sapCount = (sap.approved ?? 0) + (sap.blocked ?? 0) + (sap.failed ?? 0);
 
 	return (
 		<div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -270,6 +272,12 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 							? `Cache: ${cache.hits ?? 0} hits · ${cache.misses ?? 0} misses · ${cache.writes ?? 0} writes · ${cache.offline_misses ?? 0} offline misses`
 							: "Cache: —"}
 					</p>
+					{sapCount > 0 && (
+						<p className="text-caption-mono-sm text-muted-foreground">
+							{sapCount} ERP actions: {sap.approved ?? 0} approved ·{" "}
+							{sap.blocked ?? 0} blocked · {sap.failed ?? 0} failed
+						</p>
+					)}
 				</CardContent>
 			</Card>
 

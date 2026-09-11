@@ -57,11 +57,11 @@ This is the part most likely to be under-specified if you don't design it delibe
 
 ## 6. SAP access — decision tree
 
-Note: the submission rules require AWS **and/or** SAP, so an AWS-only build is compliant even without any SAP component. The options below are ordered by preference, given that SAP-integrated closed-loop gatekeeping is currently TerraSentry's strongest differentiator and its clearest tie to sponsor (APP Group) relevance.
+Note: the submission rules require AWS **and/or** SAP, so an AWS-only build is compliant even without any SAP component. The options below are ordered by preference, given that SAP-integrated closed-loop gatekeeping is currently TerraSentry's strongest differentiator.
 
-**Option 1 — Self-service SAP access (try first, no organizer approval needed).**
+**Option 1 — Self-service SAP access (try first).**
 - **SAP BTP Trial**: free, self-service signup, gives a real BTP tenant including Integration Suite trial capacity.
-- **SAP API Business Hub** (api.sap.com): publishes sandbox/mock endpoints for many real APIs, including S/4HANA and Ariba, callable with a free developer account — no procurement or sponsor relationship required.
+- **SAP API Business Hub** (api.sap.com): publishes sandbox/mock endpoints for many real APIs, including S/4HANA and Ariba, callable with a free developer account — no procurement relationship required.
 - **Action item (day 1):** spend 15 minutes checking both before assuming SAP access is blocked. If either works, agents call real SAP endpoints/schemas directly — replace the "mock" row in Section 2 with a real API action (e.g., one real vendor-status field flip).
 
 **Option 2 — Schema-accurate self-built stub (fallback if Option 1 doesn't pan out).**
@@ -72,7 +72,7 @@ Note: the submission rules require AWS **and/or** SAP, so an AWS-only build is c
 **Option 3 — Drop SAP, go AWS-only (fallback of last resort).**
 - Fully compliant with submission rules.
 - ERP action becomes a generic status write (e.g., a DynamoDB table + simple UI showing vendor blocked/approved) instead of anything SAP-shaped.
-- Lowest effort and lowest misrepresentation risk, but weakens the sponsor-relevance angle, since "closed-loop ERP gatekeeping" is presently framed around APP Group's SAP-based procurement stack.
+- Lowest effort and lowest misrepresentation risk, but drops the ERP-integration angle, since "closed-loop ERP gatekeeping" is presently framed around SAP-based procurement stacks.
 
 **Recommendation:** attempt Option 1 on day 1; if it fails or access is too slow to arrive, move to Option 2 rather than Option 3 — it keeps the strongest differentiator intact without misrepresenting what's real.
 
@@ -95,6 +95,6 @@ Note: the submission rules require AWS **and/or** SAP, so an AWS-only build is c
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | API rate limits hit mid-demo | High — public failure in front of judges | Rehearse full batch run beforehand; cache/pre-fetch where safe |
-| SAP sandbox access denied or delayed | Medium — falls back to mocks, still acceptable if disclosed | Ask organizers on day 1, not day 2 |
+| SAP sandbox access denied or delayed | Medium — falls back to mocks, still acceptable if disclosed | Check access on day 1, not day 2 |
 | 50-record batch takes too long for a live demo slot | Medium | Pre-run and show recorded/aggregated results; keep only the 2 live scenarios interactive |
 | Synthetic legality data looks fabricated/unrealistic to judges | Low-medium | Base formats on real Indonesian HGU/PBPH permit structures, and label clearly as synthetic test data |

@@ -67,7 +67,7 @@ M1 Integrations + cache  --->  M2 Deterministic core  --->  M3 Agent orchestrati
 | M4 API + persistence | Done | W3 | M3 | Run endpoints + SSE + batch worker, generated client |
 | M5 Cockpit | Done | W3-W4 | M4 | Demo flow navigable, live trace, batch summary, map |
 | M6 Batch 50 + throughput | In progress | W4 | M4, M5 | 50 records complete, metrics + 30/12/8 breakdown (offline verified; live numbers blocked on §3) |
-| M7 SAP closed loop | Todo | W2-W4 | M0, Day 1 access | Vendor status flip visible end-to-end |
+| M7 SAP closed loop | Done | W2-W4 | M0, Day 1 access | Vendor status flip visible end-to-end (stub path; sandbox client implemented, live check post-access) |
 | M8 Hardening + demo | Todo | W4-W5 | M6, M7 | All MVP Definition of Done boxes checked |
 
 ---
@@ -78,7 +78,7 @@ These are PRD sections 5 and 6 action items. Do them before writing dependent co
 
 | Gate | Why it blocks | Owner | Status | Deadline | Fallback |
 | --- | --- | --- | --- | --- | --- |
-| Check SAP API Business Hub / BTP trial access | Decides real vs stub SAP path and demo claim | TBD | Todo | Day 1 | Schema-accurate stub (PRD Option 2) |
+| Check SAP API Business Hub / BTP trial access | Decides real vs stub SAP path and demo claim | TBD | Done — `stub` selected (no access at build time) | Day 1 | Schema-accurate stub (PRD Option 2) |
 | Register NASA FIRMS MAP key | Key activation can take days; no key means no thermal agent | TBD | Todo | Day 1 | Cache demo fixtures (disclosed) |
 | Request Bedrock model access (orchestrator + extraction roles) | Agents cannot run without model access in the account; `python -m terrasentry_core.agents.preflight` verifies both roles | TBD | Todo | Day 1 | Cross-region inference profile / alternate model |
 | Verify GFW/Hansen API key and rate limit | Determines batch concurrency and wall-clock target | TBD | Todo | W1 | Backoff + reduced concurrency + bulk endpoint |
@@ -334,14 +334,32 @@ confirmed); the breakdown matches the 30/12/8 design; numbers are reproducible f
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
-| Day 1 access check result recorded | Todo | TBD | API Hub sandbox, BTP trial, or neither |
-| `SAP_MODE` client implementation (`sandbox` or `stub`) | Todo | TBD | `python/integrations/.../sap/` |
-| Stub service with API Hub-accurate payload shapes (if needed) | Todo | TBD | PRD Option 2 |
-| Vendor status / purchasing block surfaced in UI + DDS | Todo | TBD | closed-loop claim |
-| Demo disclosure line for mocked vs real | Todo | TBD | PRD design rules |
+| Day 1 access check result recorded | Done | — | No API Hub/BTP credentials in the build environment → `SAP_MODE=stub` (Option 2); §3 row updated |
+| `SAP_MODE` client implementation (`sandbox` or `stub`) | Done | — | `python/integrations/.../sap/`: `SapGateway` protocol, `StubSapService`, `HttpSapClient` (APIKey sandbox / OAuth live), factory + settings |
+| Stub service with API Hub-accurate payload shapes (if needed) | Done | — | `A_Supplier` / `A_BusinessPartner` OData routes on `/mock-sap`; `PATCH` updates with PascalCase bodies |
+| Vendor status / purchasing block surfaced in UI + DDS | Done | — | `sap_actions` audit table + startup replay; `RunDetail.sap_action`, `SupplierDetail.sap`, `sap` trace step, `erpAction` DDS extension, batch `sap_actions` counts |
+| Demo disclosure line for mocked vs real | Done | — | Generated per action from `SAP_MODE`; shown in the run/supplier cards, sidebar mode badge, DDS extension, run disclosures |
 
 **Exit criteria:** a compliance verdict causes a visible ERP-side status change; the demo states
 exactly what is real.
+
+> **Completed 2026-09-11 (stub path; sandbox live check post-access).** A released verdict now
+> reaches the ERP through `SapActionService`: compliant → vendor approved, high_risk → blocked with
+> purchasing block, `awaiting_review` → no action until the human decision (approve → approved,
+> override → blocked). Scenario runs, all 50 batch records, and HITL resolutions are covered;
+> every action is persisted in `sap_actions` (Alembic migration `fa63e54f2542`), replayed into the
+> stub at startup so a flip survives a restart, and emitted as a `sap` trace step. The released
+> DDS carries an `erpAction` extension block with `mode`, `real`, `status`, `purchasingBlock`,
+> `disclosure`, and `error`; an ERP outage is recorded with `status="failed"` and never fails the
+> compliance run. The stub serves API-Hub-accurate `A_Supplier`/`A_BusinessPartner` payloads
+> (field names verified against the S/4HANA `API_BUSINESS_PARTNER` docs), and the `sandbox`/`live`
+> HTTP clients are implemented behind the same protocol with respx coverage. `pnpm gen:api`
+> regenerated the contract; the cockpit adds an ERP action card on run detail, an ERP vendor card
+> on supplier detail, a `sap` trace icon, an SAP mode badge from `/health`, and ERP counts on the
+> batch throughput card. Verification: 15 SAP integration tests, 8 closed-loop API tests, DDS
+> extension tests with the golden fixture byte-identical, and the full-50 batch asserting
+> `sap_actions == 30 approved / 12 blocked / 0 failed`. The only unverified item is the live
+> sandbox call, which needs credentials the build environment did not have.
 
 ---
 
@@ -368,7 +386,7 @@ manual intervention.
 | Risk | Impact | Mitigation | Trigger / early warning | Owner | Status |
 | --- | --- | --- | --- | --- | --- |
 | API rate limits hit mid-demo | High | Cache + pre-fetch + backoff; M1 preflight | Probe shows throttling at <50 records | TBD | Todo |
-| SAP sandbox denied or delayed | Medium | Stub fallback (Option 2), disclosed | No access by end of Day 1 | TBD | Todo |
+| SAP sandbox denied or delayed | Medium | Stub fallback (Option 2), disclosed | No access by end of Day 1 | TBD | Mitigated — stub shipped and disclosed |
 | Batch too slow for a live slot | Medium | Pre-run and show aggregate results | Rehearsal exceeds demo window | TBD | Todo |
 | Synthetic legality data looks fabricated | Low-medium | Realistic HGU/PBPH formats, labelled | Judge feedback in rehearsal | TBD | Todo |
 | Bedrock quota/model access issues | High | Verify Day 1; cross-region profiles | Model access not granted in W1 | TBD | Todo |
@@ -382,6 +400,7 @@ Append one line per meaningful update. Keep newest at the top.
 
 | Date | Milestone | Update |
 | --- | --- | --- |
+| 2026-09-11 | M7 | SAP closed loop landed on the stub path (no live tenant in the build environment; §3 gate recorded). `python/integrations/.../sap/` is now a package: `SapGateway` protocol, `StubSapService` with API-Hub-accurate `A_Supplier`/`A_BusinessPartner` payloads served at `/mock-sap`, `HttpSapClient` for the Business Accelerator Hub sandbox (APIKey) and live tenants (cached OAuth client-credentials), settings (`SAP_MODE`, `SAP_API_KEY`, rate limit), and tests (15). `SapActionService` maps final verdicts to ERP actions (compliant → approved, high_risk → blocked + purchasing block, HITL approve/override → approved/blocked) and is invoked from scenario runs, every batch record, and the decision path; ERP failures are recorded (`status=failed`) without failing the run. New `sap_actions` audit table + Alembic migration, `RunStore` queries, and startup replay into the stub so a status flip survives restarts. Released DDS documents gain an `erpAction` TerraSentry extension (golden fixture unchanged; `to_json` omits it when absent), `TraceKind` gains `sap`, `RunDetail.sap_action` / `SupplierDetail.sap` / batch `sap_actions` counts / `/health` SAP mode flow through the regenerated contract, and the cockpit adds run + supplier ERP cards, a SAP mode badge, a `sap` trace icon, and ERP counts on the batch throughput card. Verification: full Python suite 190 green (15 SAP integration, 8 closed-loop API, DDS extension tests), `pnpm check`/`pnpm test`/Nitro build green, `alembic upgrade/downgrade/check` clean against Postgres, and the full-50 design-signal batch asserts 30 approved / 12 blocked / 0 failed. Live sandbox promotion needs credentials only. |
 | 2026-09-11 | M6 | Batch throughput landed (live pre-fetch blocked on §3): `python -m terrasentry_api.rehearsal` adds `prefetch` (live GFW/FIRMS → fixtures + latency report) and `run --offline` (production `RunManager` over Postgres → JSON report), with `--as-of` pinning FIRMS/GFW windows so fixtures survive across days. Batch metrics now include `median_seconds_per_record`, `p95_seconds_per_record`, `throughput_records_per_second`, `total_record_seconds`, `confusion` and a `cache_stats` delta, all exposed on `BatchSummary`; SSE `progress` carries `elapsed_seconds` and batch `snapshot` replays cumulative counts for late subscribers. The `REHEARSAL_AS_OF` pin is threaded through both the batch runner and the scenario `RunOrchestrator`/`ToolContext`, so the two live scenarios and the batch replay from the same fixtures without a day-relative cache miss. Cockpit: batch Throughput card (records/s, median, p95, design match, cache) and a dashboard KPI table mirroring the new `docs/kpi.md`. Evidence: full-50 design-signal API test asserts 30/12/8 exact + per-record state/elapsed persistence + every metric; offline fixture replay asserts zero external calls and identical verdicts; local CLI smoke over mock fixtures against Postgres/Redis produced a 50-record 30/12/8 report (0.872 s wall clock, 100 cache hits, 0 misses) — operational smoke only, live numbers pending the §3 keys. |
 | 2026-09-11 | M5 | Cockpit landed: sidebar app shell with URL-synced filters/tabs and seven routes (dashboard, suppliers list/detail, runs list/detail, batch list/detail), `components/data-table.tsx` over TanStack Table v9, `status-badge`/`verdict-breakdown`/`metric-card`/`map-view` components, and route-level error/not-found/pending states. `useRunStream`/`useBatchStream` consume SSE through the Effect `Stream` API with `takeUntil` on terminal state + reconnect and query invalidation; run detail tabs cover Trace (live merge, dedupe by step id), Assessment (findings, verifier challenges, disclosures), Evidence ledger, Map (dynamic MapLibre import, `VITE_MAP_STYLE_URL` or offline dark style; polygon + hotspot layers), and DDS (JSON/XML + download), with `ReviewDialog` for HITL approve/override and an explicit withheld-DDS state. Prerequisites fixed: scenario runs now publish a terminal `done` event, `ApiClientError` carries HTTP status, `decodeRunEventStream` is exported, and `GET /health` reports `{ offline, fixtures_loaded }`. Offline rehearsals: `terrasentry_integrations.fixtures` export/prime CLI, `CACHE_OFFLINE`/`CACHE_FIXTURES_DIR`, API startup priming, and a rehearsal badge in the shell. `apps/web` gains vitest + happy-dom (26 tests); `pnpm check`, `pnpm test`, and `pnpm build` green. Live keys remain the §3 gate. |
 | 2026-09-11 | M4 | API + persistence landed: SQLAlchemy 2.0 audit store (`suppliers`, `parcels`, `runs`, `run_steps`, `evidence`, `verdicts`, `dds_documents`) with an Alembic async migration verified up/down against Postgres and a CI `alembic check` drift gate; lifespan-built `AppServices` (engine, Redis cache, shared GFW/FIRMS clients, `RunManager`, mock SAP) with idempotent auto-seed of the synthetic suppliers/parcels. Routers: suppliers, runs (202 start, detail, evidence, SSE, decision), batch (202 start, metrics, records, SSE), dds (JSON/XML with 409 while withheld), mock sap (vendor status/block). The in-process worker runs scenarios through the M3 graph and batch records through the deterministic assess + verifier path with an asyncio semaphore (`BATCH_CONCURRENCY`) over the shared rate-limited clients; steps persist and stream live (`snapshot`/`step`/`state`/`progress`/`done`), and HITL release reconstructs the M3 result from Postgres (decisions are serialised per run; SSE responses carry a send timeout and no-store/nosniff headers). `RunOrchestrator` gained an `on_step` hook + injectable `run_id` (CLI/parity unchanged; new hook tests). `pnpm gen:api` regenerated the contract; the Effect client now decodes every response with `Schema`, exposes REST methods plus `streamRun`/`streamBatchRun` over `Stream` + `Sse`, and has 13 vitest cases. 18 API tests (SQLite + respx; lifecycle, SSE replay, HITL, batch breakdown/bounded concurrency, error paths); full Python suite 147 green, Ruff/Pyright/Biome/tsc clean. Live-key end-to-end remains gated on §3. |

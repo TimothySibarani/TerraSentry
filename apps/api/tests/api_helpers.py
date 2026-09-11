@@ -18,9 +18,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 from terrasentry_api.config import Settings
 from terrasentry_api.db import create_engine_and_session
-from terrasentry_api.mock_sap import MockSapStore
 from terrasentry_api.models import Base
 from terrasentry_api.runner import RunManager
+from terrasentry_api.sap_actions import SapActionService
 from terrasentry_api.seed_loader import seed_if_empty
 from terrasentry_api.services import AppServices, ServicesFactory
 from terrasentry_api.store import RunStore
@@ -39,6 +39,7 @@ from terrasentry_core.seed.schemas import (
 )
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_integrations.cache import CacheBackend, MemoryCache
+from terrasentry_integrations.sap import SapGateway, StubSapService, build_sap_gateway
 from terrasentry_integrations.settings import IntegrationSettings
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
@@ -201,6 +202,7 @@ def test_services_factory(
     auto_seed: bool = True,
     cache: CacheBackend | None = None,
     offline: bool = False,
+    sap_gateway: SapGateway | None = None,
 ) -> ServicesFactory:
     """A lifespan-compatible factory that never touches Postgres or Redis."""
     resolved = datasets or build_datasets()
@@ -214,6 +216,7 @@ def test_services_factory(
             firms_map_key="TESTKEY",
             firms_rate_limit_per_10min=100_000,
             cache_backend="memory",
+            sap_mode="stub",
         )
         engine, session_factory = create_engine_and_session(settings.database_url)
         await _create_all(engine)
@@ -223,6 +226,11 @@ def test_services_factory(
         if settings.auto_seed:
             async with session_factory() as session:
                 await seed_if_empty(RunStore(session), resolved)
+        sap_stub = StubSapService(record.supplier_id for record in resolved.records)
+        async with session_factory() as session:
+            sap_stub.restore(await RunStore(session).latest_vendor_states())
+        sap = sap_gateway if sap_gateway is not None else build_sap_gateway(integration, stub=sap_stub)
+        sap_actions = SapActionService(gateway=sap, mode="stub")
         manager = RunManager(
             settings=settings,
             session_factory=session_factory,
@@ -230,6 +238,7 @@ def test_services_factory(
             gfw=gfw,
             firms=firms,
             cache=cache_backend,
+            sap=sap_actions,
         )
         services = AppServices(
             settings=settings,
@@ -241,7 +250,11 @@ def test_services_factory(
             firms=firms,
             datasets=resolved,
             run_manager=manager,
-            mock_sap=MockSapStore(record.supplier_id for record in resolved.records),
+            sap=sap,
+            sap_stub=sap_stub,
+            sap_actions=sap_actions,
+            sap_mode="stub",
+            sap_real=False,
             offline=offline,
         )
         try:

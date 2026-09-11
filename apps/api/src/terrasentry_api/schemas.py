@@ -21,7 +21,9 @@ from terrasentry_integrations.sap import VendorStatus
 from terrasentry_api.models import DdsDocument as DdsRow
 from terrasentry_api.models import Parcel as ParcelRow
 from terrasentry_api.models import Run, RunVerdict
+from terrasentry_api.models import SapAction as SapActionRow
 from terrasentry_api.models import Supplier as SupplierRow
+from terrasentry_api.sap_actions import disclosure_for_mode
 
 ModelMode = Literal["scripted", "bedrock"]
 
@@ -31,11 +33,13 @@ def _opt_float(value: Any) -> float | None:
 
 
 class HealthResponse(BaseModel):
-    """Process health plus the offline-rehearsal state the cockpit badges."""
+    """Process health plus the offline-rehearsal and SAP-mode state the cockpit badges."""
 
     status: str
     offline: bool = False
     fixtures_loaded: int = 0
+    sap_mode: str = "stub"
+    sap_real: bool = False
 
 
 class RunCreate(BaseModel):
@@ -188,13 +192,14 @@ class RunSummary(BaseModel):
 
 
 class RunDetail(RunSummary):
-    """Full dossier: trace, verification, assessment, review, and DDS metadata."""
+    """Full dossier: trace, verification, assessment, review, SAP action, and DDS metadata."""
 
     disclosures: list[str] = Field(default_factory=list)
     verification: VerificationReport | None = None
     assessment: VerdictOut | None = None
     pending_assessment: VerdictOut | None = None
     review: ReviewOut | None = None
+    sap_action: SapActionOut | None = None
     steps: list[TraceStep] = Field(default_factory=list)
     dds: DdsMeta | None = None
 
@@ -206,6 +211,7 @@ class RunDetail(RunSummary):
         verdict: RunVerdict | None,
         dds: DdsRow | None,
         steps: list[TraceStep],
+        sap_action: SapActionRow | None = None,
     ) -> RunDetail:
         summary = RunSummary.from_row(run, verdict=verdict, step_count=len(steps))
         review = None
@@ -224,6 +230,7 @@ class RunDetail(RunSummary):
             assessment=verdict_out if verdict_out is not None and not verdict_out.pending else None,
             pending_assessment=(verdict_out if verdict_out is not None and verdict_out.pending else None),
             review=review,
+            sap_action=SapActionOut.from_row(sap_action) if sap_action is not None else None,
             steps=steps,
             dds=DdsMeta.from_row(dds) if dds is not None else None,
         )
@@ -247,6 +254,7 @@ class BatchSummary(BaseModel):
     cache_stats: dict[str, int] | None = None
     confusion: dict[str, dict[str, int]] = Field(default_factory=dict)
     batch_concurrency: int | None = None
+    sap_actions: dict[str, int] = Field(default_factory=dict)
     started_at: datetime | None = None
     finished_at: datetime | None = None
     metrics: dict[str, Any] = Field(default_factory=dict)
@@ -264,6 +272,7 @@ class BatchSummary(BaseModel):
         confusion = metrics.get("confusion")
         cache_stats = metrics.get("cache_stats")
         concurrency = metrics.get("batch_concurrency")
+        sap_actions = metrics.get("sap_actions")
         return cls(
             run_id=run.id,
             state=run.state,
@@ -280,6 +289,7 @@ class BatchSummary(BaseModel):
             cache_stats=cache_stats if isinstance(cache_stats, dict) else None,
             confusion=confusion if isinstance(confusion, dict) else {},
             batch_concurrency=int(concurrency) if isinstance(concurrency, (int, float)) else None,
+            sap_actions=sap_actions if isinstance(sap_actions, dict) else {},
             started_at=run.started_at,
             finished_at=run.finished_at,
             metrics=metrics,
@@ -360,8 +370,72 @@ class SupplierOut(BaseModel):
         )
 
 
+class SapActionOut(BaseModel):
+    """One recorded ERP action from the M7 closed loop."""
+
+    run_id: str
+    supplier_id: str
+    vendor_id: str
+    mode: str
+    status: str
+    purchasing_block: bool
+    real: bool
+    external_reference: str | None = None
+    error: str | None = None
+    performed_at: datetime
+
+    @classmethod
+    def from_row(cls, row: SapActionRow) -> SapActionOut:
+        return cls(
+            run_id=row.run_id,
+            supplier_id=row.supplier_id,
+            vendor_id=row.vendor_id,
+            mode=row.mode,
+            status=row.status,
+            purchasing_block=row.purchasing_block,
+            real=row.real,
+            external_reference=row.external_reference,
+            error=row.error,
+            performed_at=row.performed_at,
+        )
+
+
+class SupplierSapOut(BaseModel):
+    """Current ERP state for one supplier plus its most recent action, if any."""
+
+    vendor_id: str
+    status: str
+    purchasing_block: bool
+    mode: str
+    real: bool
+    disclosure: str
+    last_action: SapActionOut | None = None
+
+    @classmethod
+    def from_parts(
+        cls,
+        supplier_id: str,
+        *,
+        current: VendorStatus | None,
+        last_action: SapActionRow | None,
+        mode: str,
+        real: bool,
+    ) -> SupplierSapOut:
+        vendor = current or VendorStatus(vendor_id=supplier_id)
+        return cls(
+            vendor_id=vendor.vendor_id,
+            status=vendor.status,
+            purchasing_block=vendor.purchasing_block,
+            mode=mode,
+            real=real,
+            disclosure=disclosure_for_mode(mode),
+            last_action=SapActionOut.from_row(last_action) if last_action is not None else None,
+        )
+
+
 class SupplierDetail(SupplierOut):
     parcels: list[ParcelOut] = Field(default_factory=list)
+    sap: SupplierSapOut | None = None
 
 
 class SapVendorOut(BaseModel):
@@ -396,10 +470,12 @@ __all__ = [
     "RunCreate",
     "RunDetail",
     "RunSummary",
+    "SapActionOut",
     "SapBlockIn",
     "SapStatusIn",
     "SapVendorOut",
     "SupplierDetail",
     "SupplierOut",
+    "SupplierSapOut",
     "VerdictOut",
 ]

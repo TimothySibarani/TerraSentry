@@ -23,6 +23,7 @@ from terrasentry_core.dds import (
     REQUIRED_DDS_CLAIMS,
     SOAP_NAMESPACE,
     DdsDocument,
+    ErpAction,
     build_dds,
     validate_citations,
 )
@@ -207,3 +208,37 @@ def test_dds_golden_fixture_matches() -> None:
     document, _, _ = build_document(input)
     assert document.to_xml() == (FIXTURES / "dds_reference.xml").read_text(encoding="utf-8")
     assert document.to_json() == (FIXTURES / "dds_reference.json").read_text(encoding="utf-8")
+
+
+def test_json_omits_erp_action_until_the_closed_loop_runs() -> None:
+    document, _, _ = build_document(make_input())
+    assert document.erp_action is None
+    payload = json.loads(document.to_json())
+    assert "erpAction" not in payload
+
+
+def test_json_carries_the_erp_action_once_present() -> None:
+    document, _, _ = build_document(make_input())
+    document.erp_action = ErpAction(
+        vendor_id="SUP-TEST",
+        status="blocked",
+        purchasing_block=True,
+        mode="stub",
+        real=False,
+        performed_at=FIXED_TIME,
+        disclosure="schema-accurate stub",
+    )
+    payload = json.loads(document.to_json())
+    assert payload["erpAction"] == {
+        "vendorId": "SUP-TEST",
+        "status": "blocked",
+        "purchasingBlock": True,
+        "mode": "stub",
+        "real": False,
+        "externalReference": None,
+        "performedAt": "2026-09-01T12:00:00Z",
+        "disclosure": "schema-accurate stub",
+        "error": None,
+    }
+    # The extension is TerraSentry-only: the EUDR SOAP XML must not carry it.
+    assert "erpAction" not in document.to_xml()

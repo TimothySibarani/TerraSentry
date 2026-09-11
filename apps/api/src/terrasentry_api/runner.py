@@ -41,6 +41,7 @@ from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
 
 from terrasentry_api.config import Settings
+from terrasentry_api.sap_actions import SapActionRecord, SapActionService
 from terrasentry_api.store import RunStore
 
 logger = logging.getLogger(__name__)
@@ -106,6 +107,7 @@ class RunManager:
         rubric: RubricConfig | None = None,
         clock: Callable[[], datetime] = utc_now,
         cache: CacheBackend | None = None,
+        sap: SapActionService | None = None,
     ) -> None:
         self._settings = settings
         self._session_factory = session_factory
@@ -115,6 +117,7 @@ class RunManager:
         self._rubric = rubric
         self._clock = clock
         self._cache = cache
+        self._sap = sap
         self._broadcaster = RunBroadcaster()
         self._tasks: set[asyncio.Task[None]] = set()
         self._decision_locks: dict[str, asyncio.Lock] = {}
@@ -211,7 +214,10 @@ class RunManager:
 
         orchestrator = self._orchestrator(on_step=None)
         resumed = await orchestrator.resume(result, decision)
-        await self._store_result(resumed)
+        action = await self._sap_decision_action(resumed, decision)
+        if action is not None:
+            resumed = self._attach_sap(resumed, action)
+        await self._store_result(resumed, sap_action=action)
         async with self._session_factory() as session:
             store = RunStore(session)
             await store.release_dds(run_id)
@@ -278,7 +284,10 @@ class RunManager:
         if result is None:
             await self._fail(run_id, failure or "run failed")
             return
-        await self._store_result(result)
+        action = await self._sap_verdict_action(result)
+        if action is not None:
+            result = self._attach_sap(result, action)
+        await self._store_result(result, sap_action=action)
         self._publish_done(run_id, result.state)
 
     async def _persist_steps(self, run_id: str, queue: asyncio.Queue[TraceStep | None]) -> None:
@@ -468,7 +477,10 @@ class RunManager:
                 started_at=started,
                 finished_at=self._clock(),
             )
-        await self._store_result(result)
+        action = await self._sap_verdict_action(result)
+        if action is not None:
+            result = self._attach_sap(result, action)
+        await self._store_result(result, sap_action=action)
         return result.state, verdict
 
     # -- persistence helpers ---------------------------------------------------------
@@ -506,14 +518,69 @@ class RunManager:
             await session.commit()
         self._publish_state(run_id, state)
 
-    async def _store_result(self, result: AgentRunResult) -> None:
+    async def _store_result(
+        self,
+        result: AgentRunResult,
+        *,
+        sap_action: SapActionRecord | None = None,
+    ) -> None:
         async with self._session_factory() as session:
             store = RunStore(session)
             await store.persist_result(result)
+            if sap_action is not None:
+                await store.record_sap_action(
+                    run_id=sap_action.run_id,
+                    supplier_id=sap_action.supplier_id,
+                    vendor_id=sap_action.vendor_id,
+                    mode=sap_action.mode,
+                    status=sap_action.status,
+                    purchasing_block=sap_action.purchasing_block,
+                    real=sap_action.real,
+                    external_reference=sap_action.external_reference,
+                    error=sap_action.error,
+                    performed_at=sap_action.performed_at,
+                )
+            fresh: list[TraceStep] = []
             for seq, step in enumerate(result.trace, start=1):
-                await store.append_step(result.run_id, step, seq)
+                if await store.append_step(result.run_id, step, seq):
+                    fresh.append(step)
             await session.commit()
+        for step in fresh:
+            self._publish_step(result.run_id, step)
         self._publish_state(result.run_id, result.state)
+
+    async def _sap_verdict_action(self, result: AgentRunResult) -> SapActionRecord | None:
+        """Apply a released automated verdict; ``awaiting_review`` waits for a human."""
+        if self._sap is None or result.assessment is None:
+            return None
+        return await self._sap.apply_verdict(
+            run_id=result.run_id,
+            supplier_id=result.supplier_id,
+            verdict=result.assessment.assessment.verdict,
+        )
+
+    async def _sap_decision_action(
+        self, result: AgentRunResult, decision: ReviewDecision
+    ) -> SapActionRecord | None:
+        """Apply the human decision on the ambiguous branch."""
+        if self._sap is None or result.assessment is None:
+            return None
+        return await self._sap.apply_decision(
+            run_id=result.run_id,
+            supplier_id=result.supplier_id,
+            decision=decision.decision,
+        )
+
+    def _attach_sap(self, result: AgentRunResult, action: SapActionRecord) -> AgentRunResult:
+        """Fold the ERP action into the run: DDS extension, disclosure, trace step."""
+        assessment = result.assessment
+        if assessment is not None:
+            assessment.dds.erp_action = action.to_erp_action()
+        disclosures = list(result.disclosures)
+        if action.disclosure not in disclosures:
+            disclosures.append(action.disclosure)
+        step = action.to_trace_step(len(result.trace) + 1)
+        return result.model_copy(update={"trace": [*result.trace, step], "disclosures": disclosures})
 
     async def _fail(self, run_id: str, detail: str) -> None:
         async with self._session_factory() as session:
@@ -546,6 +613,7 @@ class RunManager:
             average = await store.batch_average_seconds(batch_run_id)
             durations = await store.batch_record_durations(batch_run_id)
             confusion = await store.batch_confusion(batch_run_id)
+            sap_actions = await store.batch_sap_action_counts(batch_run_id)
         wall_clock = round((finished - started).total_seconds(), 3)
         metrics: dict[str, Any] = {
             "record_count": record_count,
@@ -560,6 +628,7 @@ class RunManager:
             "total_record_seconds": round(sum(durations), 3),
             "confusion": confusion,
             "batch_concurrency": max(1, self._settings.batch_concurrency),
+            "sap_actions": sap_actions,
         }
         if cache_before is not None and self._cache is not None:
             cache_after = self._cache.stats().as_dict()

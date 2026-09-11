@@ -3,6 +3,7 @@ import {
 	ActivityIcon,
 	BotIcon,
 	FileOutputIcon,
+	LandmarkIcon,
 	ShieldCheckIcon,
 	UserCheckIcon,
 	WrenchIcon,
@@ -30,6 +31,7 @@ const KIND_ICON: Record<string, typeof ActivityIcon> = {
 	writer: FileOutputIcon,
 	review: UserCheckIcon,
 	state: ActivityIcon,
+	sap: LandmarkIcon,
 };
 
 export function TracePanel({

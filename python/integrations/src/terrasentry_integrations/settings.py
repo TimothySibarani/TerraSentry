@@ -33,6 +33,17 @@ class IntegrationSettings(BaseSettings):
     cache_offline: bool = False
     cache_fixtures_dir: str = ""
 
+    # SAP closed loop (M7). ``stub`` is the schema-accurate in-process fallback;
+    # ``sandbox`` calls the Business Accelerator Hub with SAP_API_KEY; ``live``
+    # uses OAuth client credentials. See docs/setup/sap.md.
+    sap_mode: str = "stub"
+    sap_base_url: str = ""
+    sap_api_key: str = ""
+    sap_token_url: str = ""
+    sap_client_id: str = ""
+    sap_client_secret: str = ""
+    sap_rate_limit_per_min: int = 60
+
     @property
     def has_gfw_key(self) -> bool:
         return bool(self.gfw_api_key.strip())
@@ -40,6 +51,20 @@ class IntegrationSettings(BaseSettings):
     @property
     def has_firms_key(self) -> bool:
         return bool(self.firms_map_key.strip())
+
+    @property
+    def has_sap_credentials(self) -> bool:
+        mode = self.sap_mode.strip().lower()
+        if mode == "sandbox":
+            return bool(self.sap_base_url.strip() and self.sap_api_key.strip())
+        if mode == "live":
+            return bool(
+                self.sap_base_url.strip()
+                and self.sap_token_url.strip()
+                and self.sap_client_id.strip()
+                and self.sap_client_secret.strip()
+            )
+        return True
 
     @property
     def missing_credentials(self) -> list[str]:

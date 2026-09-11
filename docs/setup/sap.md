@@ -15,7 +15,7 @@ as free access allows, and makes the fallback explicit so the demo never overcla
 | **1a. Business Accelerator Hub sandbox** | Free SAP account calling sandbox endpoints at `sandbox.api.sap.com` with an `APIKey` header | Free | "Calls SAP's published API contract against SAP's own sandbox" | ~30 min |
 | **1b. BTP trial + Integration Suite** | Real BTP tenant, 90-day trial; Integration Suite trial (30 days, shared tenant) can expose an OData/REST endpoint backed by integration flows | Free | "Real BTP tenant and integration runtime" | ~half day |
 | **2. Schema-accurate stub** | Our FastAPI router serving API Hub-accurate payloads, selected by `SAP_MODE=stub` | Free | "Implemented against SAP's real API contract, backed by a stub because no live tenant was available" | Already scaffolded |
-| **3. AWS-only status write** | Generic DynamoDB/Postgres status flip, no SAP shapes | Free | No SAP claim; weakest sponsor relevance | Small |
+| **3. AWS-only status write** | Generic DynamoDB/Postgres status flip, no SAP shapes | Free | No SAP claim; no ERP-integration story | Small |
 
 **Recommendation:** try 1a on Day 1. If sandbox APIs cover vendor status or purchasing
 block, use `SAP_MODE=sandbox`. If BTP/Integration Suite access lands quickly, use 1b for
@@ -118,15 +118,39 @@ curl -sS -X POST "$SAP_TOKEN_URL" \
 
 ## 4. Option 2 — the schema-accurate stub (our fallback)
 
-The repo already defines `SapGateway` (`python/integrations/.../sap/__init__.py`). When
-`sandbox` is unavailable, M7 implements a stub router with API Hub-accurate field names
-and status codes pulled from the public documentation, and the demo states clearly:
+The repo defines `SapGateway` (`python/integrations/.../sap/protocol.py`) with the
+`stub`, `sandbox`, and `live` implementations selected by `SAP_MODE`. Verdicts reach it
+through `SapActionService` (`apps/api/.../sap_actions.py`); the closed loop is enabled
+for scenario runs, the 50-record batch, and HITL decisions.
+
+When `sandbox` is unavailable, `SAP_MODE=stub` serves API-Hub-accurate field names and
+status codes from the integration-layer `StubSapService`, exposed by the API's
+`/mock-sap` router:
+
+| Route | Meaning |
+| --- | --- |
+| `GET /mock-sap/A_Supplier('{id}')` | `A_Supplier` entity: `Supplier`, `PurchasingIsBlocked`, `PostingIsBlocked`, `PaymentIsBlockedForSupplier` |
+| `PATCH /mock-sap/A_Supplier('{id}')` | OData update with the same PascalCase body |
+| `GET /mock-sap/A_BusinessPartner('{id}')` | `A_BusinessPartner`: `BusinessPartner`, `BusinessPartnerIsBlocked` |
+| `GET/PUT /mock-sap/vendors/{id}...` | TerraSentry convenience view over the same state |
+
+Verify it without any credentials:
+
+```bash
+curl -sS "http://localhost:8000/mock-sap/A_Supplier('SUP-001')" | python -m json.tool
+curl -sS -X PATCH "http://localhost:8000/mock-sap/A_Supplier('SUP-001')" \
+  -H "Content-Type: application/json" -d '{"PurchasingIsBlocked": true}' | python -m json.tool
+```
+
+The demo states clearly:
 
 > "This action is executed against a stub that mirrors SAP's published API contract;
 > a live tenant was not available during the build."
 
 This is materially stronger than a generic mock and is fully compliant with the
-submission rules (AWS and/or SAP).
+submission rules (AWS and/or SAP). Every action is persisted in `sap_actions` and
+replayed into the stub at startup, and the released DDS carries an `erpAction`
+extension block with `real: false`.
 
 ## 5. Team, secrets, and disclosure
 
@@ -138,13 +162,23 @@ submission rules (AWS and/or SAP).
 
 ## 6. Day-1 checklist (record results in `docs/milestones.md` §3)
 
+> **Result recorded 2026-09-11:** no API Hub or BTP credentials existed in the build
+> environment, so the gate resolved to **Option 2, `SAP_MODE=stub`**. The `sandbox`
+> (APIKey) and `live` (OAuth client-credentials) clients are implemented behind the same
+> gateway and covered by respx tests; the live check below stays a post-access item.
+
 - [ ] Business Accelerator Hub account created
 - [ ] Found at least one sandbox API for vendor status / supplier master / purchasing block
 - [ ] Sandbox call succeeded (paste the curl result in the milestone notes)
 - [ ] BTP trial created (optional, only if sandbox is insufficient)
 - [ ] Integration Suite subscribed and capabilities activated (optional)
-- [ ] Decision recorded: `SAP_MODE=sandbox` or `SAP_MODE=stub`
+- [x] Decision recorded: `SAP_MODE=stub` (no live tenant available during the build)
 - [ ] Credentials stored in `.env` / password manager (not in git)
+
+To promote to a live check later: set `SAP_MODE=sandbox`, `SAP_BASE_URL`, and
+`SAP_API_KEY` (Hub sandbox) or the four OAuth values (BTP), restart the API, and run one
+scenario through the cockpit. The action record flips to `real: true` and the DDS
+`erpAction.real` becomes `true`; no code changes are needed.
 
 ## 7. Troubleshooting
 
@@ -153,6 +187,7 @@ submission rules (AWS and/or SAP).
 | Integration Suite missing from marketplace | Entitlement or unsupported region | Add entitlement; use US East (VA) or Singapore |
 | `403` in Integration Suite | Missing capability role collection | Assign `PI_*` roles and re-login |
 | Sandbox `401` | Missing/incorrect `APIKey` header | Regenerate the key in your Hub profile |
+| Every action recorded as `failed` with `MissingCredentialError` | `SAP_MODE` is `sandbox`/`live` but credentials are incomplete | Fill `.env` per §2/§3; the API logs a startup warning and the compliance runs still complete |
 | Sandbox `404` on a path | API has no sandbox environment | Use "Try Out" in the browser to check first |
 | OAuth `invalid_client` | Wrong token URL or service key | Recreate the service key; copy all four fields |
 | Trial suspended | 30 days without login | Open the cockpit and choose *Extend Trial* |

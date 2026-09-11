@@ -16,4 +16,6 @@ async def health(services: ServicesDep) -> HealthResponse:
         status="ok",
         offline=services.offline,
         fixtures_loaded=services.fixtures_loaded,
+        sap_mode=services.sap_mode,
+        sap_real=services.sap_real,
     )

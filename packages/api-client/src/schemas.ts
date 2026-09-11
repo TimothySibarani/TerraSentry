@@ -9,6 +9,8 @@ export const HealthResponse = Schema.Struct({
   status: Schema.String,
   offline: Schema.Boolean,
   fixtures_loaded: Schema.Int,
+  sap_mode: Schema.String,
+  sap_real: Schema.Boolean,
 });
 export type HealthResponse = typeof HealthResponse.Type;
 
@@ -59,6 +61,7 @@ export const TraceKind = Schema.Literals([
   "writer",
   "review",
   "state",
+  "sap",
 ]);
 export type TraceKind = typeof TraceKind.Type;
 
@@ -140,6 +143,31 @@ export const DdsMeta = Schema.Struct({
 });
 export type DdsMeta = typeof DdsMeta.Type;
 
+export const SapActionOut = Schema.Struct({
+  run_id: Schema.String,
+  supplier_id: Schema.String,
+  vendor_id: Schema.String,
+  mode: Schema.String,
+  status: Schema.String,
+  purchasing_block: Schema.Boolean,
+  real: Schema.Boolean,
+  external_reference: Schema.NullOr(Schema.String),
+  error: Schema.NullOr(Schema.String),
+  performed_at: Schema.DateTimeUtcFromString,
+});
+export type SapActionOut = typeof SapActionOut.Type;
+
+export const SupplierSapOut = Schema.Struct({
+  vendor_id: Schema.String,
+  status: Schema.String,
+  purchasing_block: Schema.Boolean,
+  mode: Schema.String,
+  real: Schema.Boolean,
+  disclosure: Schema.String,
+  last_action: Schema.NullOr(SapActionOut),
+});
+export type SupplierSapOut = typeof SupplierSapOut.Type;
+
 const runSummaryFields = {
   run_id: Schema.String,
   kind: Schema.String,
@@ -186,6 +214,7 @@ export const RunDetail = Schema.Struct({
   assessment: Schema.NullOr(VerdictOut),
   pending_assessment: Schema.NullOr(VerdictOut),
   review: Schema.NullOr(ReviewOut),
+  sap_action: Schema.NullOr(SapActionOut),
   steps: Schema.Array(TraceStep),
   dds: Schema.NullOr(DdsMeta),
 });
@@ -210,6 +239,7 @@ export const BatchSummary = Schema.Struct({
     Schema.Record(Schema.String, Schema.Int),
   ),
   batch_concurrency: Schema.NullOr(Schema.Int),
+  sap_actions: Schema.Record(Schema.String, Schema.Int),
   started_at: Schema.NullOr(Schema.DateTimeUtcFromString),
   finished_at: Schema.NullOr(Schema.DateTimeUtcFromString),
   metrics: Schema.Record(Schema.String, Schema.Unknown),
@@ -258,6 +288,7 @@ export type SupplierOut = typeof SupplierOut.Type;
 export const SupplierDetail = Schema.Struct({
   ...supplierFields,
   parcels: Schema.Array(ParcelOut),
+  sap: Schema.NullOr(SupplierSapOut),
 });
 export type SupplierDetail = typeof SupplierDetail.Type;
 

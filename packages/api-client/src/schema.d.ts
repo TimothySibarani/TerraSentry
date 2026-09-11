@@ -130,6 +130,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mock-sap/A_BusinessPartner('{vendor_id}')": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Business Partner Entity */
+        get: operations["get_business_partner_entity_mock_sap_A_BusinessPartner___vendor_id____get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mock-sap/A_Supplier('{vendor_id}')": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Supplier Entity */
+        get: operations["get_supplier_entity_mock_sap_A_Supplier___vendor_id____get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Supplier Entity */
+        patch: operations["patch_supplier_entity"];
+        trace?: never;
+    };
     "/mock-sap/vendors/{vendor_id}": {
         parameters: {
             query?: never;
@@ -395,6 +430,10 @@ export interface components {
             record_count: number;
             /** Run Id */
             run_id: string;
+            /** Sap Actions */
+            sap_actions?: {
+                [key: string]: number;
+            };
             /** Started At */
             started_at?: string | null;
             state: components["schemas"]["RunState"];
@@ -535,7 +574,7 @@ export interface components {
         };
         /**
          * HealthResponse
-         * @description Process health plus the offline-rehearsal state the cockpit badges.
+         * @description Process health plus the offline-rehearsal and SAP-mode state the cockpit badges.
          */
         HealthResponse: {
             /**
@@ -548,6 +587,16 @@ export interface components {
              * @default false
              */
             offline: boolean;
+            /**
+             * Sap Mode
+             * @default stub
+             */
+            sap_mode: string;
+            /**
+             * Sap Real
+             * @default false
+             */
+            sap_real: boolean;
             /** Status */
             status: string;
         };
@@ -619,7 +668,7 @@ export interface components {
         };
         /**
          * RunDetail
-         * @description Full dossier: trace, verification, assessment, review, and DDS metadata.
+         * @description Full dossier: trace, verification, assessment, review, SAP action, and DDS metadata.
          */
         RunDetail: {
             assessment?: components["schemas"]["VerdictOut"] | null;
@@ -657,6 +706,7 @@ export interface components {
             review?: components["schemas"]["ReviewOut"] | null;
             /** Run Id */
             run_id: string;
+            sap_action?: components["schemas"]["SapActionOut"] | null;
             /** Score */
             score?: number | null;
             /** Started At */
@@ -738,6 +788,35 @@ export interface components {
             supplier_id?: string | null;
             verdict?: components["schemas"]["Verdict"] | null;
         };
+        /**
+         * SapActionOut
+         * @description One recorded ERP action from the M7 closed loop.
+         */
+        SapActionOut: {
+            /** Error */
+            error?: string | null;
+            /** External Reference */
+            external_reference?: string | null;
+            /** Mode */
+            mode: string;
+            /**
+             * Performed At
+             * Format: date-time
+             */
+            performed_at: string;
+            /** Purchasing Block */
+            purchasing_block: boolean;
+            /** Real */
+            real: boolean;
+            /** Run Id */
+            run_id: string;
+            /** Status */
+            status: string;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Vendor Id */
+            vendor_id: string;
+        };
         /** SapBlockIn */
         SapBlockIn: {
             /** Blocked */
@@ -792,6 +871,7 @@ export interface components {
             province: string;
             /** Sanctions */
             sanctions?: string[];
+            sap?: components["schemas"]["SupplierSapOut"] | null;
             /** Supplier Id */
             supplier_id: string;
             /** Synthetic */
@@ -840,6 +920,37 @@ export interface components {
             trading_name: string;
         };
         /**
+         * SupplierPatch
+         * @description The subset of ``A_Supplier`` an update may carry.
+         */
+        SupplierPatch: {
+            /** Paymentisblockedforsupplier */
+            PaymentIsBlockedForSupplier?: boolean | null;
+            /** Postingisblocked */
+            PostingIsBlocked?: boolean | null;
+            /** Purchasingisblocked */
+            PurchasingIsBlocked?: boolean | null;
+        };
+        /**
+         * SupplierSapOut
+         * @description Current ERP state for one supplier plus its most recent action, if any.
+         */
+        SupplierSapOut: {
+            /** Disclosure */
+            disclosure: string;
+            last_action?: components["schemas"]["SapActionOut"] | null;
+            /** Mode */
+            mode: string;
+            /** Purchasing Block */
+            purchasing_block: boolean;
+            /** Real */
+            real: boolean;
+            /** Status */
+            status: string;
+            /** Vendor Id */
+            vendor_id: string;
+        };
+        /**
          * TraceStep
          * @description One visible step of a run: a delegation, a tool call, a check, a write.
          */
@@ -858,7 +969,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "run" | "agent" | "tool" | "verifier" | "writer" | "review" | "state";
+            kind: "run" | "agent" | "tool" | "verifier" | "writer" | "review" | "state" | "sap";
             /** Name */
             name: string;
             /** Payload */
@@ -1208,6 +1319,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    get_business_partner_entity_mock_sap_A_BusinessPartner___vendor_id____get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vendor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_supplier_entity_mock_sap_A_Supplier___vendor_id____get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vendor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_supplier_entity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vendor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

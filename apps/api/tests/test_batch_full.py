@@ -137,6 +137,8 @@ def test_full_batch_matches_the_design_breakdown(
     assert summary["p95_seconds_per_record"] >= summary["median_seconds_per_record"]
     assert summary["throughput_records_per_second"] is not None
     assert summary["batch_concurrency"] == 8
+    # M7: every released verdict reaches the ERP; ambiguous records wait for HITL.
+    assert summary["sap_actions"] == {"approved": 30, "blocked": 12, "failed": 0}
 
     rows = full_client.get(f"/batch-runs/{batch_run_id}/records").json()
     assert len(rows) == 50

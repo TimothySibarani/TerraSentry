@@ -29,6 +29,7 @@ from terrasentry_core.seed.schemas import (
 )
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.trace import TraceKind, TraceStep, utc_now
+from terrasentry_integrations.sap import STATUS_FAILED, VendorStatus
 
 from terrasentry_api.models import (
     DdsDocument as DdsRow,
@@ -41,6 +42,7 @@ from terrasentry_api.models import (
     Run,
     RunStep,
     RunVerdict,
+    SapAction,
     Supplier,
 )
 
@@ -358,6 +360,106 @@ class RunStore:
             select(EvidenceRow).where(EvidenceRow.run_id == run_id).order_by(EvidenceRow.evidence_id)
         )
         return list(result)
+
+    # -- SAP closed loop --------------------------------------------------------
+
+    async def record_sap_action(
+        self,
+        *,
+        run_id: str,
+        supplier_id: str,
+        vendor_id: str,
+        mode: str,
+        status: str,
+        purchasing_block: bool,
+        real: bool,
+        performed_at: datetime,
+        external_reference: str | None = None,
+        error: str | None = None,
+    ) -> SapAction:
+        row = SapAction(
+            run_id=run_id,
+            supplier_id=supplier_id,
+            vendor_id=vendor_id,
+            mode=mode,
+            status=status,
+            purchasing_block=purchasing_block,
+            real=real,
+            external_reference=external_reference,
+            error=error,
+            performed_at=performed_at,
+        )
+        self._session.add(row)
+        await self._session.flush()
+        return row
+
+    async def get_sap_action(self, run_id: str) -> SapAction | None:
+        """The latest ERP action for a run (the initial verdict or the HITL decision)."""
+        return await self._session.scalar(
+            select(SapAction)
+            .where(SapAction.run_id == run_id)
+            .order_by(SapAction.performed_at.desc(), SapAction.id.desc())
+            .limit(1)
+        )
+
+    async def latest_sap_action(self, supplier_id: str) -> SapAction | None:
+        return await self._session.scalar(
+            select(SapAction)
+            .where(SapAction.supplier_id == supplier_id)
+            .order_by(SapAction.performed_at.desc(), SapAction.id.desc())
+            .limit(1)
+        )
+
+    async def latest_vendor_state(self, supplier_id: str) -> VendorStatus | None:
+        """The last successful action for a supplier; a failed action changes nothing."""
+        row = await self._session.scalar(
+            select(SapAction)
+            .where(SapAction.supplier_id == supplier_id, SapAction.status != STATUS_FAILED)
+            .order_by(SapAction.performed_at.desc(), SapAction.id.desc())
+            .limit(1)
+        )
+        if row is None:
+            return None
+        return VendorStatus(
+            vendor_id=row.vendor_id,
+            status=row.status,
+            purchasing_block=row.purchasing_block,
+        )
+
+    async def batch_sap_action_counts(self, parent_run_id: str) -> dict[str, int]:
+        """ERP action outcomes across a batch: approved / blocked / failed."""
+        rows = await self._session.execute(
+            select(SapAction.status, func.count())
+            .join(Run, Run.id == SapAction.run_id)
+            .where(Run.parent_run_id == parent_run_id)
+            .group_by(SapAction.status)
+        )
+        counts = {"approved": 0, "blocked": 0, "failed": 0}
+        for status, count in rows.all():
+            if str(status) in counts:
+                counts[str(status)] = int(count)
+        return counts
+
+    async def latest_vendor_states(self) -> list[VendorStatus]:
+        """Latest successful action per supplier, for replaying into the stub.
+
+        A failed action must not erase the last known good state, so failures
+        are excluded from the "latest per supplier" set.
+        """
+        latest_successful = (
+            select(func.max(SapAction.id))
+            .where(SapAction.status != STATUS_FAILED)
+            .group_by(SapAction.supplier_id)
+        )
+        rows = await self._session.scalars(select(SapAction).where(SapAction.id.in_(latest_successful)))
+        return [
+            VendorStatus(
+                vendor_id=row.vendor_id,
+                status=row.status,
+                purchasing_block=row.purchasing_block,
+            )
+            for row in rows
+        ]
 
     # -- reconstruction ---------------------------------------------------------
 

@@ -54,6 +54,7 @@ const runDetail = {
   assessment: null,
   pending_assessment: null,
   review: null,
+  sap_action: null,
   steps: [],
   dds: null,
 };
@@ -84,6 +85,8 @@ describe("ApiClient", () => {
             status: "ok",
             offline: false,
             fixtures_loaded: 0,
+            sap_mode: "stub",
+            sap_real: false,
           });
         }),
       ),
