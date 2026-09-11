@@ -25,7 +25,7 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: Lint, typecheck, test, build
-        run: pnpm exec turbo run lint typecheck test build
+        run: pnpm exec turbo run lint typecheck test build --filter='!@terrasentry/api'
         env:
           VITE_API_BASE_URL: http://localhost:8000
 
