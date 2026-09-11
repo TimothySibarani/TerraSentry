@@ -79,6 +79,8 @@ class CacheBackend(Protocol):
 
     async def clear_source(self, source: str) -> int: ...
 
+    async def iter_entries(self) -> list[CacheEntry]: ...
+
     def stats(self) -> CacheStats: ...
 
     async def close(self) -> None: ...
@@ -136,6 +138,9 @@ class MemoryCache(BaseCache):
         for key in keys:
             del self._entries[key]
         return len(keys)
+
+    async def iter_entries(self) -> list[CacheEntry]:
+        return list(self._entries.values())
 
     async def close(self) -> None:
         self._entries.clear()
@@ -205,6 +210,19 @@ class RedisCache(BaseCache):
             await self._redis.delete(key)
             removed += 1
         return removed
+
+    async def iter_entries(self) -> list[CacheEntry]:
+        entries: list[CacheEntry] = []
+        async for key in self._redis.scan_iter(match=f"{self._prefix}:*"):
+            raw = await self._redis.get(key)
+            if raw is None:
+                continue
+            try:
+                entries.append(CacheEntry.model_validate_json(raw))
+            except ValidationError as exc:
+                raise IntegrationError(f"corrupt cache entry at {key!r}: {exc}") from exc
+        entries.sort(key=lambda entry: (entry.source, entry.geometry_hash, entry.date_window))
+        return entries
 
     async def close(self) -> None:
         await self._redis.aclose()

@@ -656,7 +656,6 @@ Pending (needs credentials, Docker egress, or later workstreams):
 
 - Local Docker image builds: container egress is blocked in the scaffold environment, so both images
   are built by the CI `docker` job instead; the full `docker compose up` smoke test is still pending.
-- Component tests in the web app; MapLibre/Amazon Location map addition.
 - CDK stacks beyond the empty app shell.
 
 M1 landed (2026-09-11): GFW/Hansen and NASA FIRMS clients with per-source retry, rate limiting, and
@@ -706,6 +705,28 @@ Follow-up (2026-09-11): the runtime client now uses adaptive retries and explici
 caching is an opt-in `BEDROCK_PROMPT_CACHE` knob (off by default, below current prompt thresholds),
 and `python -m terrasentry_core.agents.preflight` pings both roles and serves the §3 gate.
 126 Python tests green.
+
+M5 landed (2026-09-11): the cockpit. `apps/web/src/routes/` now has the dashboard, suppliers
+list/detail, runs list/detail, and batch list/detail behind a sidebar shell
+(`components/layout/app-sidebar.tsx`), with filters and tabs synced to URL search params. Data access
+stays Effect-first: `features/*/queries.ts` wrap the generated `ApiClient` in TanStack Query
+`queryOptions`, mutations wrap `createRun`/`createBatchRun`/`submitDecision`, and
+`features/runs/use-run-stream.ts` runs the SSE `Stream` through the shared `ManagedRuntime`
+(`Stream.takeUntil` on a terminal state, step dedupe by `step_id`, query invalidation on close).
+`components/data-table.tsx` wraps TanStack Table v9 (`useTable` + explicit `tableFeatures`), and
+`components/map/map-view.tsx` loads MapLibre dynamically with `VITE_MAP_STYLE_URL` when set and a
+no-tiles dark style otherwise. HITL is drivable from the UI (`ReviewDialog` approve/override with a
+reviewer note). Prerequisites fixed while landing M5: successful scenario runs publish the terminal
+`done` SSE frame, `ApiClientError` carries the HTTP status for typed 404/409/422 states,
+`decodeRunEventStream` is part of the package barrel, and `GET /health` reports `{ offline,
+fixtures_loaded }` for the rehearsal badge. The api-client schemas are plain `Schema.Struct`s rather
+than `Schema.Class`es because TanStack Start serializes loader/query data with Seroval, which
+rejects class instances; SSR of every cockpit route is serialization-error-free. Offline rehearsal
+support lives in `terrasentry_integrations.fixtures` (`export`/`prime` CLI over the cache),
+`CACHE_OFFLINE` and `CACHE_FIXTURES_DIR` settings, and API startup priming. `apps/web` gained a
+vitest + happy-dom suite (26 tests); `pnpm check`, `pnpm test`, and the Nitro build are green.
+Live-key end-to-end still needs the §3 gates; fixture files are recorded at the M6 rehearsal because
+FIRMS cache windows are date-relative.
 
 ---
 

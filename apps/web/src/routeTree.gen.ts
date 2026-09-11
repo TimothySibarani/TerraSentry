@@ -10,33 +10,115 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BatchIndexRouteImport } from './routes/batch.index'
+import { Route as BatchBatchIdRouteImport } from './routes/batch.$batchId'
+import { Route as RunsIndexRouteImport } from './routes/runs.index'
+import { Route as RunsRunIdRouteImport } from './routes/runs.$runId'
+import { Route as SuppliersIndexRouteImport } from './routes/suppliers.index'
+import { Route as SuppliersSupplierIdRouteImport } from './routes/suppliers.$supplierId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BatchIndexRoute = BatchIndexRouteImport.update({
+  id: '/batch/',
+  path: '/batch/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BatchBatchIdRoute = BatchBatchIdRouteImport.update({
+  id: '/batch/$batchId',
+  path: '/batch/$batchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunsIndexRoute = RunsIndexRouteImport.update({
+  id: '/runs/',
+  path: '/runs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunsRunIdRoute = RunsRunIdRouteImport.update({
+  id: '/runs/$runId',
+  path: '/runs/$runId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuppliersIndexRoute = SuppliersIndexRouteImport.update({
+  id: '/suppliers/',
+  path: '/suppliers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuppliersSupplierIdRoute = SuppliersSupplierIdRouteImport.update({
+  id: '/suppliers/$supplierId',
+  path: '/suppliers/$supplierId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/batch/$batchId': typeof BatchBatchIdRoute
+  '/runs/$runId': typeof RunsRunIdRoute
+  '/suppliers/$supplierId': typeof SuppliersSupplierIdRoute
+  '/batch/': typeof BatchIndexRoute
+  '/runs/': typeof RunsIndexRoute
+  '/suppliers/': typeof SuppliersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/batch/$batchId': typeof BatchBatchIdRoute
+  '/runs/$runId': typeof RunsRunIdRoute
+  '/suppliers/$supplierId': typeof SuppliersSupplierIdRoute
+  '/batch': typeof BatchIndexRoute
+  '/runs': typeof RunsIndexRoute
+  '/suppliers': typeof SuppliersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/batch/$batchId': typeof BatchBatchIdRoute
+  '/runs/$runId': typeof RunsRunIdRoute
+  '/suppliers/$supplierId': typeof SuppliersSupplierIdRoute
+  '/batch/': typeof BatchIndexRoute
+  '/runs/': typeof RunsIndexRoute
+  '/suppliers/': typeof SuppliersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/batch/$batchId'
+    | '/runs/$runId'
+    | '/suppliers/$supplierId'
+    | '/batch/'
+    | '/runs/'
+    | '/suppliers/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/batch/$batchId'
+    | '/runs/$runId'
+    | '/suppliers/$supplierId'
+    | '/batch'
+    | '/runs'
+    | '/suppliers'
+  id:
+    | '__root__'
+    | '/'
+    | '/batch/$batchId'
+    | '/runs/$runId'
+    | '/suppliers/$supplierId'
+    | '/batch/'
+    | '/runs/'
+    | '/suppliers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BatchBatchIdRoute: typeof BatchBatchIdRoute
+  RunsRunIdRoute: typeof RunsRunIdRoute
+  SuppliersSupplierIdRoute: typeof SuppliersSupplierIdRoute
+  BatchIndexRoute: typeof BatchIndexRoute
+  RunsIndexRoute: typeof RunsIndexRoute
+  SuppliersIndexRoute: typeof SuppliersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +130,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/batch/': {
+      id: '/batch/'
+      path: '/batch'
+      fullPath: '/batch/'
+      preLoaderRoute: typeof BatchIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/batch/$batchId': {
+      id: '/batch/$batchId'
+      path: '/batch/$batchId'
+      fullPath: '/batch/$batchId'
+      preLoaderRoute: typeof BatchBatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/runs/': {
+      id: '/runs/'
+      path: '/runs'
+      fullPath: '/runs/'
+      preLoaderRoute: typeof RunsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/runs/$runId': {
+      id: '/runs/$runId'
+      path: '/runs/$runId'
+      fullPath: '/runs/$runId'
+      preLoaderRoute: typeof RunsRunIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suppliers/': {
+      id: '/suppliers/'
+      path: '/suppliers'
+      fullPath: '/suppliers/'
+      preLoaderRoute: typeof SuppliersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suppliers/$supplierId': {
+      id: '/suppliers/$supplierId'
+      path: '/suppliers/$supplierId'
+      fullPath: '/suppliers/$supplierId'
+      preLoaderRoute: typeof SuppliersSupplierIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BatchBatchIdRoute: BatchBatchIdRoute,
+  RunsRunIdRoute: RunsRunIdRoute,
+  SuppliersSupplierIdRoute: SuppliersSupplierIdRoute,
+  BatchIndexRoute: BatchIndexRoute,
+  RunsIndexRoute: RunsIndexRoute,
+  SuppliersIndexRoute: SuppliersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

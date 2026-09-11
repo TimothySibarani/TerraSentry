@@ -1,10 +1,16 @@
 import { Schema } from "effect";
 
-export class HealthResponse extends Schema.Class<HealthResponse>(
-  "terrasentry/api-client/HealthResponse",
-)({
+/**
+ * Plain `Schema.Struct`s, not `Schema.Class`es: decoded payloads cross the
+ * TanStack Start SSR boundary, and Seroval only serializes plain objects.
+ */
+
+export const HealthResponse = Schema.Struct({
   status: Schema.String,
-}) {}
+  offline: Schema.Boolean,
+  fixtures_loaded: Schema.Int,
+});
+export type HealthResponse = typeof HealthResponse.Type;
 
 export const RunState = Schema.Literals([
   "queued",
@@ -59,9 +65,7 @@ export type TraceKind = typeof TraceKind.Type;
 export const ModelMode = Schema.Literals(["scripted", "bedrock"]);
 export type ModelMode = typeof ModelMode.Type;
 
-export class Finding extends Schema.Class<Finding>(
-  "terrasentry/api-client/Finding",
-)({
+export const Finding = Schema.Struct({
   code: FindingCode,
   level: FindingLevel,
   points: Schema.Int,
@@ -72,11 +76,10 @@ export class Finding extends Schema.Class<Finding>(
   ),
   evidence_ids: Schema.Array(Schema.String),
   mitigating: Schema.Boolean,
-}) {}
+});
+export type Finding = typeof Finding.Type;
 
-export class Assessment extends Schema.Class<Assessment>(
-  "terrasentry/api-client/Assessment",
-)({
+export const Assessment = Schema.Struct({
   record_id: Schema.NullOr(Schema.String),
   supplier_id: Schema.String,
   polygon_id: Schema.String,
@@ -88,11 +91,10 @@ export class Assessment extends Schema.Class<Assessment>(
   citations: Schema.Record(Schema.String, Schema.Array(Schema.String)),
   disclosures: Schema.Array(Schema.String),
   data_gaps: Schema.Array(Schema.String),
-}) {}
+});
+export type Assessment = typeof Assessment.Type;
 
-export class VerificationChallenge extends Schema.Class<VerificationChallenge>(
-  "terrasentry/api-client/VerificationChallenge",
-)({
+export const VerificationChallenge = Schema.Struct({
   kind: Schema.String,
   severity: Schema.Literals(["info", "warning", "error"]),
   detail: Schema.String,
@@ -100,46 +102,43 @@ export class VerificationChallenge extends Schema.Class<VerificationChallenge>(
   evidence_ids: Schema.Array(Schema.String),
   expected: Schema.NullOr(Schema.String),
   observed: Schema.NullOr(Schema.String),
-}) {}
+});
+export type VerificationChallenge = typeof VerificationChallenge.Type;
 
-export class VerificationReport extends Schema.Class<VerificationReport>(
-  "terrasentry/api-client/VerificationReport",
-)({
+export const VerificationReport = Schema.Struct({
   accepted: Schema.Boolean,
   checked_claims: Schema.Array(Schema.String),
   challenges: Schema.Array(VerificationChallenge),
   notes: Schema.Array(Schema.String),
   llm_reviewed: Schema.Boolean,
   model_id: Schema.NullOr(Schema.String),
-}) {}
+});
+export type VerificationReport = typeof VerificationReport.Type;
 
-export class TraceStep extends Schema.Class<TraceStep>(
-  "terrasentry/api-client/TraceStep",
-)({
+export const TraceStep = Schema.Struct({
   step_id: Schema.String,
   kind: TraceKind,
   name: Schema.String,
   detail: Schema.String,
   at: Schema.DateTimeUtcFromString,
   payload: Schema.Record(Schema.String, Schema.Unknown),
-}) {}
+});
+export type TraceStep = typeof TraceStep.Type;
 
-export class ReviewOut extends Schema.Class<ReviewOut>(
-  "terrasentry/api-client/ReviewOut",
-)({
+export const ReviewOut = Schema.Struct({
   decision: Schema.Literals(["approve", "override"]),
   reviewer: Schema.String,
   note: Schema.String,
   reviewed_at: Schema.NullOr(Schema.DateTimeUtcFromString),
-}) {}
+});
+export type ReviewOut = typeof ReviewOut.Type;
 
-export class DdsMeta extends Schema.Class<DdsMeta>(
-  "terrasentry/api-client/DdsMeta",
-)({
+export const DdsMeta = Schema.Struct({
   released: Schema.Boolean,
   schema_version: Schema.String,
   created_at: Schema.DateTimeUtcFromString,
-}) {}
+});
+export type DdsMeta = typeof DdsMeta.Type;
 
 const runSummaryFields = {
   run_id: Schema.String,
@@ -163,13 +162,10 @@ const runSummaryFields = {
   metrics: Schema.Record(Schema.String, Schema.Unknown),
 } as const;
 
-export class RunSummary extends Schema.Class<RunSummary>(
-  "terrasentry/api-client/RunSummary",
-)(runSummaryFields) {}
+export const RunSummary = Schema.Struct(runSummaryFields);
+export type RunSummary = typeof RunSummary.Type;
 
-export class VerdictOut extends Schema.Class<VerdictOut>(
-  "terrasentry/api-client/VerdictOut",
-)({
+export const VerdictOut = Schema.Struct({
   record_id: Schema.String,
   supplier_id: Schema.String,
   polygon_id: Schema.String,
@@ -180,11 +176,10 @@ export class VerdictOut extends Schema.Class<VerdictOut>(
   fingerprint: Schema.String,
   pending: Schema.Boolean,
   assessment: Assessment,
-}) {}
+});
+export type VerdictOut = typeof VerdictOut.Type;
 
-export class RunDetail extends Schema.Class<RunDetail>(
-  "terrasentry/api-client/RunDetail",
-)({
+export const RunDetail = Schema.Struct({
   ...runSummaryFields,
   disclosures: Schema.Array(Schema.String),
   verification: Schema.NullOr(VerificationReport),
@@ -193,11 +188,10 @@ export class RunDetail extends Schema.Class<RunDetail>(
   review: Schema.NullOr(ReviewOut),
   steps: Schema.Array(TraceStep),
   dds: Schema.NullOr(DdsMeta),
-}) {}
+});
+export type RunDetail = typeof RunDetail.Type;
 
-export class BatchSummary extends Schema.Class<BatchSummary>(
-  "terrasentry/api-client/BatchSummary",
-)({
+export const BatchSummary = Schema.Struct({
   run_id: Schema.String,
   state: RunState,
   record_count: Schema.Int,
@@ -209,11 +203,10 @@ export class BatchSummary extends Schema.Class<BatchSummary>(
   started_at: Schema.NullOr(Schema.DateTimeUtcFromString),
   finished_at: Schema.NullOr(Schema.DateTimeUtcFromString),
   metrics: Schema.Record(Schema.String, Schema.Unknown),
-}) {}
+});
+export type BatchSummary = typeof BatchSummary.Type;
 
-export class ParcelOut extends Schema.Class<ParcelOut>(
-  "terrasentry/api-client/ParcelOut",
-)({
+export const ParcelOut = Schema.Struct({
   polygon_id: Schema.String,
   supplier_id: Schema.String,
   label: Schema.String,
@@ -226,7 +219,8 @@ export class ParcelOut extends Schema.Class<ParcelOut>(
   archetype: Schema.String,
   scenario: Schema.NullOr(Schema.String),
   is_demo: Schema.Boolean,
-}) {}
+});
+export type ParcelOut = typeof ParcelOut.Type;
 
 const supplierFields = {
   supplier_id: Schema.String,
@@ -248,20 +242,16 @@ const supplierFields = {
   disclosure: Schema.String,
 } as const;
 
-export class SupplierOut extends Schema.Class<SupplierOut>(
-  "terrasentry/api-client/SupplierOut",
-)(supplierFields) {}
+export const SupplierOut = Schema.Struct(supplierFields);
+export type SupplierOut = typeof SupplierOut.Type;
 
-export class SupplierDetail extends Schema.Class<SupplierDetail>(
-  "terrasentry/api-client/SupplierDetail",
-)({
+export const SupplierDetail = Schema.Struct({
   ...supplierFields,
   parcels: Schema.Array(ParcelOut),
-}) {}
+});
+export type SupplierDetail = typeof SupplierDetail.Type;
 
-export class EvidenceEntry extends Schema.Class<EvidenceEntry>(
-  "terrasentry/api-client/EvidenceEntry",
-)({
+export const EvidenceEntry = Schema.Struct({
   schema_version: Schema.Int,
   evidence_id: Schema.String,
   claim: Schema.String,
@@ -273,15 +263,15 @@ export class EvidenceEntry extends Schema.Class<EvidenceEntry>(
   cached: Schema.Boolean,
   synthetic: Schema.Boolean,
   disclosure: Schema.NullOr(Schema.String),
-}) {}
+});
+export type EvidenceEntry = typeof EvidenceEntry.Type;
 
-export class SapVendorOut extends Schema.Class<SapVendorOut>(
-  "terrasentry/api-client/SapVendorOut",
-)({
+export const SapVendorOut = Schema.Struct({
   vendor_id: Schema.String,
   status: Schema.String,
   purchasing_block: Schema.Boolean,
-}) {}
+});
+export type SapVendorOut = typeof SapVendorOut.Type;
 
 export const RunCreateRequest = Schema.Struct({
   record_id: Schema.optional(Schema.String),

@@ -433,6 +433,30 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HealthResponse": {
+        "description": "Process health plus the offline-rehearsal state the cockpit badges.",
+        "properties": {
+          "fixtures_loaded": {
+            "default": 0,
+            "title": "Fixtures Loaded",
+            "type": "integer"
+          },
+          "offline": {
+            "default": false,
+            "title": "Offline",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
       "ParcelOut": {
         "properties": {
           "archetype": {
@@ -1918,11 +1942,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Health Health Get",
-                  "type": "object"
+                  "$ref": "#/components/schemas/HealthResponse"
                 }
               }
             },

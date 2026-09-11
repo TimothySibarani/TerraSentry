@@ -9,8 +9,12 @@ describe("HealthResponse", () => {
     Effect.gen(function* () {
       const health = yield* Schema.decodeUnknownEffect(HealthResponse)({
         status: "ok",
+        offline: false,
+        fixtures_loaded: 0,
       });
       assert.strictEqual(health.status, "ok");
+      assert.strictEqual(health.offline, false);
+      assert.strictEqual(health.fixtures_loaded, 0);
     }),
   );
 

@@ -7,9 +7,29 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { CompassIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
+import { RouteError } from "#/components/error-state";
+import { AppSidebar } from "#/components/layout/app-sidebar";
+import { Button } from "#/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "#/components/ui/empty";
+import { Separator } from "#/components/ui/separator";
+import {
+	SidebarInset,
+	SidebarProvider,
+	SidebarTrigger,
+} from "#/components/ui/sidebar";
+import { Skeleton } from "#/components/ui/skeleton";
+import { TooltipProvider } from "#/components/ui/tooltip";
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -33,6 +53,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				content:
 					"TerraSentry verifies EUDR supplier lots against satellite, thermal, and legality evidence, with every claim cited.",
 			},
+			{
+				name: "theme-color",
+				content: "#0a0a0a",
+			},
 		],
 		links: [
 			{
@@ -42,6 +66,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 		],
 	}),
 	shellComponent: RootDocument,
+	errorComponent: RouteError,
+	notFoundComponent: NotFound,
+	pendingComponent: RoutePending,
 });
 
 function RootDocument({ children }: { children: ReactNode }) {
@@ -50,49 +77,34 @@ function RootDocument({ children }: { children: ReactNode }) {
 			<head>
 				<HeadContent />
 			</head>
-			<body className="flex min-h-dvh flex-col">
+			<body className="min-h-dvh bg-background">
 				<a
 					href="#main"
 					className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
 				>
 					Skip to content
 				</a>
-				<header className="sticky top-0 z-40 border-b border-border bg-background">
-					<nav className="mx-auto flex w-full max-w-5xl items-center justify-between gap-6 px-6 py-3">
-						<Link
-							to="/"
-							className="text-display-xs tracking-tight text-foreground no-underline"
-						>
-							TerraSentry
-						</Link>
-						<div className="flex items-center gap-6">
-							<a
-								href="#capabilities"
-								className="text-body-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
-							>
-								Capabilities
-							</a>
-							<a
-								href="#runs"
-								className="text-body-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
-							>
-								Runs
-							</a>
-						</div>
-					</nav>
-				</header>
-				<div id="main" className="flex-1">
-					{children}
-				</div>
-				<footer className="border-t border-border">
-					<div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-6 py-12">
-						<p className="eyebrow-sm text-muted-foreground">TerraSentry</p>
-						<p className="max-w-xl text-body-sm text-body-mid">
-							Satellite and supply-chain evidence for EUDR due diligence,
-							verified in code and cited end to end.
-						</p>
-					</div>
-				</footer>
+				<TooltipProvider>
+					<SidebarProvider>
+						<AppSidebar />
+						<SidebarInset id="main" className="min-h-dvh">
+							<header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur md:px-4">
+								<SidebarTrigger aria-label="Toggle navigation" />
+								<Separator orientation="vertical" className="h-4" />
+								<Link
+									to="/"
+									className="text-body-sm text-foreground no-underline md:hidden"
+								>
+									TerraSentry
+								</Link>
+								<p className="hidden text-caption-mono-sm text-muted-foreground md:block">
+									Due-diligence cockpit
+								</p>
+							</header>
+							<div className="flex-1 px-4 py-6 md:px-6">{children}</div>
+						</SidebarInset>
+					</SidebarProvider>
+				</TooltipProvider>
 				{import.meta.env.DEV && (
 					<TanStackDevtools
 						config={{
@@ -110,5 +122,47 @@ function RootDocument({ children }: { children: ReactNode }) {
 				<Scripts />
 			</body>
 		</html>
+	);
+}
+
+function NotFound() {
+	return (
+		<div className="mx-auto w-full max-w-3xl p-4 md:p-6">
+			<Empty>
+				<EmptyHeader>
+					<EmptyMedia variant="icon">
+						<CompassIcon aria-hidden="true" />
+					</EmptyMedia>
+					<EmptyTitle>Page not found</EmptyTitle>
+					<EmptyDescription>
+						That page does not exist or was moved. Check the address or head
+						back to the overview.
+					</EmptyDescription>
+				</EmptyHeader>
+				<EmptyContent>
+					<Button variant="outline" render={<Link to="/" />}>
+						Back to overview
+					</Button>
+				</EmptyContent>
+			</Empty>
+		</div>
+	);
+}
+
+function RoutePending() {
+	return (
+		<div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-6">
+			<div className="flex flex-col gap-2">
+				<Skeleton className="h-3 w-24" />
+				<Skeleton className="h-8 w-72" />
+				<Skeleton className="h-4 w-full max-w-xl" />
+			</div>
+			<div className="grid gap-4 md:grid-cols-3">
+				<Skeleton className="h-28" />
+				<Skeleton className="h-28" />
+				<Skeleton className="h-28" />
+			</div>
+			<Skeleton className="h-64" />
+		</div>
 	);
 }

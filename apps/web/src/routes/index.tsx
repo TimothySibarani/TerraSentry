@@ -1,18 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import {
-	ArrowRightIcon,
-	FlameIcon,
-	MapIcon,
-	PlayIcon,
-	PlusIcon,
-	SatelliteIcon,
-	ScaleIcon,
-} from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ClockIcon, LayersIcon, ListChecksIcon, WifiIcon } from "lucide-react";
 
-import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
-import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
+import { MetricCard } from "#/components/metric-card";
+import { PageHeader } from "#/components/page-header";
+import { RunStateBadge, VerdictBadge } from "#/components/status-badge";
 import {
 	Card,
 	CardContent,
@@ -25,155 +17,234 @@ import {
 	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
-	EmptyMedia,
 	EmptyTitle,
 } from "#/components/ui/empty";
 import { Separator } from "#/components/ui/separator";
-import { Skeleton } from "#/components/ui/skeleton";
-import { Spinner } from "#/components/ui/spinner";
+import { VerdictBreakdown } from "#/components/verdict-breakdown";
 import { healthQuery } from "#/features/health/queries";
+import { RunLauncher } from "#/features/runs/launcher";
+import { batchRunsQuery, runsQuery } from "#/features/runs/queries";
+import { formatDateTime, formatDuration, formatNumber } from "#/lib/format";
 
 export const Route = createFileRoute("/")({
-	loader: ({ context }) => context.queryClient.ensureQueryData(healthQuery()),
-	component: Home,
+	loader: ({ context }) =>
+		Promise.all([
+			context.queryClient.ensureQueryData(healthQuery()),
+			context.queryClient.ensureQueryData(runsQuery()),
+			context.queryClient.ensureQueryData(batchRunsQuery()),
+		]),
+	component: Dashboard,
 });
 
-const capabilities = [
-	{
-		title: "Geospatial",
-		detail: "Forest-loss history per parcel from GFW/Hansen imagery.",
-		icon: MapIcon,
-	},
-	{
-		title: "Thermal",
-		detail: "Active fire detections near the plot from NASA FIRMS.",
-		icon: FlameIcon,
-	},
-	{
-		title: "Legality",
-		detail: "DDS readiness and supply-chain checks against HGU records.",
-		icon: ScaleIcon,
-	},
-];
+function Dashboard() {
+	const health = useQuery(healthQuery());
+	const runs = useQuery(runsQuery());
+	const batches = useQuery(batchRunsQuery());
 
-function Home() {
-	const { data, isPending } = useQuery(healthQuery());
-	const online = data?.online ?? false;
+	const recentRuns = (runs.data ?? []).slice(0, 8);
+	const latestBatch = (batches.data ?? []).find(
+		(batch) => batch.state === "complete",
+	);
+
+	const apiTone = health.data?.online
+		? health.data.offline || health.data.fixturesLoaded > 0
+			? "Rehearsal data"
+			: "Live API"
+		: "Offline";
 
 	return (
-		<main>
-			<section className="mx-auto w-full max-w-5xl px-6 pt-16 pb-16 md:pt-24">
-				<p className="eyebrow text-muted-foreground">EUDR due diligence</p>
-				<h1 className="mt-4 max-w-3xl text-display-md text-foreground md:text-display-xl">
-					Verify every parcel before it ships.
-				</h1>
-				<p className="mt-6 max-w-2xl text-body-lg text-body">
-					TerraSentry runs geospatial, thermal, and legality checks for each
-					supplier lot, cites every claim, and routes anything ambiguous to a
-					human reviewer.
-				</p>
-				<div className="mt-8 flex flex-wrap items-center gap-3">
-					<Button variant="outline">
-						<PlayIcon data-icon="inline-start" />
-						Start a due-diligence run
-					</Button>
-					<Button variant="ghost">
-						View the 50-record batch
-						<ArrowRightIcon data-icon="inline-end" />
-					</Button>
-				</div>
-			</section>
+		<div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+			<PageHeader
+				eyebrow="Overview"
+				title="Compliance cockpit"
+				description="Run the two live scenarios, follow the agent trace, and read the batch throughput the KPI table is built on."
+			/>
 
-			<section className="mx-auto w-full max-w-5xl px-6 pb-16">
-				<Card className="max-w-xl">
+			<Card>
+				<CardHeader>
+					<CardTitle>Start a due-diligence run</CardTitle>
+					<CardDescription>
+						Scripted runs replay offline; Bedrock runs use the configured model
+						ids. Cached sources keep rehearsals free of external calls.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<RunLauncher />
+				</CardContent>
+			</Card>
+
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+				<MetricCard
+					label="API"
+					value={
+						<span className="flex items-center gap-2">
+							<WifiIcon
+								aria-hidden="true"
+								className="size-4 text-muted-foreground"
+							/>
+							{apiTone}
+						</span>
+					}
+					hint={
+						health.data?.fixturesLoaded
+							? `${health.data.fixturesLoaded} cache fixtures primed`
+							: "No fixture priming configured"
+					}
+				/>
+				<MetricCard
+					label="Runs recorded"
+					value={formatNumber(runs.data?.length ?? 0)}
+					hint={
+						<span className="flex items-center gap-1">
+							<ListChecksIcon aria-hidden="true" className="size-3" />
+							Scenarios and batch records
+						</span>
+					}
+				/>
+				<MetricCard
+					label="Batch wall clock"
+					value={
+						latestBatch ? formatDuration(latestBatch.wall_clock_seconds) : "—"
+					}
+					hint={
+						latestBatch
+							? `${latestBatch.record_count} records`
+							: "No completed batch yet"
+					}
+				/>
+				<MetricCard
+					label="Avg per record"
+					value={
+						latestBatch
+							? formatDuration(latestBatch.average_seconds_per_record)
+							: "—"
+					}
+					hint={
+						<span className="flex items-center gap-1">
+							<ClockIcon aria-hidden="true" className="size-3" />
+							Empirical, from the last batch
+						</span>
+					}
+				/>
+			</div>
+
+			<div className="grid gap-6 lg:grid-cols-5">
+				<Card className="lg:col-span-3">
 					<CardHeader>
-						<CardTitle>System status</CardTitle>
+						<CardTitle>Recent runs</CardTitle>
 						<CardDescription>
-							Live health check against the FastAPI backend.
+							Newest first. Open a run for the live trace, evidence, map, and
+							DDS.
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="flex flex-col gap-4">
-						{isPending ? (
-							<div className="flex items-center gap-3">
-								<Spinner className="size-4 text-muted-foreground" />
-								<Skeleton className="h-5 w-40" />
-							</div>
+					<CardContent>
+						{recentRuns.length === 0 ? (
+							<Empty>
+								<EmptyHeader>
+									<EmptyTitle>No runs yet</EmptyTitle>
+									<EmptyDescription>
+										Start a scenario or queue the 50-record batch above.
+									</EmptyDescription>
+								</EmptyHeader>
+							</Empty>
 						) : (
-							<div className="flex flex-wrap items-center gap-3">
-								{online ? (
-									<Badge variant="compliant">Online</Badge>
-								) : (
-									<Badge variant="risk">Offline</Badge>
-								)}
-								<span className="text-body-sm text-muted-foreground">
-									{online
-										? `API reports "${data?.status}".`
-										: "API unreachable — showing the offline fallback."}
-								</span>
-							</div>
-						)}
-						{!isPending && !online && (
-							<Alert variant="destructive">
-								<AlertTitle>Backend not reachable</AlertTitle>
-								<AlertDescription>
-									Start the API with pnpm dev or docker compose up, then reload.
-								</AlertDescription>
-							</Alert>
+							<ul className="flex flex-col">
+								{recentRuns.map((run, index) => (
+									<li key={run.run_id}>
+										{index > 0 && <Separator />}
+										<Link
+											to={
+												run.kind === "batch"
+													? "/batch/$batchId"
+													: "/runs/$runId"
+											}
+											params={
+												run.kind === "batch"
+													? { batchId: run.run_id }
+													: { runId: run.run_id }
+											}
+											className="flex flex-wrap items-center gap-3 py-2.5 no-underline transition-colors hover:bg-muted/40"
+										>
+											<span className="font-mono text-xs text-foreground">
+												{run.record_id ?? run.run_id}
+											</span>
+											<RunStateBadge state={run.state} />
+											<VerdictBadge verdict={run.verdict} />
+											<span className="text-caption-mono-sm text-muted-foreground">
+												{run.kind} · {run.model}
+											</span>
+											<span className="ml-auto text-caption-mono-sm text-muted-foreground">
+												{formatDateTime(run.started_at ?? run.created_at)}
+											</span>
+										</Link>
+									</li>
+								))}
+							</ul>
 						)}
 					</CardContent>
 				</Card>
-			</section>
 
-			<section
-				id="capabilities"
-				className="mx-auto w-full max-w-5xl px-6 pb-16"
-			>
-				<p className="eyebrow text-muted-foreground">Capabilities</p>
-				<h2 className="mt-3 text-display-sm text-foreground">
-					Three checks, one verdict, every claim cited.
-				</h2>
-				<div className="mt-8 grid gap-4 md:grid-cols-3">
-					{capabilities.map(({ title, detail, icon: Icon }) => (
-						<Card key={title}>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<Icon className="size-4 text-muted-foreground" />
-									{title}
-								</CardTitle>
-								<CardDescription>{detail}</CardDescription>
-							</CardHeader>
-							<CardContent>
+				<Card className="lg:col-span-2">
+					<CardHeader>
+						<CardTitle>Latest batch</CardTitle>
+						<CardDescription>
+							Pass/fail/ambiguous breakdown against the 30/12/8 design.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="flex flex-col gap-4">
+						{latestBatch ? (
+							<>
+								<VerdictBreakdown
+									verdicts={latestBatch.verdict_breakdown}
+									expected={latestBatch.expected_breakdown}
+									total={latestBatch.record_count}
+								/>
 								<Separator />
-								<p className="mt-3 text-body-sm text-muted-foreground">
-									Evidence cached per source and replayable.
-								</p>
-							</CardContent>
-						</Card>
-					))}
-				</div>
-			</section>
-
-			<section id="runs" className="mx-auto w-full max-w-5xl px-6 pb-24">
-				<p className="eyebrow text-muted-foreground">Runs</p>
-				<Empty className="mt-4">
-					<EmptyHeader>
-						<EmptyMedia variant="icon">
-							<SatelliteIcon />
-						</EmptyMedia>
-						<EmptyTitle>No runs yet</EmptyTitle>
-						<EmptyDescription>
-							Start a live scenario or queue the 50-record batch to populate the
-							cockpit.
-						</EmptyDescription>
-					</EmptyHeader>
-					<EmptyContent>
-						<Button variant="outline" size="sm">
-							<PlusIcon data-icon="inline-start" />
-							New run
-						</Button>
-					</EmptyContent>
-				</Empty>
-			</section>
-		</main>
+								<div className="grid grid-cols-2 gap-3">
+									<div>
+										<p className="eyebrow-sm text-muted-foreground">
+											Wall clock
+										</p>
+										<p className="text-body-sm tabular-nums">
+											{formatDuration(latestBatch.wall_clock_seconds)}
+										</p>
+									</div>
+									<div>
+										<p className="eyebrow-sm text-muted-foreground">
+											Avg / record
+										</p>
+										<p className="text-body-sm tabular-nums">
+											{formatDuration(latestBatch.average_seconds_per_record)}
+										</p>
+									</div>
+								</div>
+								<Link
+									to="/batch/$batchId"
+									params={{ batchId: latestBatch.run_id }}
+									className="text-body-sm text-foreground underline-offset-4 hover:underline"
+								>
+									Open batch summary
+								</Link>
+							</>
+						) : (
+							<Empty>
+								<EmptyHeader>
+									<EmptyTitle>No completed batch</EmptyTitle>
+									<EmptyDescription>
+										Queue the 50-record batch to populate the KPI numbers.
+									</EmptyDescription>
+								</EmptyHeader>
+								<EmptyContent>
+									<span className="flex items-center gap-1 text-caption-mono-sm text-muted-foreground">
+										<LayersIcon aria-hidden="true" className="size-3" />
+										Run it once before the demo to warm the cache
+									</span>
+								</EmptyContent>
+							</Empty>
+						)}
+					</CardContent>
+				</Card>
+			</div>
+		</div>
 	);
 }

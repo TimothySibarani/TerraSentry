@@ -513,6 +513,24 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * HealthResponse
+         * @description Process health plus the offline-rehearsal state the cockpit badges.
+         */
+        HealthResponse: {
+            /**
+             * Fixtures Loaded
+             * @default 0
+             */
+            fixtures_loaded: number;
+            /**
+             * Offline
+             * @default false
+             */
+            offline: boolean;
+            /** Status */
+            status: string;
+        };
         /** ParcelOut */
         ParcelOut: {
             /** Archetype */
@@ -1169,9 +1187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
+                    "application/json": components["schemas"]["HealthResponse"];
                 };
             };
         };

@@ -17,6 +17,7 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_integrations.cache import CacheBackend, build_cache
+from terrasentry_integrations.fixtures import prime_fixtures
 from terrasentry_integrations.settings import IntegrationSettings, get_integration_settings
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
@@ -44,6 +45,8 @@ class AppServices:
     datasets: SeedDatasets
     run_manager: RunManager
     mock_sap: MockSapStore
+    offline: bool = False
+    fixtures_loaded: int = 0
 
     async def aclose(self) -> None:
         await self.run_manager.shutdown()
@@ -61,10 +64,15 @@ async def build_services(settings: Settings = default_settings) -> AsyncIterator
     """Build the real services: Postgres engine, Redis cache, live source clients."""
     integration = get_integration_settings()
     engine, session_factory = create_engine_and_session(settings.database_url)
-    cache = build_cache(integration)
+    cache = build_cache(integration, offline=integration.cache_offline)
     gfw = GfwClient(integration, cache=cache)
     firms = FirmsClient(integration, cache=cache)
     try:
+        fixtures_loaded = 0
+        if integration.cache_fixtures_dir:
+            fixtures_loaded = await prime_fixtures(
+                cache, Path(integration.cache_fixtures_dir)
+            )
         datasets = SeedDatasets.load(
             batch_path=Path(settings.seed_data_dir) / "batch_50.json",
             operator_path=Path(settings.seed_data_dir) / "operator.json",
@@ -90,6 +98,8 @@ async def build_services(settings: Settings = default_settings) -> AsyncIterator
             datasets=datasets,
             run_manager=run_manager,
             mock_sap=MockSapStore(record.supplier_id for record in datasets.records),
+            offline=integration.cache_offline,
+            fixtures_loaded=fixtures_loaded,
         )
     except BaseException:
         await gfw.close()

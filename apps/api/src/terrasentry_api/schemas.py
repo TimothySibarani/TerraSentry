@@ -26,6 +26,14 @@ from terrasentry_api.models import Supplier as SupplierRow
 ModelMode = Literal["scripted", "bedrock"]
 
 
+class HealthResponse(BaseModel):
+    """Process health plus the offline-rehearsal state the cockpit badges."""
+
+    status: str
+    offline: bool = False
+    fixtures_loaded: int = 0
+
+
 class RunCreate(BaseModel):
     """Start one scenario run for a seed record or a named demo scenario."""
 

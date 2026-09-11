@@ -3,6 +3,7 @@ import { Sse } from "effect/unstable/encoding";
 import {
   FetchHttpClient,
   HttpClient,
+  HttpClientError,
   HttpClientRequest,
   HttpClientResponse,
 } from "effect/unstable/http";
@@ -38,7 +39,9 @@ export const decodeRunEventStream = <E, R>(
         data: frame.data,
       }),
     ),
-    Stream.mapError((cause) => new ApiClientError({ operation, cause })),
+    Stream.mapError(
+      (cause) => new ApiClientError({ operation, cause, status: null }),
+    ),
   );
 
 export class ApiClient extends Context.Service<
@@ -110,7 +113,13 @@ export class ApiClient extends Context.Service<
         );
 
         const fail = (operation: string) => (cause: unknown) =>
-          new ApiClientError({ operation, cause });
+          new ApiClientError({
+            operation,
+            cause,
+            status: HttpClientError.isHttpClientError(cause)
+              ? (cause.response?.status ?? null)
+              : null,
+          });
 
         const getJson = <S extends Schema.Constraint>(
           operation: string,

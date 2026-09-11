@@ -28,6 +28,10 @@ class IntegrationSettings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     cache_prefix: str = "ts:cache:v1"
     cache_ttl_seconds: int = 7_776_000
+    # Fixture-backed rehearsals: prime the cache from data/fixtures and refuse
+    # external calls on a miss (see terrasentry_integrations.fixtures).
+    cache_offline: bool = False
+    cache_fixtures_dir: str = ""
 
     @property
     def has_gfw_key(self) -> bool:

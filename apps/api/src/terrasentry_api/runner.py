@@ -255,6 +255,7 @@ class RunManager:
             await self._fail(run_id, failure or "run failed")
             return
         await self._store_result(result)
+        self._publish_done(run_id, result.state)
 
     async def _persist_steps(self, run_id: str, queue: asyncio.Queue[TraceStep | None]) -> None:
         seq = 0

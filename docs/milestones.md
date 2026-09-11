@@ -65,7 +65,7 @@ M1 Integrations + cache  --->  M2 Deterministic core  --->  M3 Agent orchestrati
 | M2 Deterministic core | Done | W2 | M1 | Reproducible score, cited evidence, valid DDS |
 | M3 Agent orchestration | Done | W2-W3 | M2 | Reference-pipeline parity + verifier catch + HITL |
 | M4 API + persistence | Done | W3 | M3 | Run endpoints + SSE + batch worker, generated client |
-| M5 Cockpit | Todo | W3-W4 | M4 | Demo flow navigable, live trace, batch summary, map |
+| M5 Cockpit | Done | W3-W4 | M4 | Demo flow navigable, live trace, batch summary, map |
 | M6 Batch 50 + throughput | Todo | W4 | M4, M5 | 50 records complete, metrics + 30/12/8 breakdown |
 | M7 SAP closed loop | Todo | W2-W4 | M0, Day 1 access | Vendor status flip visible end-to-end |
 | M8 Hardening + demo | Todo | W4-W5 | M6, M7 | All MVP Definition of Done boxes checked |
@@ -258,16 +258,38 @@ against the regenerated schema; run traces persist and stream.
 
 | Task | Status | Owner | Notes |
 | --- | --- | --- | --- |
-| Routes: dashboard, suppliers, run detail, batch summary | Todo | TBD | `apps/web/src/routes/` |
-| Live agent trace panel (SSE -> Effect `Stream`) | Todo | TBD | visible reasoning for the demo |
-| Batch summary view (wall clock, avg/record, breakdown) | Todo | TBD | PRD section 4.3 numbers |
-| Supplier/record table (TanStack Table) | Todo | TBD | 50-record batch view |
-| Map view (MapLibre + Amazon Location) | Todo | TBD | polygons, loss, hotspots |
-| shadcn components, loading/error/empty states | Todo | TBD | `apps/web/src/components/` not created yet |
-| Offline demo mode backed by `data/fixtures` | Todo | TBD | rehearsal without burning quotas |
+| Routes: dashboard, suppliers, run detail, batch summary | Done | — | `apps/web/src/routes/`; sidebar shell with URL-synced filters/tabs |
+| Live agent trace panel (SSE -> Effect `Stream`) | Done | — | `features/runs/use-run-stream.ts`; `Stream.takeUntil` terminal state, reconnect button |
+| Batch summary view (wall clock, avg/record, breakdown) | Done | — | `routes/batch.$batchId.tsx` + `verdict-breakdown.tsx` |
+| Supplier/record table (TanStack Table) | Done | — | v9 `useTable`/`tableFeatures` wrapper in `components/data-table.tsx` |
+| Map view (MapLibre + Amazon Location) | Done | — | `components/map/map-view.tsx`; `VITE_MAP_STYLE_URL` or offline dark style |
+| shadcn components, loading/error/empty states | Done | — | sidebar/table/tabs/progress/dialog/field/select/etc.; route error/not-found/pending |
+| Offline demo mode backed by `data/fixtures` | Done | — | `terrasentry_integrations.fixtures` export/prime + `CACHE_OFFLINE`/`CACHE_FIXTURES_DIR`, rehearsal badge |
 
 **Exit criteria:** the demo script (PRD section 7) can be driven from the UI; failures show typed
 error states instead of blank screens.
+
+> **Completed 2026-09-11.** The cockpit is a dark sidebar app shell (`__root.tsx`,
+> `components/layout/app-sidebar.tsx`) over seven routes: dashboard (run launcher + batch KPIs),
+> suppliers list/detail (search in the URL), runs list (kind filter in the URL), run detail
+> (Trace / Assessment / Evidence / Map / DDS tabs in the URL), and batch list/detail. The live trace
+> consumes `streamRun` through the Effect client (`useRunStream`), merges streamed steps with the
+> SSR-loaded `RunDetail.steps` by `step_id`, treats a terminal `state` as end-of-stream, and
+> invalidates the run/evidence/DDS queries when it closes; `apps/api` now also publishes `done` on a
+> successful scenario run (the M4 gap) and `ApiClientError` carries the HTTP status so 404/409/422
+> render as distinct typed states. HITL is in the UI: `ReviewDialog` records approve/override with a
+> reviewer and note, and the withheld-DDS state is explained rather than treated as an error. The map
+> uses a dynamic MapLibre import with `VITE_MAP_STYLE_URL` when set and a no-tiles dark style
+> otherwise; polygons come from `parcel.geometry` evidence and hotspots from
+> `hotspots.detections`, decoded with Effect `Schema`. All `api-client` schemas are plain
+> `Schema.Struct`s (not `Schema.Class`es) because TanStack Start serializes loader data with Seroval,
+> which rejects class instances; SSR of every route is error-free. Offline/rehearsal mode adds
+> `terrasentry_integrations.fixtures` (`export`/`prime` CLI), `CACHE_OFFLINE` +
+> `CACHE_FIXTURES_DIR` settings, API startup priming, and a `GET /health` `{ offline,
+> fixtures_loaded }` response surfaced as a sidebar badge. `apps/web` gained vitest + happy-dom with
+> 26 tests (stream reducer, evidence decoders, formatters, status badges); `pnpm check`, `pnpm test`,
+> and the Nitro build are green. Live-key end-to-end remains gated on §3; fixtures themselves are
+> recorded at the M6 rehearsal because FIRMS cache windows are date-relative.
 
 ---
 
@@ -342,6 +364,7 @@ Append one line per meaningful update. Keep newest at the top.
 
 | Date | Milestone | Update |
 | --- | --- | --- |
+| 2026-09-11 | M5 | Cockpit landed: sidebar app shell with URL-synced filters/tabs and seven routes (dashboard, suppliers list/detail, runs list/detail, batch list/detail), `components/data-table.tsx` over TanStack Table v9, `status-badge`/`verdict-breakdown`/`metric-card`/`map-view` components, and route-level error/not-found/pending states. `useRunStream`/`useBatchStream` consume SSE through the Effect `Stream` API with `takeUntil` on terminal state + reconnect and query invalidation; run detail tabs cover Trace (live merge, dedupe by step id), Assessment (findings, verifier challenges, disclosures), Evidence ledger, Map (dynamic MapLibre import, `VITE_MAP_STYLE_URL` or offline dark style; polygon + hotspot layers), and DDS (JSON/XML + download), with `ReviewDialog` for HITL approve/override and an explicit withheld-DDS state. Prerequisites fixed: scenario runs now publish a terminal `done` event, `ApiClientError` carries HTTP status, `decodeRunEventStream` is exported, and `GET /health` reports `{ offline, fixtures_loaded }`. Offline rehearsals: `terrasentry_integrations.fixtures` export/prime CLI, `CACHE_OFFLINE`/`CACHE_FIXTURES_DIR`, API startup priming, and a rehearsal badge in the shell. `apps/web` gains vitest + happy-dom (26 tests); `pnpm check`, `pnpm test`, and `pnpm build` green. Live keys remain the §3 gate. |
 | 2026-09-11 | M4 | API + persistence landed: SQLAlchemy 2.0 audit store (`suppliers`, `parcels`, `runs`, `run_steps`, `evidence`, `verdicts`, `dds_documents`) with an Alembic async migration verified up/down against Postgres and a CI `alembic check` drift gate; lifespan-built `AppServices` (engine, Redis cache, shared GFW/FIRMS clients, `RunManager`, mock SAP) with idempotent auto-seed of the synthetic suppliers/parcels. Routers: suppliers, runs (202 start, detail, evidence, SSE, decision), batch (202 start, metrics, records, SSE), dds (JSON/XML with 409 while withheld), mock sap (vendor status/block). The in-process worker runs scenarios through the M3 graph and batch records through the deterministic assess + verifier path with an asyncio semaphore (`BATCH_CONCURRENCY`) over the shared rate-limited clients; steps persist and stream live (`snapshot`/`step`/`state`/`progress`/`done`), and HITL release reconstructs the M3 result from Postgres (decisions are serialised per run; SSE responses carry a send timeout and no-store/nosniff headers). `RunOrchestrator` gained an `on_step` hook + injectable `run_id` (CLI/parity unchanged; new hook tests). `pnpm gen:api` regenerated the contract; the Effect client now decodes every response with `Schema`, exposes REST methods plus `streamRun`/`streamBatchRun` over `Stream` + `Sse`, and has 13 vitest cases. 18 API tests (SQLite + respx; lifecycle, SSE replay, HITL, batch breakdown/bounded concurrency, error paths); full Python suite 147 green, Ruff/Pyright/Biome/tsc clean. Live-key end-to-end remains gated on §3. |
 | 2026-09-11 | M3 | Live Bedrock path hardened per Bedrock best practice: adaptive retries + explicit connect/read timeouts and validated agent settings, opt-in prompt caching (`BEDROCK_PROMPT_CACHE=off|auto|anthropic`, documented as below the Sonnet/Haiku minimums), and a new `python -m terrasentry_core.agents.preflight` gate check that pings both roles through the same Strands path and maps AWS errors to fixes. AWS runbook now uses a least-privilege Bedrock policy and SSO/role guidance instead of `AmazonBedrockFullAccess`. 126 Python tests green, Ruff/Pyright clean. Live smoke still gated on the §3 account access. |
 | 2026-09-11 | M3 | Agent orchestration landed: `tools/` shared source layer (`fetch_polygon_sources`, `SeedDatasets`, `TraceCollector`) now backs both the reference pipeline and the agent tools; `agents/` adds Bedrock model routing, an offline `ScriptedModel`/`AutopilotResponder`, specialists with ids-only tools, an agents-as-tools supervisor, a verifier node that re-derives metrics and validates citations before the LLM review, a deterministic assessor/writer, and `RunOrchestrator` with the graph verify-before-write edge plus the `awaiting_review`/resume HITL seam. CLI: `python -m terrasentry_core.agents --record/--scenario --model scripted|bedrock` with exit codes 0/2/1 and run/DDS/evidence artifacts. Tests add 23 agent cases (parity vs reference, verifier catch, HITL, graph flow, tools, scripted model, model routing, CLI); full Python suite 108 green, Ruff/Pyright clean. Also fixed an M2 determinism defect found by parity: cache provenance was inside the hashed evidence artifact, so cached re-runs fingerprint differently; `EvidenceEntry.cached` is now outside the hash and the golden DDS fixture is regenerated. Live Bedrock smoke remains gated on §3 Day-1 model access. |

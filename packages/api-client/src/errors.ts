@@ -5,5 +5,6 @@ export class ApiClientError extends Schema.TaggedError<ApiClientError>()(
   {
     operation: Schema.String,
     cause: Schema.Defect(),
+    status: Schema.NullOr(Schema.Number),
   },
 ) {}

@@ -80,7 +80,11 @@ describe("ApiClient", () => {
         apiLayer((request, url) => {
           assert.strictEqual(request.method, "GET");
           assert.strictEqual(url.href, "http://terrasentry.test/health");
-          return jsonResponse({ status: "ok" });
+          return jsonResponse({
+            status: "ok",
+            offline: false,
+            fixtures_loaded: 0,
+          });
         }),
       ),
     ),
@@ -129,6 +133,7 @@ describe("ApiClient", () => {
       const error = yield* api.getHealth().pipe(Effect.flip);
       assert.instanceOf(error, ApiClientError);
       assert.strictEqual(error.operation, "getHealth");
+      assert.strictEqual(error.status, 404);
     }).pipe(
       Effect.provide(apiLayer(() => jsonResponse({ detail: "no run" }, 404))),
     ),
