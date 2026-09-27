@@ -16,7 +16,10 @@ Work top to bottom; record each result in `docs/milestones.md` §3.
 
 - [ ] Create AWS account (Free plan) + MFA + budget alert — [aws.md](./aws.md)
 - [ ] Submit the Bedrock model-provider use-case form **once** (inherited by the org) — [aws.md](./aws.md)
-- [ ] Set `BEDROCK_MODEL_*` in `.env` and verify both roles — [aws.md](./aws.md)
+- [ ] Set `BEDROCK_MODEL_*` in `.env` and verify both roles — `/health` reports `bedrock_configured`
+      and the cockpit keeps "Bedrock (live)" disabled until both ids are set. On the Free plan use
+      `openai.gpt-oss-120b-1:0` (`BEDROCK_REASONING_EFFORT=low`); GPT-6 needs the Paid plan —
+      [aws.md](./aws.md)
 - [ ] Register GFW API key (Resource Watch → JWT → `POST /auth/apikey`) — [data-sources.md](./data-sources.md)
 - [ ] Request NASA FIRMS MAP_KEY (emailed) — [data-sources.md](./data-sources.md)
 - [ ] Check SAP Business Accelerator Hub sandbox and BTP trial access — [sap.md](./sap.md)
@@ -59,6 +62,18 @@ uv run pytest apps/api/tests          # SQLite + mocked sources, no Docker neede
 
 Set `AGENT_MODEL=bedrock` (with `BEDROCK_MODEL_*` from [aws.md](./aws.md)) to run the live agent
 path; the batch worker is deterministic and needs no model access.
+
+### Real plot intake (S1)
+
+`/screen` draws, pastes, uploads, or point-enters a plot, fills supplier/legality/consignment, then
+posts a submitted record and starts its run; `POST /records` and `POST /records/import`
+(CSV/GeoJSON, ≤5 MB / 500 rows) are the API equivalents. Submitted records persist in the `records`
+table and register into the record registry at startup, so runs resolve after a restart; seed data
+stays a clearly labelled demo set. Write endpoints (and `/mcp` later) accept a shared bearer token:
+set `API_TOKEN` — and `VITE_API_TOKEN` for the cockpit — before exposing the API beyond localhost;
+`/health.auth_enabled` reports whether the guard is on. The live Bedrock run needs the two model
+ids above plus AWS credentials (the UI disables it otherwise); scripted runs still call real GFW
+and FIRMS.
 
 ## The free-stuff strategy in one paragraph
 

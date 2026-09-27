@@ -18,4 +18,9 @@ async def health(services: ServicesDep) -> HealthResponse:
         fixtures_loaded=services.fixtures_loaded,
         sap_mode=services.sap_mode,
         sap_real=services.sap_real,
+        bedrock_configured=services.bedrock_configured,
+        default_model=services.settings.agent_model,
+        gfw_configured=services.integration.has_gfw_key,
+        firms_configured=services.integration.has_firms_key,
+        auth_enabled=bool(services.settings.api_token),
     )

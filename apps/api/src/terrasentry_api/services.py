@@ -16,6 +16,7 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
+from terrasentry_core.agents.settings import get_agent_settings
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_integrations.cache import CacheBackend, build_cache
 from terrasentry_integrations.fixtures import prime_fixtures
@@ -35,7 +36,7 @@ from terrasentry_api.config import settings as default_settings
 from terrasentry_api.db import check_database, create_engine_and_session
 from terrasentry_api.runner import RunManager
 from terrasentry_api.sap_actions import SapActionService
-from terrasentry_api.seed_loader import seed_if_empty
+from terrasentry_api.seed_loader import restore_submitted_records, seed_if_empty
 from terrasentry_api.store import RunStore
 
 logger = logging.getLogger(__name__)
@@ -61,6 +62,7 @@ class AppServices:
     sap_real: bool
     offline: bool = False
     fixtures_loaded: int = 0
+    bedrock_configured: bool = False
 
     async def aclose(self) -> None:
         await self.run_manager.shutdown()
@@ -102,9 +104,13 @@ async def build_services(
         if settings.auto_seed:
             async with session_factory() as session:
                 await seed_if_empty(RunStore(session), datasets)
+        async with session_factory() as session:
+            await restore_submitted_records(RunStore(session), datasets)
         # Replay the persisted ERP action log into the stub so a status flip
         # survives an API restart, then select the configured SAP transport.
-        sap_stub = StubSapService(record.supplier_id for record in datasets.records)
+        sap_stub = StubSapService(
+            record.supplier_id for record in [*datasets.records, *datasets.submitted_records()]
+        )
         async with session_factory() as session:
             sap_stub.restore(await RunStore(session).latest_vendor_states())
         sap_mode = resolve_sap_mode(resolved)
@@ -143,6 +149,7 @@ async def build_services(
             sap_real=sap_real,
             offline=resolved.cache_offline,
             fixtures_loaded=fixtures_loaded,
+            bedrock_configured=not get_agent_settings().missing_models,
         )
     except BaseException:
         if sap is not None:

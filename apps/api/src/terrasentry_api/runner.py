@@ -177,9 +177,15 @@ class RunManager:
         *,
         size: int,
         refresh: bool = False,
+        record_ids: list[str] | None = None,
     ) -> str:
         batch_run_id = f"batch-{uuid4().hex[:12]}"
-        records = self._datasets.records[:size]
+        # Explicit ids screen submitted (or chosen) records; otherwise the seed demo batch.
+        records = (
+            [self._datasets.get_record(record_id) for record_id in dict.fromkeys(record_ids)]
+            if record_ids
+            else self._datasets.records[:size]
+        )
         async with self._session_factory() as session:
             store = RunStore(session)
             await store.create_run(run_id=batch_run_id, kind="batch", model="deterministic")
@@ -313,7 +319,7 @@ class RunManager:
     ) -> None:
         started = self._clock()
         await self._set_state(batch_run_id, RunState.RUNNING, started_at=started)
-        expected = Counter(record.expected_archetype for record in records)
+        expected = Counter(record.expected_archetype for record in records if record.expected_archetype)
         progress: dict[str, Any] = {
             "run_id": batch_run_id,
             "total": len(records),
@@ -459,7 +465,7 @@ class RunManager:
                 assessment=candidate if state is RunState.COMPLETE else None,
                 pending_assessment=candidate if state is RunState.AWAITING_REVIEW else None,
                 trace=trace.steps,
-                disclosures=self._datasets.disclosures,
+                disclosures=self._datasets.disclosures_for(record),
                 started_at=started,
                 finished_at=self._clock(),
             )
@@ -473,7 +479,7 @@ class RunManager:
                 state=RunState.FAILED,
                 summary=f"run failed: {exc}",
                 trace=trace.steps,
-                disclosures=self._datasets.disclosures,
+                disclosures=self._datasets.disclosures_for(record),
                 started_at=started,
                 finished_at=self._clock(),
             )

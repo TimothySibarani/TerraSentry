@@ -10,7 +10,9 @@ Archetype = Literal["compliant", "high_risk", "ambiguous"]
 Scenario = Literal["compliant_live", "high_risk_live"]
 ExpectedSignal = Literal["deforestation", "fire", "legal"]
 AmbiguityReason = Literal["borderline_area", "old_fire_scar", "permit_gap"]
-Commodity = Literal["oil_palm", "wood"]
+Commodity = Literal["oil_palm", "wood", "rubber", "cocoa", "coffee"]
+#: Where a legality/consignment value came from; shown next to every evidence row.
+Provenance = Literal["synthetic", "supplier_declared", "document_extracted", "sap_import"]
 
 SEED_SCHEMA_VERSION = 2
 
@@ -33,7 +35,8 @@ class SeedPolygon(BaseModel):
     label: str
     region: str
     province: str
-    archetype: Archetype
+    #: Seed design label; ``None`` for submitted (unlabelled) plots.
+    archetype: Archetype | None = None
     scenario: Scenario | None = None
     is_demo: bool = False
     area_ha: float
@@ -67,6 +70,7 @@ class LegalityRecord(BaseModel):
     certifications: list[str] = Field(default_factory=list)
     sanctions: list[str] = Field(default_factory=list)
     synthetic: bool = True
+    provenance: Provenance = "synthetic"
     disclosure: str = LEGALITY_DISCLOSURE
 
 
@@ -92,6 +96,7 @@ class ConsignmentRecord(BaseModel):
     production_place: str
     harvest_year: int
     synthetic: bool = True
+    provenance: Provenance = "synthetic"
     disclosure: str = CONSIGNMENT_DISCLOSURE
 
 
@@ -128,7 +133,8 @@ class BatchRecord(BaseModel):
     polygon: SeedPolygon
     legality: LegalityRecord
     consignment: ConsignmentRecord
-    expected_archetype: Archetype
+    #: Seed design label; ``None`` for submitted records, which are unlabelled.
+    expected_archetype: Archetype | None = None
     expected_signal: ExpectedSignal | None = None
     expected_ambiguity: AmbiguityReason | None = None
 

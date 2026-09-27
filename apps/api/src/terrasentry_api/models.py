@@ -81,6 +81,8 @@ class Supplier(Base):
     certifications: Mapped[list[str]] = mapped_column(JSONType, default=list)
     sanctions: Mapped[list[str]] = mapped_column(JSONType, default=list)
     synthetic: Mapped[bool] = mapped_column(Boolean, default=True)
+    #: synthetic | supplier_declared | document_extracted | sap_import
+    provenance: Mapped[str] = mapped_column(String(24), default="synthetic", server_default="synthetic")
     disclosure: Mapped[str] = mapped_column(Text, default="")
 
     parcels: Mapped[list[Parcel]] = relationship(back_populates="supplier")
@@ -102,11 +104,33 @@ class Parcel(Base):
     centroid_lat: Mapped[float] = mapped_column(Float)
     centroid_lon: Mapped[float] = mapped_column(Float)
     geometry: Mapped[dict[str, Any]] = mapped_column(JSONType)
-    archetype: Mapped[str] = mapped_column(String(16))
+    #: Seed design label; NULL for submitted plots.
+    archetype: Mapped[str | None] = mapped_column(String(16), default=None)
     scenario: Mapped[str | None] = mapped_column(String(32), default=None)
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
 
     supplier: Mapped[Supplier] = relationship(back_populates="parcels")
+
+
+class SubmittedRecord(Base):
+    """A user-submitted plot record (intake), replayed into the registry at startup.
+
+    ``payload`` is the full ``BatchRecord`` so the agent graph can rebuild the
+    exact input it will score; ``geometry`` keeps the geometry as submitted
+    (a point stays a point) next to the server-side measurements.
+    """
+
+    __tablename__ = "records"
+
+    record_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    supplier_id: Mapped[str] = mapped_column(
+        ForeignKey("suppliers.supplier_id", ondelete="CASCADE"), index=True
+    )
+    polygon_id: Mapped[str] = mapped_column(ForeignKey("parcels.polygon_id", ondelete="CASCADE"))
+    source: Mapped[str] = mapped_column(String(24), default="submitted")
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONType)
+    geometry: Mapped[dict[str, Any]] = mapped_column(JSONType)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
 class Run(Base):
@@ -213,7 +237,7 @@ class RunVerdict(Base):
     citations: Mapped[dict[str, list[str]]] = mapped_column(JSONType, default=dict)
     disclosures: Mapped[list[str]] = mapped_column(JSONType, default=list)
     data_gaps: Mapped[list[str]] = mapped_column(JSONType, default=list)
-    expected_archetype: Mapped[str] = mapped_column(String(16))
+    expected_archetype: Mapped[str | None] = mapped_column(String(16), default=None)
     expected_signal: Mapped[str | None] = mapped_column(String(16), default=None)
     expected_ambiguity: Mapped[str | None] = mapped_column(String(32), default=None)
     pending: Mapped[bool] = mapped_column(Boolean, default=False)

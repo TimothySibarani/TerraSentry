@@ -51,6 +51,7 @@ class SupplierProfile(BaseModel):
     certifications: list[str] = Field(default_factory=list)
     sanctions: list[str] = Field(default_factory=list)
     synthetic: bool = True
+    provenance: str = "synthetic"
     disclosure: str = ""
 
 
@@ -69,6 +70,7 @@ class Consignment(BaseModel):
     production_place: str
     harvest_year: int
     synthetic: bool = True
+    provenance: str = "synthetic"
     disclosure: str = ""
 
 

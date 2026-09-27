@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ClockIcon, LayersIcon, ListChecksIcon, WifiIcon } from "lucide-react";
+import {
+	ClockIcon,
+	LayersIcon,
+	ListChecksIcon,
+	RadarIcon,
+	WifiIcon,
+} from "lucide-react";
 
 import { type KpiRow, KpiTable } from "#/components/kpi-table";
 import { MetricCard } from "#/components/metric-card";
@@ -10,6 +16,7 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
+	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "#/components/ui/card";
@@ -20,6 +27,7 @@ import {
 	EmptyHeader,
 	EmptyTitle,
 } from "#/components/ui/empty";
+import { Button } from "#/components/ui/button";
 import { Separator } from "#/components/ui/separator";
 import { VerdictBreakdown } from "#/components/verdict-breakdown";
 import { healthQuery } from "#/features/health/queries";
@@ -131,21 +139,58 @@ function Dashboard() {
 			<PageHeader
 				eyebrow="Overview"
 				title="Compliance cockpit"
-				description="Run the two live scenarios, follow the agent trace, and read the batch throughput the KPI table is built on."
+				description="Screen real supplier plots, follow the agent trace, and read the batch throughput the KPI table is built on."
 			/>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Start a due-diligence run</CardTitle>
-					<CardDescription>
-						Scripted runs replay offline; Bedrock runs use the configured model
-						ids. Cached sources keep rehearsals free of external calls.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<RunLauncher />
-				</CardContent>
-			</Card>
+			<div className="grid gap-4 lg:grid-cols-5">
+				<Card className="lg:col-span-3">
+					<CardHeader>
+						<CardTitle>Screen a supplier plot</CardTitle>
+						<CardDescription>
+							Draw or upload a real plot boundary, declare the supplier, permit,
+							and lot, and the agents check it against live Hansen tree-cover
+							loss and NASA FIRMS data. No seed data needed.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="flex flex-col gap-4">
+						<ol className="grid gap-3 sm:grid-cols-3">
+							{[
+								["Map", "Draw on satellite imagery or paste coordinates"],
+								["Declare", "Supplier, HGU/PBPH permit, commodity lot"],
+								["Verify", "Live evidence, rubric, verifier, DDS"],
+							].map(([title, detail], position) => (
+								<li
+									key={title}
+									className="flex flex-col gap-1 rounded-md border border-border p-3"
+								>
+									<span className="eyebrow-sm text-muted-foreground">
+										{String(position + 1).padStart(2, "0")} · {title}
+									</span>
+									<span className="text-body-sm text-foreground">{detail}</span>
+								</li>
+							))}
+						</ol>
+					</CardContent>
+					<CardFooter>
+						<Button render={<Link to="/screen" />}>
+							<RadarIcon data-icon="inline-start" aria-hidden="true" />
+							Screen a plot
+						</Button>
+					</CardFooter>
+				</Card>
+				<Card className="lg:col-span-2">
+					<CardHeader>
+						<CardTitle>Demo scenarios</CardTitle>
+						<CardDescription>
+							Seeded plots with synthetic legality records, for the rehearsed
+							demo and the 50-record throughput batch.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<RunLauncher />
+					</CardContent>
+				</Card>
+			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				<MetricCard

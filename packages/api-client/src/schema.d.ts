@@ -216,6 +216,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Records */
+        get: operations["list_records_records_get"];
+        put?: never;
+        /**
+         * Create Record
+         * @description Register one submitted plot; start screening with ``POST /runs {record_id}``.
+         */
+        post: operations["create_record_records_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/records/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Records
+         * @description Import a supplier portfolio; valid rows are created, invalid rows are reported.
+         */
+        post: operations["import_records_records_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/records/validate-geometry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate Plot Geometry
+         * @description Server-measured area/centroid for a geometry, or the reason it is rejected.
+         */
+        post: operations["validate_plot_geometry_records_validate_geometry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/records/{record_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Record */
+        get: operations["get_record_records__record_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs": {
         parameters: {
             query?: never;
@@ -379,9 +457,11 @@ export interface components {
         };
         /**
          * BatchCreate
-         * @description Queue a deterministic batch run over the seed records.
+         * @description Queue a deterministic batch run over the seed records or explicit record ids.
          */
         BatchCreate: {
+            /** Record Ids */
+            record_ids?: string[] | null;
             /**
              * Refresh
              * @default false
@@ -451,6 +531,43 @@ export interface components {
             };
             /** Wall Clock Seconds */
             wall_clock_seconds?: number | null;
+        };
+        /** Body_import_records_records_import_post */
+        Body_import_records_records_import_post: {
+            /**
+             * File
+             * @description CSV (wkt or lat/lon columns) or GeoJSON FeatureCollection
+             */
+            file: string;
+        };
+        /** ConsignmentInput */
+        ConsignmentInput: {
+            /**
+             * Commodity
+             * @enum {string}
+             */
+            commodity: "oil_palm" | "wood" | "rubber" | "cocoa" | "coffee";
+            /** Description */
+            description: string;
+            /** Harvest Year */
+            harvest_year: number;
+            /**
+             * Hs Heading
+             * @default
+             */
+            hs_heading: string;
+            /** Net Weight Kg */
+            net_weight_kg: number;
+            /**
+             * Species Common
+             * @default
+             */
+            species_common: string;
+            /**
+             * Species Scientific
+             * @default
+             */
+            species_scientific: string;
         };
         /**
          * DdsMeta
@@ -567,6 +684,42 @@ export interface components {
          * @enum {string}
          */
         FindingLevel: "clear" | "borderline" | "flag";
+        /**
+         * GeometryCheck
+         * @description Validate a plot geometry without creating a record (live form feedback).
+         */
+        GeometryCheck: {
+            /** Declared Area Ha */
+            declared_area_ha?: number | null;
+            /** Geometry */
+            geometry: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * GeometryReport
+         * @description Normalized geometry plus what the server measured.
+         */
+        GeometryReport: {
+            /** Area Ha */
+            area_ha: number;
+            /** Centroid Lat */
+            centroid_lat: number;
+            /** Centroid Lon */
+            centroid_lon: number;
+            /** Geometry */
+            geometry: {
+                [key: string]: unknown;
+            };
+            /** Geometry Type */
+            geometry_type: string;
+            /** Query Geometry */
+            query_geometry: {
+                [key: string]: unknown;
+            };
+            /** Vertex Count */
+            vertex_count: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -578,10 +731,35 @@ export interface components {
          */
         HealthResponse: {
             /**
+             * Auth Enabled
+             * @default false
+             */
+            auth_enabled: boolean;
+            /**
+             * Bedrock Configured
+             * @default false
+             */
+            bedrock_configured: boolean;
+            /**
+             * Default Model
+             * @default scripted
+             */
+            default_model: string;
+            /**
+             * Firms Configured
+             * @default false
+             */
+            firms_configured: boolean;
+            /**
              * Fixtures Loaded
              * @default 0
              */
             fixtures_loaded: number;
+            /**
+             * Gfw Configured
+             * @default false
+             */
+            gfw_configured: boolean;
             /**
              * Offline
              * @default false
@@ -600,10 +778,68 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** ImportResult */
+        ImportResult: {
+            /** Created */
+            created?: components["schemas"]["RecordOut"][];
+            /** Errors */
+            errors?: components["schemas"]["ImportRowError"][];
+            /** Total Rows */
+            total_rows: number;
+        };
+        /** ImportRowError */
+        ImportRowError: {
+            /** Field */
+            field: string;
+            /** Message */
+            message: string;
+            /** Row */
+            row: number;
+        };
+        /** LatestRunOut */
+        LatestRunOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Model */
+            model: string;
+            /** Run Id */
+            run_id: string;
+            /** Score */
+            score?: number | null;
+            state: components["schemas"]["RunState"];
+            verdict?: components["schemas"]["Verdict"] | null;
+        };
+        /** LegalityInput */
+        LegalityInput: {
+            /** Concession Area Ha */
+            concession_area_ha?: number | null;
+            /**
+             * Permit Number
+             * @default
+             */
+            permit_number: string;
+            /**
+             * Permit Status
+             * @default active
+             * @enum {string}
+             */
+            permit_status: "active" | "expired" | "suspended" | "none";
+            /**
+             * Permit Type
+             * @default none
+             * @enum {string}
+             */
+            permit_type: "hgu" | "pbph" | "none";
+            /** Sanctions */
+            sanctions?: string[];
+        };
         /** ParcelOut */
         ParcelOut: {
             /** Archetype */
-            archetype: string;
+            archetype?: string | null;
             /** Area Ha */
             area_ha: number;
             /** Centroid Lat */
@@ -628,6 +864,99 @@ export interface components {
             scenario?: string | null;
             /** Supplier Id */
             supplier_id: string;
+        };
+        /** PlotInput */
+        PlotInput: {
+            /**
+             * Declared Area Ha
+             * @description Required for a Point; must be <= 4 ha (EUDR).
+             */
+            declared_area_ha?: number | null;
+            /**
+             * Geometry
+             * @description GeoJSON Polygon, MultiPolygon, Point, or a Feature wrapping one.
+             */
+            geometry: {
+                [key: string]: unknown;
+            };
+            /**
+             * Kabupaten
+             * @default
+             */
+            kabupaten: string;
+            /** Label */
+            label: string;
+            /**
+             * Province
+             * @default
+             */
+            province: string;
+        };
+        /**
+         * RecordOut
+         * @description A submitted plot record, as stored, with the latest screening run.
+         */
+        RecordOut: {
+            /** Area Ha */
+            area_ha: number;
+            /** Centroid Lat */
+            centroid_lat: number;
+            /** Centroid Lon */
+            centroid_lon: number;
+            /** Commodity */
+            commodity: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /** Disclosure */
+            disclosure: string;
+            /** Geometry */
+            geometry: {
+                [key: string]: unknown;
+            };
+            /** Geometry Type */
+            geometry_type: string;
+            /** Hgu Number */
+            hgu_number?: string | null;
+            /** Hs Heading */
+            hs_heading: string;
+            /** Label */
+            label: string;
+            latest_run?: components["schemas"]["LatestRunOut"] | null;
+            /** Legal Name */
+            legal_name: string;
+            /** Net Weight Kg */
+            net_weight_kg: number;
+            /** Pbp Number */
+            pbp_number?: string | null;
+            /** Permit Status */
+            permit_status: string;
+            /** Polygon Id */
+            polygon_id: string;
+            /** Provenance */
+            provenance: string;
+            /** Record Id */
+            record_id: string;
+            /** Region */
+            region: string;
+            /** Source */
+            source: string;
+            /** Supplier Id */
+            supplier_id: string;
+        };
+        /**
+         * RecordSubmission
+         * @description Everything a user declares for one plot.
+         */
+        RecordSubmission: {
+            consignment: components["schemas"]["ConsignmentInput"];
+            legality?: components["schemas"]["LegalityInput"];
+            plot: components["schemas"]["PlotInput"];
+            supplier: components["schemas"]["SupplierInput"];
         };
         /** ReviewOut */
         ReviewOut: {
@@ -867,6 +1196,11 @@ export interface components {
             pbp_number?: string | null;
             /** Permit Status */
             permit_status: string;
+            /**
+             * Provenance
+             * @default synthetic
+             */
+            provenance: string;
             /** Province */
             province: string;
             /** Sanctions */
@@ -877,6 +1211,37 @@ export interface components {
             /** Synthetic */
             synthetic: boolean;
             /** Trading Name */
+            trading_name: string;
+        };
+        /** SupplierInput */
+        SupplierInput: {
+            /** Beneficial Owners */
+            beneficial_owners?: string[];
+            /** Certifications */
+            certifications?: string[];
+            /**
+             * Group
+             * @default
+             */
+            group: string;
+            /** Legal Name */
+            legal_name: string;
+            /**
+             * Nib
+             * @description Nomor Induk Berusaha (business id).
+             * @default
+             */
+            nib: string;
+            /**
+             * Npwp
+             * @description Tax id.
+             * @default
+             */
+            npwp: string;
+            /**
+             * Trading Name
+             * @default
+             */
             trading_name: string;
         };
         /** SupplierOut */
@@ -908,6 +1273,11 @@ export interface components {
             pbp_number?: string | null;
             /** Permit Status */
             permit_status: string;
+            /**
+             * Provenance
+             * @default synthetic
+             */
+            provenance: string;
             /** Province */
             province: string;
             /** Sanctions */
@@ -1007,7 +1377,7 @@ export interface components {
             /** Expected Ambiguity */
             expected_ambiguity?: string | null;
             /** Expected Archetype */
-            expected_archetype: string;
+            expected_archetype?: string | null;
             /** Expected Signal */
             expected_signal?: string | null;
             /** Fingerprint */
@@ -1514,6 +1884,169 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SapVendorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_records_records_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                source?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_record_records_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordSubmission"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_records_records_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_records_records_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_plot_geometry_records_validate_geometry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeometryCheck"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeometryReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_record_records__record_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordOut"];
                 };
             };
             /** @description Validation Error */

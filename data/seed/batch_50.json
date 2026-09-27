@@ -80,6 +80,7 @@
           "2021 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -95,6 +96,7 @@
         "production_place": "Block 01 — Riau peat forests (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -161,6 +163,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -176,6 +179,7 @@
         "production_place": "Block 02 — Jambi lowland forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -250,6 +254,7 @@
           "2021 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -265,6 +270,7 @@
         "production_place": "Block 03 — South Sumatra peat forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -343,6 +349,7 @@
           "2021 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -358,6 +365,7 @@
         "production_place": "Block 04 — Central Kalimantan forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -432,6 +440,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -447,6 +456,7 @@
         "production_place": "Block 05 — East Kalimantan forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "ambiguous",
@@ -529,6 +539,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -544,6 +555,7 @@
         "production_place": "Block 06 — West Kalimantan forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -630,6 +642,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -645,6 +658,7 @@
         "production_place": "Block 07 — Riau peat forests (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "ambiguous",
@@ -719,6 +733,7 @@
           "2020 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -734,6 +749,7 @@
         "production_place": "Block 08 — Jambi lowland forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -816,6 +832,7 @@
           "2022 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -831,6 +848,7 @@
         "production_place": "Block 09 — South Sumatra peat forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -909,6 +927,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -924,6 +943,7 @@
         "production_place": "Block 10 — Central Kalimantan forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -1002,6 +1022,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1017,6 +1038,7 @@
         "production_place": "Block 11 — East Kalimantan forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "ambiguous",
@@ -1091,6 +1113,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1106,6 +1129,7 @@
         "production_place": "Block 12 — West Kalimantan forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -1184,6 +1208,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1199,6 +1224,7 @@
         "production_place": "Block 13 — Riau peat forests (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -1277,6 +1303,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1292,6 +1319,7 @@
         "production_place": "Block 14 — Jambi lowland forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -1370,6 +1398,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1385,6 +1414,7 @@
         "production_place": "Block 15 — South Sumatra peat forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -1463,6 +1493,7 @@
           "2018 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1478,6 +1509,7 @@
         "production_place": "Block 16 — Central Kalimantan forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -1560,6 +1592,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1575,6 +1608,7 @@
         "production_place": "Block 17 — East Kalimantan forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -1649,6 +1683,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1664,6 +1699,7 @@
         "production_place": "Block 18 — West Kalimantan forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -1742,6 +1778,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1757,6 +1794,7 @@
         "production_place": "Block 19 — Riau peat forests (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -1839,6 +1877,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1854,6 +1893,7 @@
         "production_place": "Block 20 — Jambi lowland forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -1936,6 +1976,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -1951,6 +1992,7 @@
         "production_place": "Block 21 — South Sumatra peat forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -2029,6 +2071,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -2044,6 +2087,7 @@
         "production_place": "Block 22 — Central Kalimantan forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "ambiguous",
@@ -2122,6 +2166,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -2137,6 +2182,7 @@
         "production_place": "Block 23 — East Kalimantan forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -2223,6 +2269,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -2238,6 +2285,7 @@
         "production_place": "Block 24 — West Kalimantan forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -2324,6 +2372,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -2339,6 +2388,7 @@
         "production_place": "Block 25 — Riau peat forests (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -2425,6 +2475,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -2440,6 +2491,7 @@
         "production_place": "Block 26 — Jambi lowland forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "ambiguous",
@@ -2518,6 +2570,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -2533,6 +2586,7 @@
         "production_place": "Block 27 — South Sumatra peat forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -2607,6 +2661,7 @@
           "2022 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -2622,6 +2677,7 @@
         "production_place": "Block 28 — Central Kalimantan forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -2704,6 +2760,7 @@
           "2024 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -2719,6 +2776,7 @@
         "production_place": "Block 29 — East Kalimantan forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -2797,6 +2855,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -2812,6 +2871,7 @@
         "production_place": "Block 30 — West Kalimantan forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -2894,6 +2954,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -2909,6 +2970,7 @@
         "production_place": "Block 31 — Riau peat forests (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -2995,6 +3057,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3010,6 +3073,7 @@
         "production_place": "Block 32 — Jambi lowland forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -3096,6 +3160,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3111,6 +3176,7 @@
         "production_place": "Block 33 — South Sumatra peat forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -3197,6 +3263,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3212,6 +3279,7 @@
         "production_place": "Block 34 — Central Kalimantan forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "ambiguous",
@@ -3286,6 +3354,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3301,6 +3370,7 @@
         "production_place": "Block 35 — East Kalimantan forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "ambiguous",
@@ -3379,6 +3449,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3394,6 +3465,7 @@
         "production_place": "Block 36 — West Kalimantan forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -3480,6 +3552,7 @@
           "2020 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3495,6 +3568,7 @@
         "production_place": "Block 37 — Riau peat forests (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -3569,6 +3643,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3584,6 +3659,7 @@
         "production_place": "Block 38 — Jambi lowland forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -3670,6 +3746,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3685,6 +3762,7 @@
         "production_place": "Block 39 — South Sumatra peat forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -3771,6 +3849,7 @@
           "2018 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3786,6 +3865,7 @@
         "production_place": "Block 40 — Central Kalimantan forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -3872,6 +3952,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3887,6 +3968,7 @@
         "production_place": "Block 41 — East Kalimantan forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -3969,6 +4051,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -3984,6 +4067,7 @@
         "production_place": "Block 42 — West Kalimantan forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -4062,6 +4146,7 @@
           "2018 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -4077,6 +4162,7 @@
         "production_place": "Block 43 — Riau peat forests (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",
@@ -4151,6 +4237,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -4166,6 +4253,7 @@
         "production_place": "Block 44 — Jambi lowland forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -4240,6 +4328,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -4255,6 +4344,7 @@
         "production_place": "Block 45 — South Sumatra peat forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "ambiguous",
@@ -4329,6 +4419,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -4344,6 +4435,7 @@
         "production_place": "Block 46 — Central Kalimantan forest (SYNTH)",
         "harvest_year": 2023,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -4430,6 +4522,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -4445,6 +4538,7 @@
         "production_place": "Block 47 — East Kalimantan forest (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -4523,6 +4617,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -4538,6 +4633,7 @@
         "production_place": "Block 48 — West Kalimantan forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -4620,6 +4716,7 @@
         ],
         "sanctions": [],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -4635,6 +4732,7 @@
         "production_place": "Block 49 — Riau peat forests (SYNTH)",
         "harvest_year": 2025,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "compliant",
@@ -4721,6 +4819,7 @@
           "2020 permit suspension (synthetic)"
         ],
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
       },
       "consignment": {
@@ -4736,6 +4835,7 @@
         "production_place": "Block 50 — Jambi lowland forest (SYNTH)",
         "harvest_year": 2024,
         "synthetic": true,
+        "provenance": "synthetic",
         "disclosure": "SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats."
       },
       "expected_archetype": "high_risk",

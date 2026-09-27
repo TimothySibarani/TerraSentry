@@ -49,7 +49,7 @@ class RecordAssessment(BaseModel):
     record_id: str
     supplier_id: str
     polygon_id: str
-    expected_archetype: Archetype
+    expected_archetype: Archetype | None = None
     expected_signal: ExpectedSignal | None = None
     expected_ambiguity: AmbiguityReason | None = None
     run_state: RunState

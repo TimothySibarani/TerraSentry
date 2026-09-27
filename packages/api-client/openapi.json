@@ -81,8 +81,23 @@
         "type": "object"
       },
       "BatchCreate": {
-        "description": "Queue a deterministic batch run over the seed records.",
+        "description": "Queue a deterministic batch run over the seed records or explicit record ids.",
         "properties": {
+          "record_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 500,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Ids"
+          },
           "refresh": {
             "default": false,
             "title": "Refresh",
@@ -278,6 +293,80 @@
           "record_count"
         ],
         "title": "BatchSummary",
+        "type": "object"
+      },
+      "Body_import_records_records_import_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "CSV (wkt or lat/lon columns) or GeoJSON FeatureCollection",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_records_records_import_post",
+        "type": "object"
+      },
+      "ConsignmentInput": {
+        "properties": {
+          "commodity": {
+            "enum": [
+              "oil_palm",
+              "wood",
+              "rubber",
+              "cocoa",
+              "coffee"
+            ],
+            "title": "Commodity",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 300,
+            "minLength": 2,
+            "title": "Description",
+            "type": "string"
+          },
+          "harvest_year": {
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Harvest Year",
+            "type": "integer"
+          },
+          "hs_heading": {
+            "default": "",
+            "maxLength": 10,
+            "title": "Hs Heading",
+            "type": "string"
+          },
+          "net_weight_kg": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 10000000000.0,
+            "title": "Net Weight Kg",
+            "type": "number"
+          },
+          "species_common": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Species Common",
+            "type": "string"
+          },
+          "species_scientific": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Species Scientific",
+            "type": "string"
+          }
+        },
+        "required": [
+          "commodity",
+          "description",
+          "net_weight_kg",
+          "harvest_year"
+        ],
+        "title": "ConsignmentInput",
         "type": "object"
       },
       "DdsMeta": {
@@ -506,6 +595,79 @@
         "title": "FindingLevel",
         "type": "string"
       },
+      "GeometryCheck": {
+        "description": "Validate a plot geometry without creating a record (live form feedback).",
+        "properties": {
+          "declared_area_ha": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Area Ha"
+          },
+          "geometry": {
+            "additionalProperties": true,
+            "title": "Geometry",
+            "type": "object"
+          }
+        },
+        "required": [
+          "geometry"
+        ],
+        "title": "GeometryCheck",
+        "type": "object"
+      },
+      "GeometryReport": {
+        "description": "Normalized geometry plus what the server measured.",
+        "properties": {
+          "area_ha": {
+            "title": "Area Ha",
+            "type": "number"
+          },
+          "centroid_lat": {
+            "title": "Centroid Lat",
+            "type": "number"
+          },
+          "centroid_lon": {
+            "title": "Centroid Lon",
+            "type": "number"
+          },
+          "geometry": {
+            "additionalProperties": true,
+            "title": "Geometry",
+            "type": "object"
+          },
+          "geometry_type": {
+            "title": "Geometry Type",
+            "type": "string"
+          },
+          "query_geometry": {
+            "additionalProperties": true,
+            "title": "Query Geometry",
+            "type": "object"
+          },
+          "vertex_count": {
+            "title": "Vertex Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "geometry",
+          "query_geometry",
+          "geometry_type",
+          "area_ha",
+          "centroid_lat",
+          "centroid_lon",
+          "vertex_count"
+        ],
+        "title": "GeometryReport",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -522,10 +684,35 @@
       "HealthResponse": {
         "description": "Process health plus the offline-rehearsal and SAP-mode state the cockpit badges.",
         "properties": {
+          "auth_enabled": {
+            "default": false,
+            "title": "Auth Enabled",
+            "type": "boolean"
+          },
+          "bedrock_configured": {
+            "default": false,
+            "title": "Bedrock Configured",
+            "type": "boolean"
+          },
+          "default_model": {
+            "default": "scripted",
+            "title": "Default Model",
+            "type": "string"
+          },
+          "firms_configured": {
+            "default": false,
+            "title": "Firms Configured",
+            "type": "boolean"
+          },
           "fixtures_loaded": {
             "default": 0,
             "title": "Fixtures Loaded",
             "type": "integer"
+          },
+          "gfw_configured": {
+            "default": false,
+            "title": "Gfw Configured",
+            "type": "boolean"
           },
           "offline": {
             "default": false,
@@ -553,11 +740,170 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "ImportResult": {
+        "properties": {
+          "created": {
+            "items": {
+              "$ref": "#/components/schemas/RecordOut"
+            },
+            "title": "Created",
+            "type": "array"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/ImportRowError"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "total_rows": {
+            "title": "Total Rows",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_rows"
+        ],
+        "title": "ImportResult",
+        "type": "object"
+      },
+      "ImportRowError": {
+        "properties": {
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "row": {
+            "title": "Row",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row",
+          "field",
+          "message"
+        ],
+        "title": "ImportRowError",
+        "type": "object"
+      },
+      "LatestRunOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "state": {
+            "$ref": "#/components/schemas/RunState"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Verdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "run_id",
+          "state",
+          "model",
+          "created_at"
+        ],
+        "title": "LatestRunOut",
+        "type": "object"
+      },
+      "LegalityInput": {
+        "properties": {
+          "concession_area_ha": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concession Area Ha"
+          },
+          "permit_number": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Permit Number",
+            "type": "string"
+          },
+          "permit_status": {
+            "default": "active",
+            "enum": [
+              "active",
+              "expired",
+              "suspended",
+              "none"
+            ],
+            "title": "Permit Status",
+            "type": "string"
+          },
+          "permit_type": {
+            "default": "none",
+            "enum": [
+              "hgu",
+              "pbph",
+              "none"
+            ],
+            "title": "Permit Type",
+            "type": "string"
+          },
+          "sanctions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Sanctions",
+            "type": "array"
+          }
+        },
+        "title": "LegalityInput",
+        "type": "object"
+      },
       "ParcelOut": {
         "properties": {
           "archetype": {
-            "title": "Archetype",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archetype"
           },
           "area_ha": {
             "title": "Area Ha",
@@ -622,10 +968,223 @@
           "centroid_lat",
           "centroid_lon",
           "geometry",
-          "archetype",
           "is_demo"
         ],
         "title": "ParcelOut",
+        "type": "object"
+      },
+      "PlotInput": {
+        "properties": {
+          "declared_area_ha": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required for a Point; must be <= 4 ha (EUDR).",
+            "title": "Declared Area Ha"
+          },
+          "geometry": {
+            "additionalProperties": true,
+            "description": "GeoJSON Polygon, MultiPolygon, Point, or a Feature wrapping one.",
+            "title": "Geometry",
+            "type": "object"
+          },
+          "kabupaten": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Kabupaten",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "province": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Province",
+            "type": "string"
+          }
+        },
+        "required": [
+          "geometry",
+          "label"
+        ],
+        "title": "PlotInput",
+        "type": "object"
+      },
+      "RecordOut": {
+        "description": "A submitted plot record, as stored, with the latest screening run.",
+        "properties": {
+          "area_ha": {
+            "title": "Area Ha",
+            "type": "number"
+          },
+          "centroid_lat": {
+            "title": "Centroid Lat",
+            "type": "number"
+          },
+          "centroid_lon": {
+            "title": "Centroid Lon",
+            "type": "number"
+          },
+          "commodity": {
+            "title": "Commodity",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "disclosure": {
+            "title": "Disclosure",
+            "type": "string"
+          },
+          "geometry": {
+            "additionalProperties": true,
+            "title": "Geometry",
+            "type": "object"
+          },
+          "geometry_type": {
+            "title": "Geometry Type",
+            "type": "string"
+          },
+          "hgu_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hgu Number"
+          },
+          "hs_heading": {
+            "title": "Hs Heading",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "latest_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatestRunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "legal_name": {
+            "title": "Legal Name",
+            "type": "string"
+          },
+          "net_weight_kg": {
+            "title": "Net Weight Kg",
+            "type": "number"
+          },
+          "pbp_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pbp Number"
+          },
+          "permit_status": {
+            "title": "Permit Status",
+            "type": "string"
+          },
+          "polygon_id": {
+            "title": "Polygon Id",
+            "type": "string"
+          },
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "record_id": {
+            "title": "Record Id",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "supplier_id": {
+            "title": "Supplier Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_id",
+          "supplier_id",
+          "polygon_id",
+          "source",
+          "created_at",
+          "label",
+          "region",
+          "area_ha",
+          "centroid_lat",
+          "centroid_lon",
+          "geometry_type",
+          "geometry",
+          "legal_name",
+          "commodity",
+          "description",
+          "hs_heading",
+          "net_weight_kg",
+          "permit_status",
+          "provenance",
+          "disclosure"
+        ],
+        "title": "RecordOut",
+        "type": "object"
+      },
+      "RecordSubmission": {
+        "description": "Everything a user declares for one plot.",
+        "properties": {
+          "consignment": {
+            "$ref": "#/components/schemas/ConsignmentInput"
+          },
+          "legality": {
+            "$ref": "#/components/schemas/LegalityInput"
+          },
+          "plot": {
+            "$ref": "#/components/schemas/PlotInput"
+          },
+          "supplier": {
+            "$ref": "#/components/schemas/SupplierInput"
+          }
+        },
+        "required": [
+          "plot",
+          "supplier",
+          "consignment"
+        ],
+        "title": "RecordSubmission",
         "type": "object"
       },
       "ReviewOut": {
@@ -1351,6 +1910,11 @@
             "title": "Permit Status",
             "type": "string"
           },
+          "provenance": {
+            "default": "synthetic",
+            "title": "Provenance",
+            "type": "string"
+          },
           "province": {
             "title": "Province",
             "type": "string"
@@ -1399,6 +1963,63 @@
           "synthetic"
         ],
         "title": "SupplierDetail",
+        "type": "object"
+      },
+      "SupplierInput": {
+        "properties": {
+          "beneficial_owners": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Beneficial Owners",
+            "type": "array"
+          },
+          "certifications": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Certifications",
+            "type": "array"
+          },
+          "group": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Group",
+            "type": "string"
+          },
+          "legal_name": {
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Legal Name",
+            "type": "string"
+          },
+          "nib": {
+            "default": "",
+            "description": "Nomor Induk Berusaha (business id).",
+            "maxLength": 32,
+            "title": "Nib",
+            "type": "string"
+          },
+          "npwp": {
+            "default": "",
+            "description": "Tax id.",
+            "maxLength": 32,
+            "title": "Npwp",
+            "type": "string"
+          },
+          "trading_name": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Trading Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "legal_name"
+        ],
+        "title": "SupplierInput",
         "type": "object"
       },
       "SupplierOut": {
@@ -1470,6 +2091,11 @@
           },
           "permit_status": {
             "title": "Permit Status",
+            "type": "string"
+          },
+          "provenance": {
+            "default": "synthetic",
+            "title": "Provenance",
             "type": "string"
           },
           "province": {
@@ -1719,8 +2345,15 @@
             "title": "Expected Ambiguity"
           },
           "expected_archetype": {
-            "title": "Expected Archetype",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Archetype"
           },
           "expected_signal": {
             "anyOf": [
@@ -1762,7 +2395,6 @@
           "supplier_id",
           "polygon_id",
           "run_state",
-          "expected_archetype",
           "fingerprint",
           "pending",
           "assessment"
@@ -2516,6 +3148,249 @@
         "summary": "Update Vendor Status",
         "tags": [
           "mock-sap"
+        ]
+      }
+    },
+    "/records": {
+      "get": {
+        "operationId": "list_records_records_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^(submitted|import)$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecordOut"
+                  },
+                  "title": "Response List Records Records Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Records",
+        "tags": [
+          "records"
+        ]
+      },
+      "post": {
+        "description": "Register one submitted plot; start screening with ``POST /runs {record_id}``.",
+        "operationId": "create_record_records_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordSubmission"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/records/import": {
+      "post": {
+        "description": "Import a supplier portfolio; valid rows are created, invalid rows are reported.",
+        "operationId": "import_records_records_import_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_records_records_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Records",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/records/validate-geometry": {
+      "post": {
+        "description": "Server-measured area/centroid for a geometry, or the reason it is rejected.",
+        "operationId": "validate_plot_geometry_records_validate_geometry_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeometryCheck"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeometryReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Plot Geometry",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/records/{record_id}": {
+      "get": {
+        "operationId": "get_record_records__record_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Record",
+        "tags": [
+          "records"
         ]
       }
     },

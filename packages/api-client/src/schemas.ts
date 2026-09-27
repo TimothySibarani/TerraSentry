@@ -11,6 +11,11 @@ export const HealthResponse = Schema.Struct({
   fixtures_loaded: Schema.Int,
   sap_mode: Schema.String,
   sap_real: Schema.Boolean,
+  bedrock_configured: Schema.Boolean,
+  default_model: Schema.String,
+  gfw_configured: Schema.Boolean,
+  firms_configured: Schema.Boolean,
+  auth_enabled: Schema.Boolean,
 });
 export type HealthResponse = typeof HealthResponse.Type;
 
@@ -198,7 +203,7 @@ export const VerdictOut = Schema.Struct({
   supplier_id: Schema.String,
   polygon_id: Schema.String,
   run_state: RunState,
-  expected_archetype: Schema.String,
+  expected_archetype: Schema.NullOr(Schema.String),
   expected_signal: Schema.NullOr(Schema.String),
   expected_ambiguity: Schema.NullOr(Schema.String),
   fingerprint: Schema.String,
@@ -256,7 +261,7 @@ export const ParcelOut = Schema.Struct({
   centroid_lat: Schema.Number,
   centroid_lon: Schema.Number,
   geometry: Schema.Record(Schema.String, Schema.Unknown),
-  archetype: Schema.String,
+  archetype: Schema.NullOr(Schema.String),
   scenario: Schema.NullOr(Schema.String),
   is_demo: Schema.Boolean,
 });
@@ -279,6 +284,7 @@ const supplierFields = {
   certifications: Schema.Array(Schema.String),
   sanctions: Schema.Array(Schema.String),
   synthetic: Schema.Boolean,
+  provenance: Schema.String,
   disclosure: Schema.String,
 } as const;
 
@@ -332,6 +338,7 @@ export type DecisionRequest = typeof DecisionRequest.Type;
 export const BatchCreateRequest = Schema.Struct({
   size: Schema.optional(Schema.Int),
   refresh: Schema.optional(Schema.Boolean),
+  record_ids: Schema.optional(Schema.Array(Schema.String)),
 });
 export type BatchCreateRequest = typeof BatchCreateRequest.Type;
 
@@ -376,3 +383,143 @@ export const RunEvent = Schema.Union([
   Schema.Struct({ event: Schema.Literal("progress"), data: ProgressData }),
 ]);
 export type RunEvent = typeof RunEvent.Type;
+
+// -- intake (submitted plots) --------------------------------------------------
+
+export const Commodity = Schema.Literals([
+  "oil_palm",
+  "wood",
+  "rubber",
+  "cocoa",
+  "coffee",
+]);
+export type Commodity = typeof Commodity.Type;
+
+export const PermitType = Schema.Literals(["hgu", "pbph", "none"]);
+export type PermitType = typeof PermitType.Type;
+
+export const PermitStatus = Schema.Literals([
+  "active",
+  "expired",
+  "suspended",
+  "none",
+]);
+export type PermitStatus = typeof PermitStatus.Type;
+
+const GeoJsonObject = Schema.Record(Schema.String, Schema.Unknown);
+
+export const RecordSubmission = Schema.Struct({
+  plot: Schema.Struct({
+    geometry: GeoJsonObject,
+    label: Schema.String,
+    province: Schema.optional(Schema.String),
+    kabupaten: Schema.optional(Schema.String),
+    declared_area_ha: Schema.optional(Schema.NullOr(Schema.Number)),
+  }),
+  supplier: Schema.Struct({
+    legal_name: Schema.String,
+    trading_name: Schema.optional(Schema.String),
+    group: Schema.optional(Schema.String),
+    nib: Schema.optional(Schema.String),
+    npwp: Schema.optional(Schema.String),
+    beneficial_owners: Schema.optional(Schema.Array(Schema.String)),
+    certifications: Schema.optional(Schema.Array(Schema.String)),
+  }),
+  legality: Schema.optional(
+    Schema.Struct({
+      permit_type: Schema.optional(PermitType),
+      permit_number: Schema.optional(Schema.String),
+      permit_status: Schema.optional(PermitStatus),
+      concession_area_ha: Schema.optional(Schema.NullOr(Schema.Number)),
+      sanctions: Schema.optional(Schema.Array(Schema.String)),
+    }),
+  ),
+  consignment: Schema.Struct({
+    commodity: Commodity,
+    description: Schema.String,
+    hs_heading: Schema.optional(Schema.String),
+    species_scientific: Schema.optional(Schema.String),
+    species_common: Schema.optional(Schema.String),
+    net_weight_kg: Schema.Number,
+    harvest_year: Schema.Int,
+  }),
+});
+export type RecordSubmission = typeof RecordSubmission.Type;
+
+export const GeometryCheckRequest = Schema.Struct({
+  geometry: GeoJsonObject,
+  declared_area_ha: Schema.optional(Schema.NullOr(Schema.Number)),
+});
+export type GeometryCheckRequest = typeof GeometryCheckRequest.Type;
+
+export const GeometryReport = Schema.Struct({
+  geometry: GeoJsonObject,
+  query_geometry: GeoJsonObject,
+  geometry_type: Schema.String,
+  area_ha: Schema.Number,
+  centroid_lat: Schema.Number,
+  centroid_lon: Schema.Number,
+  vertex_count: Schema.Int,
+});
+export type GeometryReport = typeof GeometryReport.Type;
+
+export const LatestRunOut = Schema.Struct({
+  run_id: Schema.String,
+  state: RunState,
+  verdict: Schema.NullOr(Verdict),
+  score: Schema.NullOr(Schema.Int),
+  model: Schema.String,
+  created_at: Schema.DateTimeUtcFromString,
+});
+export type LatestRunOut = typeof LatestRunOut.Type;
+
+export const RecordOut = Schema.Struct({
+  record_id: Schema.String,
+  supplier_id: Schema.String,
+  polygon_id: Schema.String,
+  source: Schema.String,
+  created_at: Schema.DateTimeUtcFromString,
+  label: Schema.String,
+  region: Schema.String,
+  area_ha: Schema.Number,
+  centroid_lat: Schema.Number,
+  centroid_lon: Schema.Number,
+  geometry_type: Schema.String,
+  geometry: GeoJsonObject,
+  legal_name: Schema.String,
+  commodity: Schema.String,
+  description: Schema.String,
+  hs_heading: Schema.String,
+  net_weight_kg: Schema.Number,
+  permit_status: Schema.String,
+  hgu_number: Schema.NullOr(Schema.String),
+  pbp_number: Schema.NullOr(Schema.String),
+  provenance: Schema.String,
+  disclosure: Schema.String,
+  latest_run: Schema.NullOr(LatestRunOut),
+});
+export type RecordOut = typeof RecordOut.Type;
+
+export const ImportResult = Schema.Struct({
+  created: Schema.Array(RecordOut),
+  errors: Schema.Array(
+    Schema.Struct({
+      row: Schema.Int,
+      field: Schema.String,
+      message: Schema.String,
+    }),
+  ),
+  total_rows: Schema.Int,
+});
+export type ImportResult = typeof ImportResult.Type;
+
+/** FastAPI's 422 body; intake errors reuse the same shape. */
+export const ValidationErrorBody = Schema.Struct({
+  detail: Schema.Array(
+    Schema.Struct({
+      loc: Schema.Array(Schema.Union([Schema.String, Schema.Number])),
+      msg: Schema.String,
+    }),
+  ),
+});
+export type ValidationErrorBody = typeof ValidationErrorBody.Type;

@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     api_cors_origins: str = "http://localhost:3000"
+    # Shared bearer token for write endpoints. Empty = open (local dev only);
+    # set it for any deployment reachable by others.
+    api_token: str = ""
+    import_max_bytes: int = 5 * 1024 * 1024
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/terrasentry"
     auto_seed: bool = True

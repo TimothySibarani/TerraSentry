@@ -43,6 +43,7 @@ from terrasentry_api.models import (
     RunStep,
     RunVerdict,
     SapAction,
+    SubmittedRecord,
     Supplier,
 )
 
@@ -81,31 +82,77 @@ class RunStore:
         supplier_ids = set((await self._session.scalars(select(Supplier.supplier_id))).all())
         parcel_ids = set((await self._session.scalars(select(Parcel.polygon_id))).all())
         for record in datasets.records:
-            legality = record.legality
-            if legality.supplier_id not in supplier_ids:
-                self._session.add(Supplier(**legality.model_dump()))
-                supplier_ids.add(legality.supplier_id)
-            polygon = record.polygon
-            if polygon.id not in parcel_ids:
-                self._session.add(
-                    Parcel(
-                        polygon_id=polygon.id,
-                        supplier_id=record.supplier_id,
-                        label=polygon.label,
-                        region=polygon.region,
-                        province=polygon.province,
-                        area_ha=polygon.area_ha,
-                        centroid_lat=polygon.centroid_lat,
-                        centroid_lon=polygon.centroid_lon,
-                        geometry=polygon.geometry,
-                        archetype=polygon.archetype,
-                        scenario=polygon.scenario,
-                        is_demo=polygon.is_demo,
-                    )
-                )
-                parcel_ids.add(polygon.id)
+            self._add_record_rows(record, supplier_ids=supplier_ids, parcel_ids=parcel_ids)
         await self._session.flush()
         return len(parcel_ids)
+
+    def _add_record_rows(self, record: BatchRecord, *, supplier_ids: set[str], parcel_ids: set[str]) -> None:
+        legality = record.legality
+        if legality.supplier_id not in supplier_ids:
+            self._session.add(Supplier(**legality.model_dump()))
+            supplier_ids.add(legality.supplier_id)
+        polygon = record.polygon
+        if polygon.id not in parcel_ids:
+            self._session.add(
+                Parcel(
+                    polygon_id=polygon.id,
+                    supplier_id=record.supplier_id,
+                    label=polygon.label,
+                    region=polygon.region,
+                    province=polygon.province,
+                    area_ha=polygon.area_ha,
+                    centroid_lat=polygon.centroid_lat,
+                    centroid_lon=polygon.centroid_lon,
+                    geometry=polygon.geometry,
+                    archetype=polygon.archetype,
+                    scenario=polygon.scenario,
+                    is_demo=polygon.is_demo,
+                )
+            )
+            parcel_ids.add(polygon.id)
+
+    # -- submitted records ------------------------------------------------------
+
+    async def create_submitted_record(
+        self, record: BatchRecord, *, geometry: dict[str, Any], source: str = "submitted"
+    ) -> SubmittedRecord:
+        """Persist a submitted record plus its supplier and parcel rows."""
+        self._add_record_rows(record, supplier_ids=set(), parcel_ids=set())
+        # Suppliers/parcels must exist before the FK'd record row.
+        await self._session.flush()
+        row = SubmittedRecord(
+            record_id=record.record_id,
+            supplier_id=record.supplier_id,
+            polygon_id=record.polygon.id,
+            source=source,
+            payload=record.model_dump(mode="json"),
+            geometry=geometry,
+        )
+        self._session.add(row)
+        await self._session.flush()
+        return row
+
+    async def list_submitted_records(
+        self, *, limit: int | None = None, offset: int = 0, source: str | None = None
+    ) -> list[SubmittedRecord]:
+        statement = select(SubmittedRecord)
+        if source is not None:
+            statement = statement.where(SubmittedRecord.source == source)
+        statement = statement.order_by(SubmittedRecord.created_at.desc(), SubmittedRecord.record_id.desc())
+        if limit is not None:
+            statement = statement.limit(limit).offset(offset)
+        return list(await self._session.scalars(statement))
+
+    async def get_submitted_record(self, record_id: str) -> SubmittedRecord | None:
+        return await self._session.get(SubmittedRecord, record_id)
+
+    async def latest_run_for_record(self, record_id: str) -> Run | None:
+        return await self._session.scalar(
+            select(Run)
+            .where(Run.record_id == record_id, Run.kind == "scenario")
+            .order_by(Run.created_at.desc())
+            .limit(1)
+        )
 
     # -- suppliers ------------------------------------------------------------
 

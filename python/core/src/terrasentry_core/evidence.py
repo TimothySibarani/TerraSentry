@@ -306,7 +306,8 @@ def build_source_ledger(
                 artifact={"supplier_id": consignment.supplier_id},
                 unit=unit,
                 retrieved_at=retrieved_at,
-                synthetic=True,
+                synthetic=consignment.synthetic,
+                disclosure=consignment.disclosure or None,
             )
 
     operator = input.operator

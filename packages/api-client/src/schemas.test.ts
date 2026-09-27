@@ -19,6 +19,11 @@ describe("HealthResponse", () => {
         fixtures_loaded: 0,
         sap_mode: "stub",
         sap_real: false,
+        bedrock_configured: false,
+        default_model: "scripted",
+        gfw_configured: true,
+        firms_configured: true,
+        auth_enabled: false,
       });
       assert.strictEqual(health.status, "ok");
       assert.strictEqual(health.offline, false);

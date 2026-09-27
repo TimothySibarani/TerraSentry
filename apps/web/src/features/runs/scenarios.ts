@@ -19,6 +19,6 @@ export const DEMO_SCENARIOS: ReadonlyArray<DemoScenario> = [
 		id: "high_risk_live",
 		label: "High-risk scenario",
 		description:
-			"Permit and satellite signals conflict: the supervisor re-tasks the legality agent and the verifier challenges the draft.",
+			"Riau peat plot with a suspended (synthetic) permit: the rubric flags high risk from the permit status alongside real GFW and FIRMS evidence, the verifier re-derives every metric, and the vendor is blocked in SAP (stub).",
 	},
 ];

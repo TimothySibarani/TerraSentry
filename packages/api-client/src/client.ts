@@ -8,13 +8,18 @@ import {
   HttpClientResponse,
 } from "effect/unstable/http";
 
-import { ApiClientError } from "./errors";
+import { ApiClientError, type FieldIssue } from "./errors";
 import {
   type BatchCreateRequest,
   BatchSummary,
   type DecisionRequest,
   EvidenceEntry,
+  type GeometryCheckRequest,
+  GeometryReport,
   HealthResponse,
+  ImportResult,
+  RecordOut,
+  type RecordSubmission,
   type RunCreateRequest,
   RunDetail,
   RunEvent,
@@ -24,7 +29,19 @@ import {
   SapVendorOut,
   SupplierDetail,
   SupplierOut,
+  ValidationErrorBody,
 } from "./schemas";
+
+/** Map FastAPI `detail[]` to dotted field paths (`["body","plot","geometry"]` → `plot.geometry`). */
+export const fieldIssues = (
+  body: ValidationErrorBody,
+): ReadonlyArray<FieldIssue> =>
+  body.detail.map((item) => ({
+    field: item.loc
+      .filter((part, index) => !(index === 0 && part === "body"))
+      .join("."),
+    message: item.msg,
+  }));
 
 export const decodeRunEventStream = <E, R>(
   stream: Stream.Stream<Uint8Array, E, R>,
@@ -83,6 +100,18 @@ export class ApiClient extends Context.Service<
       vendorId: string,
       payload: SapBlockRequest,
     ): Effect.Effect<SapVendorOut, ApiClientError>;
+    createRecord(
+      payload: RecordSubmission,
+    ): Effect.Effect<RecordOut, ApiClientError>;
+    validateGeometry(
+      payload: GeometryCheckRequest,
+    ): Effect.Effect<GeometryReport, ApiClientError>;
+    listRecords(): Effect.Effect<ReadonlyArray<RecordOut>, ApiClientError>;
+    getRecord(recordId: string): Effect.Effect<RecordOut, ApiClientError>;
+    importRecords(
+      file: Blob,
+      filename: string,
+    ): Effect.Effect<ImportResult, ApiClientError>;
     streamRun(
       runId: string,
     ): Effect.Effect<Stream.Stream<RunEvent, ApiClientError>, ApiClientError>;
@@ -94,6 +123,7 @@ export class ApiClient extends Context.Service<
   static layer(
     baseUrl: string,
     client: Layer.Layer<HttpClient.HttpClient> = FetchHttpClient.layer,
+    token?: string,
   ) {
     return Layer.effect(
       ApiClient,
@@ -103,6 +133,8 @@ export class ApiClient extends Context.Service<
             flow(
               HttpClientRequest.prependUrl(baseUrl),
               HttpClientRequest.acceptJson,
+              (request) =>
+                token ? HttpClientRequest.bearerToken(request, token) : request,
             ),
           ),
           HttpClient.filterStatusOk,
@@ -133,17 +165,47 @@ export class ApiClient extends Context.Service<
               Effect.mapError(fail(operation)),
             );
 
+        // A 422 carries field-level issues; decode them so forms can point at
+        // the exact input instead of showing a generic "invalid request".
+        const withIssues =
+          (operation: string) =>
+          (cause: unknown): Effect.Effect<never, ApiClientError> => {
+            const response = HttpClientError.isHttpClientError(cause)
+              ? cause.response
+              : undefined;
+            if (response === undefined || response.status !== 422) {
+              return Effect.fail(fail(operation)(cause));
+            }
+            return response.json.pipe(
+              Effect.flatMap(Schema.decodeUnknownEffect(ValidationErrorBody)),
+              Effect.map(fieldIssues),
+              Effect.orElseSucceed(() => [] as ReadonlyArray<FieldIssue>),
+              Effect.flatMap((issues) =>
+                Effect.fail(
+                  new ApiClientError({
+                    operation,
+                    cause,
+                    status: 422,
+                    issues,
+                  }),
+                ),
+              ),
+            );
+          };
+
         const sendJson = <S extends Schema.Constraint>(
           operation: string,
           schema: S,
           request: HttpClientRequest.HttpClientRequest,
         ) =>
-          http
-            .execute(request)
-            .pipe(
-              Effect.flatMap(HttpClientResponse.schemaBodyJson(schema)),
-              Effect.mapError(fail(operation)),
-            );
+          http.execute(request).pipe(
+            Effect.catch(withIssues(operation)),
+            Effect.flatMap((response) =>
+              HttpClientResponse.schemaBodyJson(schema)(response).pipe(
+                Effect.mapError(fail(operation)),
+              ),
+            ),
+          );
 
         const body = (method: "POST" | "PUT", url: string, payload: unknown) =>
           (method === "POST"
@@ -321,6 +383,59 @@ export class ApiClient extends Context.Service<
           );
         });
 
+        const createRecord = Effect.fn("ApiClient.createRecord")(function* (
+          payload: RecordSubmission,
+        ) {
+          return yield* sendJson(
+            "createRecord",
+            RecordOut,
+            body("POST", "/records", payload),
+          );
+        });
+
+        const validateGeometry = Effect.fn("ApiClient.validateGeometry")(
+          function* (payload: GeometryCheckRequest) {
+            return yield* sendJson(
+              "validateGeometry",
+              GeometryReport,
+              body("POST", "/records/validate-geometry", payload),
+            );
+          },
+        );
+
+        const listRecords = Effect.fn("ApiClient.listRecords")(function* () {
+          return yield* getJson(
+            "listRecords",
+            Schema.Array(RecordOut),
+            "/records",
+          );
+        });
+
+        const getRecord = Effect.fn("ApiClient.getRecord")(function* (
+          recordId: string,
+        ) {
+          return yield* getJson(
+            "getRecord",
+            RecordOut,
+            `/records/${encodeURIComponent(recordId)}`,
+          );
+        });
+
+        const importRecords = Effect.fn("ApiClient.importRecords")(function* (
+          file: Blob,
+          filename: string,
+        ) {
+          const form = new FormData();
+          form.append("file", file, filename);
+          return yield* sendJson(
+            "importRecords",
+            ImportResult,
+            HttpClientRequest.post("/records/import").pipe(
+              HttpClientRequest.bodyFormData(form),
+            ),
+          );
+        });
+
         const streamRun = Effect.fn("ApiClient.streamRun")(function* (
           runId: string,
         ) {
@@ -357,6 +472,11 @@ export class ApiClient extends Context.Service<
           getSapVendor,
           updateSapVendorStatus,
           setSapPurchasingBlock,
+          createRecord,
+          validateGeometry,
+          listRecords,
+          getRecord,
+          importRecords,
           streamRun,
           streamBatchRun,
         });

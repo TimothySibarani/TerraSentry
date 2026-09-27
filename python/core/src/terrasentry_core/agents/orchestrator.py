@@ -308,7 +308,7 @@ class RunOrchestrator:
             assessment=assessment,
             pending_assessment=pending,
             trace=trace.steps,
-            disclosures=self._datasets.disclosures,
+            disclosures=self._datasets.disclosures_for(record),
             started_at=started,
             finished_at=self._clock(),
         )

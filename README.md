@@ -5,8 +5,10 @@ parcels against real satellite and geospatial sources (Hansen GFC, NASA FIRMS), 
 deterministic rubric, and produces explainable, audit-ready due-diligence verdicts with a full agent
 trace.
 
-**Status:** M6 batch/throughput landed offline; the live rehearsal and the two live scenarios are
-gated on Day-1 API keys — see [docs/milestones.md](./docs/milestones.md) for progress.
+**Status:** Real input landed (S1): submit a plot in `/screen` (draw, paste, upload, or ≤4 ha point)
+with supplier, legality, and consignment, and get an agent-scored verdict and DDS without seed data.
+The live Bedrock run, the live rehearsal, and the two demo scenarios are gated on Day-1 AWS model
+access and API keys — see [docs/milestones.md](./docs/milestones.md) for progress.
 
 ## Stack
 

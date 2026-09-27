@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, model_validator
 from terrasentry_core.agents.verification import VerificationReport
 from terrasentry_core.domain.enums import RunState, Verdict
 from terrasentry_core.domain.models import Assessment, Finding
+from terrasentry_core.seed.schemas import BatchRecord
 from terrasentry_core.tools.trace import TraceStep
 from terrasentry_integrations.sap import VendorStatus
 
@@ -22,6 +23,7 @@ from terrasentry_api.models import DdsDocument as DdsRow
 from terrasentry_api.models import Parcel as ParcelRow
 from terrasentry_api.models import Run, RunVerdict
 from terrasentry_api.models import SapAction as SapActionRow
+from terrasentry_api.models import SubmittedRecord as SubmittedRecordRow
 from terrasentry_api.models import Supplier as SupplierRow
 from terrasentry_api.sap_actions import disclosure_for_mode
 
@@ -40,6 +42,11 @@ class HealthResponse(BaseModel):
     fixtures_loaded: int = 0
     sap_mode: str = "stub"
     sap_real: bool = False
+    bedrock_configured: bool = False
+    default_model: str = "scripted"
+    gfw_configured: bool = False
+    firms_configured: bool = False
+    auth_enabled: bool = False
 
 
 class RunCreate(BaseModel):
@@ -66,10 +73,11 @@ class DecisionCreate(BaseModel):
 
 
 class BatchCreate(BaseModel):
-    """Queue a deterministic batch run over the seed records."""
+    """Queue a deterministic batch run over the seed records or explicit record ids."""
 
     size: int = Field(default=50, ge=1, le=50)
     refresh: bool = False
+    record_ids: list[str] | None = Field(default=None, max_length=500)
 
 
 class ReviewOut(BaseModel):
@@ -86,7 +94,7 @@ class VerdictOut(BaseModel):
     supplier_id: str
     polygon_id: str
     run_state: RunState
-    expected_archetype: str
+    expected_archetype: str | None = None
     expected_signal: str | None = None
     expected_ambiguity: str | None = None
     fingerprint: str
@@ -306,7 +314,7 @@ class ParcelOut(BaseModel):
     centroid_lat: float
     centroid_lon: float
     geometry: dict[str, Any]
-    archetype: str
+    archetype: str | None = None
     scenario: str | None = None
     is_demo: bool
 
@@ -345,6 +353,7 @@ class SupplierOut(BaseModel):
     certifications: list[str] = Field(default_factory=list)
     sanctions: list[str] = Field(default_factory=list)
     synthetic: bool
+    provenance: str = "synthetic"
     disclosure: str = ""
 
     @classmethod
@@ -366,8 +375,111 @@ class SupplierOut(BaseModel):
             certifications=row.certifications,
             sanctions=row.sanctions,
             synthetic=row.synthetic,
+            provenance=row.provenance,
             disclosure=row.disclosure,
         )
+
+
+class LatestRunOut(BaseModel):
+    run_id: str
+    state: RunState
+    verdict: Verdict | None = None
+    score: int | None = None
+    model: str
+    created_at: datetime
+
+
+class RecordOut(BaseModel):
+    """A submitted plot record, as stored, with the latest screening run."""
+
+    record_id: str
+    supplier_id: str
+    polygon_id: str
+    source: str
+    created_at: datetime
+    label: str
+    region: str
+    area_ha: float
+    centroid_lat: float
+    centroid_lon: float
+    geometry_type: str
+    geometry: dict[str, Any]
+    legal_name: str
+    commodity: str
+    description: str
+    hs_heading: str
+    net_weight_kg: float
+    permit_status: str
+    hgu_number: str | None = None
+    pbp_number: str | None = None
+    provenance: str
+    disclosure: str
+    latest_run: LatestRunOut | None = None
+
+    @classmethod
+    def from_parts(
+        cls,
+        row: SubmittedRecordRow,
+        *,
+        latest: Run | None = None,
+        verdict: RunVerdict | None = None,
+    ) -> RecordOut:
+        record = BatchRecord.model_validate(row.payload)
+        return cls(
+            record_id=record.record_id,
+            supplier_id=record.supplier_id,
+            polygon_id=record.polygon.id,
+            source=row.source,
+            created_at=row.created_at,
+            label=record.polygon.label,
+            region=record.polygon.region,
+            area_ha=record.polygon.area_ha,
+            centroid_lat=record.polygon.centroid_lat,
+            centroid_lon=record.polygon.centroid_lon,
+            geometry_type=str(row.geometry.get("type", "")),
+            geometry=row.geometry,
+            legal_name=record.legality.legal_name,
+            commodity=record.consignment.commodity,
+            description=record.consignment.description,
+            hs_heading=record.consignment.hs_heading,
+            net_weight_kg=record.consignment.net_weight_kg,
+            permit_status=record.legality.permit_status,
+            hgu_number=record.legality.hgu_number,
+            pbp_number=record.legality.pbp_number,
+            provenance=record.legality.provenance,
+            disclosure=record.legality.disclosure,
+            latest_run=(
+                LatestRunOut(
+                    run_id=latest.id,
+                    state=latest.state,
+                    verdict=verdict.verdict if verdict is not None else None,
+                    score=verdict.score if verdict is not None else None,
+                    model=latest.model,
+                    created_at=latest.created_at,
+                )
+                if latest is not None
+                else None
+            ),
+        )
+
+
+class GeometryCheck(BaseModel):
+    """Validate a plot geometry without creating a record (live form feedback)."""
+
+    geometry: dict[str, Any]
+    declared_area_ha: float | None = Field(default=None, gt=0)
+
+
+class ImportRowError(BaseModel):
+    row: int
+    field: str
+    message: str
+
+
+class ImportResult(BaseModel):
+    created: list[RecordOut] = Field(default_factory=list)
+    errors: list[ImportRowError] = Field(default_factory=list)
+    total_rows: int
 
 
 class SapActionOut(BaseModel):
@@ -465,7 +577,12 @@ __all__ = [
     "BatchSummary",
     "DdsMeta",
     "DecisionCreate",
+    "GeometryCheck",
+    "ImportResult",
+    "ImportRowError",
+    "LatestRunOut",
     "ParcelOut",
+    "RecordOut",
     "ReviewOut",
     "RunCreate",
     "RunDetail",

@@ -28,6 +28,10 @@ class AgentSettings(BaseSettings):
     bedrock_model_extraction: str = ""
     agent_temperature: float = Field(default=0.0, ge=0.0, le=1.0)
     agent_max_tokens: int = Field(default=2048, gt=0)
+    #: Sent as ``additional_request_fields.reasoning_effort`` when set; models
+    #: differ in what they accept (gpt-oss: low|medium|high, GPT-6: none..max).
+    #: Empty means "use the model default" and no field is sent.
+    bedrock_reasoning_effort: Literal["", "none", "low", "medium", "high", "xhigh", "max"] = ""
     agent_retry_max_attempts: int = Field(default=5, ge=1, le=10)
     agent_read_timeout_seconds: int = Field(default=120, gt=0)
     bedrock_prompt_cache: PromptCacheMode = "off"
@@ -57,4 +61,3 @@ def get_agent_settings() -> AgentSettings:
 
 
 __all__ = ["AgentSettings", "ModelRole", "PromptCacheMode", "get_agent_settings"]
-

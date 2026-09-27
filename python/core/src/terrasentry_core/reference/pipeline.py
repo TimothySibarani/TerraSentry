@@ -23,7 +23,7 @@ class PolygonReport(BaseModel):
     polygon_id: str
     label: str
     region: str
-    archetype: str
+    archetype: str | None = None
     area_ha: float
     loss: TreeCoverLossResult | None = None
     hotspots: FirmsHotspotResult | None = None

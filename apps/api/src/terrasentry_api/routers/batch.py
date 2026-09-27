@@ -41,6 +41,7 @@ async def create_batch(
     batch_run_id = await services.run_manager.start_batch(
         size=payload.size,
         refresh=payload.refresh,
+        record_ids=payload.record_ids,
     )
     return await _summary(RunStore(session), batch_run_id)
 

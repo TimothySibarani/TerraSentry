@@ -15,7 +15,7 @@ Prove, live, that the Supervisor→Specialist→Verifier agent pattern can (a) r
 | Geospatial Analyst Agent | Real — GFW/Hansen GFC API, live polygon analysis |
 | Thermal & Anomaly Agent | Real — NASA FIRMS API, live hotspot query |
 | Independent Verifier Agent | Real — LLM-based cross-check, no external dependency |
-| Legality & Entity Agent | Mocked — curated synthetic legality dataset, disclosed as such |
+| Legality & Entity Agent | Supplier-declared with provenance (S1); the seed demo dataset remains synthetic and labelled |
 | Supervisor Orchestrator | Real — tool-calling orchestration (Bedrock AgentCore or direct model tool-use) |
 | Compliance & DDS Writer | Real — generates structured JSON/XML DDS payload from agent outputs |
 | SAP Ariba / S/4HANA / Joule actions | Mocked — via BTP Integration Suite sandbox, or real if sandbox access is granted (see Risks) |
@@ -24,7 +24,7 @@ Prove, live, that the Supervisor→Specialist→Verifier agent pattern can (a) r
 
 ## 3. Out of scope (explicitly, to protect build time)
 
-- Real-time HGU/PBPH registry integration (no public API exists for this — synthetic dataset only)
+- Real-time HGU/PBPH registry integration (no public API exists for this — TerraSentry uses supplier declarations today, uploaded documents next, and the seed dataset is labelled demo data)
 - Real SAP Ariba/S/4HANA writes unless sandbox credentials are confirmed before build starts
 - UI polish beyond a functional cockpit/dashboard — a clean table + status view is sufficient
 - Handling of edge cases outside the 2 scenario archetypes (e.g., partial/ambiguous polygons) beyond what's needed to demonstrate the Ambiguous/HITL branch once

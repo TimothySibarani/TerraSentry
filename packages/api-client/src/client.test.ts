@@ -87,6 +87,11 @@ describe("ApiClient", () => {
             fixtures_loaded: 0,
             sap_mode: "stub",
             sap_real: false,
+            bedrock_configured: true,
+            default_model: "scripted",
+            gfw_configured: true,
+            firms_configured: true,
+            auth_enabled: false,
           });
         }),
       ),
@@ -139,6 +144,60 @@ describe("ApiClient", () => {
       assert.strictEqual(error.status, 404);
     }).pipe(
       Effect.provide(apiLayer(() => jsonResponse({ detail: "no run" }, 404))),
+    ),
+  );
+
+  it.effect("surfaces 422 field issues on intake errors", () =>
+    Effect.gen(function* () {
+      const api = yield* ApiClient;
+      const error = yield* api
+        .validateGeometry({ geometry: { type: "Point", coordinates: [0, 0] } })
+        .pipe(Effect.flip);
+      assert.strictEqual(error.status, 422);
+      assert.deepStrictEqual(error.issues, [
+        {
+          field: "plot.declared_area_ha",
+          message: "a point plot needs a declared area (at most 4 ha)",
+        },
+      ]);
+    }).pipe(
+      Effect.provide(
+        apiLayer(() =>
+          jsonResponse(
+            {
+              detail: [
+                {
+                  loc: ["body", "plot", "declared_area_ha"],
+                  msg: "a point plot needs a declared area (at most 4 ha)",
+                  type: "intake",
+                },
+              ],
+            },
+            422,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  it.effect("sends a bearer token when configured", () =>
+    Effect.gen(function* () {
+      const api = yield* ApiClient;
+      yield* api.getHealth().pipe(Effect.ignore);
+    }).pipe(
+      Effect.provide(
+        ApiClient.layer(
+          "http://terrasentry.test",
+          stubLayer((request) => {
+            assert.strictEqual(
+              request.headers.authorization,
+              "Bearer demo-token",
+            );
+            return jsonResponse({ detail: "stop" }, 404);
+          }),
+          "demo-token",
+        ),
+      ),
     ),
   );
 });

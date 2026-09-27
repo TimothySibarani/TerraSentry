@@ -14,6 +14,7 @@ client config is passed), explicit ``max_tokens``, and opt-in prompt caching.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import boto3
 from botocore.config import Config as BotocoreConfig
@@ -91,6 +92,9 @@ def build_model(role: ModelRole, *, settings: AgentSettings | None = None) -> Mo
 
     cached = cache_config(resolved)
     client = client_config(resolved)
+    extra: dict[str, Any] = {}
+    if resolved.bedrock_reasoning_effort:
+        extra["additional_request_fields"] = {"reasoning_effort": resolved.bedrock_reasoning_effort}
     try:
         if resolved.has_profile:
             return BedrockModel(
@@ -100,6 +104,7 @@ def build_model(role: ModelRole, *, settings: AgentSettings | None = None) -> Mo
                 max_tokens=resolved.agent_max_tokens,
                 boto_client_config=client,
                 cache_config=cached,
+                **extra,
             )
         return BedrockModel(
             region_name=resolved.aws_region,
@@ -108,6 +113,7 @@ def build_model(role: ModelRole, *, settings: AgentSettings | None = None) -> Mo
             max_tokens=resolved.agent_max_tokens,
             boto_client_config=client,
             cache_config=cached,
+            **extra,
         )
     except ProfileNotFound as exc:
         raise ModelConfigurationError(

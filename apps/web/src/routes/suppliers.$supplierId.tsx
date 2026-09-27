@@ -51,7 +51,9 @@ function SupplierDetailPage() {
 						geometry,
 						label: parcel.label,
 						detail: `${parcel.region} · ${formatNumber(parcel.area_ha)} ha`,
-						tone: ARCHETYPE_TONE[parcel.archetype] ?? "neutral",
+						tone: parcel.archetype
+							? (ARCHETYPE_TONE[parcel.archetype] ?? "neutral")
+							: "neutral",
 					},
 				];
 			}),
@@ -207,17 +209,21 @@ function SupplierDetailPage() {
 								<span className="flex flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2">
 									<span className="font-mono text-xs">{parcel.polygon_id}</span>
 									<span className="text-body-sm">{parcel.label}</span>
-									<Badge
-										variant={
-											parcel.archetype === "high_risk"
-												? "risk"
-												: parcel.archetype === "ambiguous"
-													? "review"
-													: "compliant"
-										}
-									>
-										{parcel.archetype}
-									</Badge>
+									{parcel.archetype ? (
+										<Badge
+											variant={
+												parcel.archetype === "high_risk"
+													? "risk"
+													: parcel.archetype === "ambiguous"
+														? "review"
+														: "compliant"
+											}
+										>
+											{parcel.archetype}
+										</Badge>
+									) : (
+										<Badge variant="outline">submitted</Badge>
+									)}
 									{parcel.scenario && (
 										<Badge variant="outline">{parcel.scenario}</Badge>
 									)}

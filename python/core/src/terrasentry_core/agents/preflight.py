@@ -33,7 +33,9 @@ from terrasentry_core.agents.models import CONNECT_TIMEOUT_SECONDS, build_model,
 from terrasentry_core.agents.settings import AgentSettings, ModelRole, get_agent_settings
 
 _PING_PROMPT = "Reply with the single word ok."
-PING_MAX_TOKENS = 16
+#: Reasoning models (GPT-6, gpt-oss) spend tokens thinking before they answer,
+#: so the ping needs headroom even for a one-word reply.
+PING_MAX_TOKENS = 256
 _ROLES: tuple[ModelRole, ...] = ("orchestrator", "extraction")
 
 

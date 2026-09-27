@@ -573,12 +573,13 @@ web app only receives `VITE_*` values at build time.
 | Geospatial Analyst (GFW/Hansen) | Real API | `python/integrations/.../sources/` + `python/core/.../agents/` |
 | Thermal & Anomaly (NASA FIRMS) | Real API | same, separate source client + specialist |
 | Independent Verifier | Real (LLM cross-check) | `python/core/.../agents/verifier.py` |
-| Legality & Entity | Simulated, labelled | `data/seed/` + legality specialist |
+| Plot intake (submitted records) | Real — validated WGS84 geometry, persisted across restarts, provenance on every field | `python/core/.../intake.py`, `apps/api/.../routers/records.py`, `/screen` |
+| Legality & Entity | Submitted: declared by the supplier (the GFW cross-checks land in S2); seed demo data: simulated and labelled | `python/core/.../intake.py` + `data/seed/` + legality specialist |
 | Supervisor | Real (Strands graph) | `python/core/.../agents/supervisor.py` |
 | Compliance & DDS Writer | Real (JSON/XML) | `python/core/.../dds.py` |
 | SAP actions | Stub by default (schema-accurate); sandbox/live ready and disclosed per action | `python/integrations/.../sap/` + `apps/api/.../sap_actions.py` |
 | 2 live scenarios | Real data, full trace | seeded polygons in `data/seed/` + fixtures cache |
-| 50-record batch | Real GFW/FIRMS calls per record, synthetic legality | `apps/api` batch worker + `data/seed/` |
+| 50-record batch | Seed records: real GFW/FIRMS + synthetic legality; submitted records: real sources + supplier-declared legality | `apps/api` batch worker + `records` table |
 
 ---
 
@@ -768,6 +769,28 @@ supplier ERP cards, an SAP mode badge, the `sap` trace icon, and ERP counts on t
 throughput card. The stub payload field names were checked against the S/4HANA
 `API_BUSINESS_PARTNER` docs (`PurchasingIsBlocked`, `PostingIsBlocked`,
 `PaymentIsBlockedForSupplier`, `BusinessPartnerIsBlocked`).
+
+S1 landed (2026-09-26; live Bedrock leg gated on `BEDROCK_MODEL_*` + credentials): real input
+without seed data. `python/core/src/terrasentry_core/intake.py` is the trust boundary for
+submitted plots — WGS84 GeoJSON Polygon/MultiPolygon/Point validated with shapely (validity,
+bounds, 5,000-vertex cap, 0.01–10,000 ha, EUDR point ≤ 4 ha buffered geodesically for source
+queries, 6-decimal rounding) and returned as the same `BatchRecord` shape the seed uses, with
+`expected_archetype=None` and `supplier_declared` provenance/disclosure. Submissions persist in
+the new `records` table (`source`, payload JSON, geometry; Alembic `7c1e4b9d2a10`) and register
+into `SeedDatasets` at submit and at startup, so runs resolve after a restart. The API adds
+`POST/GET /records` (with a `source` filter), bulk CSV/GeoJSON import with per-row errors (5 MB /
+500 rows; BOM and delimiter sniffing), `POST /records/validate-geometry`, `BatchCreate.record_ids`,
+and an optional `API_TOKEN` bearer guard on non-GET routes (`/health.auth_enabled`). The cockpit
+adds `/screen`: a five-step flow (draw with terra-draw on MapLibre, paste, upload, or ≤4 ha point;
+supplier; legality; consignment; review) with server-measured geometry, per-field 422 mapping, and
+the `Bedrock (live)` option disabled until `/health.bedrock_configured`. Verification: 214 Python
+tests, 52 web tests, and 17 client tests green; `pnpm check` clean; the Alembic up/down/check cycle
+clean on Postgres; a browser end-to-end run (sample polygon → supplier/legality/consignment →
+scripted run → DDS naming the submitted producer) with no console errors; and the generated client
+diff-stable via `pnpm gen:api`. U1 closed 2026-09-27: the live path runs on Bedrock
+(`openai.gpt-oss-120b-1:0`, `BEDROCK_REASONING_EFFORT=low`; GPT-6 needs the Paid plan) — the
+preflight passes both roles and `high_risk_live` completed live with a 23-step real trace, released
+DDS, and a SAP block under a least-privilege IAM policy (`docs/milestones.md` 2026-09-27).
 
 ---
 

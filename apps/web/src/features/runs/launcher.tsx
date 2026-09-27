@@ -16,12 +16,8 @@ import {
 } from "#/components/ui/select";
 import { Spinner } from "#/components/ui/spinner";
 import { useCreateBatch, useCreateRun } from "#/features/runs/mutations";
+import { ModelSelect, useDefaultModel } from "#/features/runs/model-select";
 import { DEMO_SCENARIOS } from "#/features/runs/scenarios";
-
-const MODEL_ITEMS = {
-	scripted: "Scripted (offline)",
-	bedrock: "Bedrock (live)",
-} as const;
 
 const CACHE_ITEMS = {
 	cache: "Use cached sources",
@@ -38,14 +34,16 @@ export function RunLauncher({
 	const navigate = useNavigate();
 	const createRun = useCreateRun();
 	const createBatch = useCreateBatch();
-	const [model, setModel] = useState<ModelMode>("scripted");
+	const defaultModel = useDefaultModel();
+	const [model, setModel] = useState<ModelMode | null>(null);
+	const selectedModel = model ?? defaultModel;
 	const [cacheMode, setCacheMode] = useState<"cache" | "refresh">("cache");
 
 	const refresh = cacheMode === "refresh";
 
 	const startScenario = (scenario: string) => {
 		createRun.mutate(
-			{ scenario, model, refresh },
+			{ scenario, model: selectedModel, refresh },
 			{
 				onSuccess: (run) =>
 					void navigate({
@@ -75,24 +73,12 @@ export function RunLauncher({
 	return (
 		<div className="flex flex-col gap-4">
 			<FieldGroup className="flex-row flex-wrap items-end gap-3">
-				<Field className="w-44">
-					<FieldLabel htmlFor="run-model">Model</FieldLabel>
-					<Select
-						items={MODEL_ITEMS}
-						value={model}
-						onValueChange={(value) => setModel(value as ModelMode)}
-					>
-						<SelectTrigger id="run-model" className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectGroup>
-								<SelectItem value="scripted">Scripted (offline)</SelectItem>
-								<SelectItem value="bedrock">Bedrock (live)</SelectItem>
-							</SelectGroup>
-						</SelectContent>
-					</Select>
-				</Field>
+				<ModelSelect
+					id="run-model"
+					className="w-52"
+					value={selectedModel}
+					onChange={setModel}
+				/>
 				<Field className="w-52">
 					<FieldLabel htmlFor="run-cache">Source data</FieldLabel>
 					<Select

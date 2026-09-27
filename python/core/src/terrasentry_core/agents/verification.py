@@ -195,6 +195,9 @@ def _design_challenges(
     challenges: list[VerificationChallenge] = []
     checked: list[str] = []
     verdict = candidate.assessment.verdict.value
+    if record.expected_archetype is None:
+        # Submitted plots carry no design labels; there is nothing to cross-check.
+        return challenges, checked
     if record.expected_archetype != verdict:
         challenges.append(
             VerificationChallenge(
