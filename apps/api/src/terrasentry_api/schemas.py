@@ -8,14 +8,14 @@ so the API cannot drift from the engine.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Literal
+from datetime import date, datetime
+from typing import Any, Literal, cast
 
 from pydantic import BaseModel, Field, model_validator
 from terrasentry_core.agents.verification import VerificationReport
 from terrasentry_core.domain.enums import RunState, Verdict
 from terrasentry_core.domain.models import Assessment, Finding
-from terrasentry_core.seed.schemas import BatchRecord
+from terrasentry_core.seed.schemas import BatchRecord, OperatorRecord, Provenance
 from terrasentry_core.tools.trace import TraceStep
 from terrasentry_integrations.sap import VendorStatus
 
@@ -114,6 +114,7 @@ class VerdictOut(BaseModel):
             fingerprint=row.fingerprint,
             pending=row.pending,
             assessment=Assessment(
+                assessment_date=row.assessment_date,
                 record_id=row.record_id,
                 supplier_id=row.supplier_id,
                 polygon_id=row.polygon_id,
@@ -156,6 +157,8 @@ class RunSummary(BaseModel):
     polygon_id: str | None = None
     parent_run_id: str | None = None
     model: str
+    assessment_date: date | None = None
+    operator_profile: OperatorRecord | None = None
     summary: str = ""
     error: str | None = None
     verdict: Verdict | None = None
@@ -185,6 +188,10 @@ class RunSummary(BaseModel):
             polygon_id=run.polygon_id,
             parent_run_id=run.parent_run_id,
             model=run.model,
+            assessment_date=run.assessment_date,
+            operator_profile=OperatorRecord.model_validate(run.operator_profile)
+            if run.operator_profile
+            else None,
             summary=run.summary,
             error=run.error,
             verdict=verdict.verdict if verdict is not None else None,
@@ -305,6 +312,8 @@ class BatchSummary(BaseModel):
 
 
 class ParcelOut(BaseModel):
+    country: str | None = None
+    provenance: Provenance = "legacy_unknown"
     polygon_id: str
     supplier_id: str
     label: str
@@ -321,6 +330,8 @@ class ParcelOut(BaseModel):
     @classmethod
     def from_row(cls, row: ParcelRow) -> ParcelOut:
         return cls(
+            country=row.country,
+            provenance=cast(Provenance, row.provenance),
             polygon_id=row.polygon_id,
             supplier_id=row.supplier_id,
             label=row.label,
@@ -346,6 +357,8 @@ class SupplierOut(BaseModel):
     hgu_number: str | None = None
     pbp_number: str | None = None
     permit_status: str
+    permit_expiry: date | None = None
+    declared_holder: str | None = None
     concession_area_ha: float
     province: str
     kabupaten: str
@@ -368,6 +381,8 @@ class SupplierOut(BaseModel):
             hgu_number=row.hgu_number,
             pbp_number=row.pbp_number,
             permit_status=row.permit_status,
+            permit_expiry=row.permit_expiry,
+            declared_holder=row.declared_holder,
             concession_area_ha=row.concession_area_ha,
             province=row.province,
             kabupaten=row.kabupaten,
@@ -390,6 +405,8 @@ class LatestRunOut(BaseModel):
 
 
 class RecordOut(BaseModel):
+    country: str | None = None
+    geometry_provenance: Provenance = "legacy_unknown"
     """A submitted plot record, as stored, with the latest screening run."""
 
     record_id: str
@@ -410,6 +427,8 @@ class RecordOut(BaseModel):
     hs_heading: str
     net_weight_kg: float
     permit_status: str
+    permit_expiry: date | None = None
+    declared_holder: str | None = None
     hgu_number: str | None = None
     pbp_number: str | None = None
     provenance: str
@@ -431,6 +450,8 @@ class RecordOut(BaseModel):
             polygon_id=record.polygon.id,
             source=row.source,
             created_at=row.created_at,
+            country=record.polygon.country,
+            geometry_provenance=record.polygon.provenance,
             label=record.polygon.label,
             region=record.polygon.region,
             area_ha=record.polygon.area_ha,
@@ -444,6 +465,8 @@ class RecordOut(BaseModel):
             hs_heading=record.consignment.hs_heading,
             net_weight_kg=record.consignment.net_weight_kg,
             permit_status=record.legality.permit_status,
+            permit_expiry=record.legality.permit_expiry,
+            declared_holder=record.legality.declared_holder,
             hgu_number=record.legality.hgu_number,
             pbp_number=record.legality.pbp_number,
             provenance=record.legality.provenance,

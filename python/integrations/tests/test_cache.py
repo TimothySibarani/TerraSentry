@@ -2,8 +2,20 @@ from datetime import UTC, datetime
 
 import fakeredis.aioredis
 import pytest
-from terrasentry_integrations.cache import CacheEntry, MemoryCache, RedisCache
+from terrasentry_integrations.cache import CacheEntry, MemoryCache, RedisCache, geometry_hash
 from terrasentry_integrations.errors import CacheMissError
+
+
+def test_geometry_identity_preserves_query_precision_and_versions_old_keys() -> None:
+    import hashlib
+    import json
+
+    a = {"type": "Point", "coordinates": [101.0000001, 0.0]}
+    b = {"coordinates": [101.0000001, 0.0], "type": "Point"}
+    assert geometry_hash(a) == geometry_hash(b)
+    assert geometry_hash(a) != geometry_hash({**a, "coordinates": [101.0000004, 0.0]})
+    old = json.dumps({"coordinates": [101.0, 0.0], "type": "Point"}, separators=(",", ":"), sort_keys=True)
+    assert geometry_hash(a) != hashlib.sha256(old.encode()).hexdigest()
 
 
 def _entry(source: str = "gfw") -> CacheEntry:

@@ -23,6 +23,7 @@ export function TextField({
 	required = false,
 	placeholder,
 	inputMode,
+	type = "text",
 	className,
 	autoComplete = "off",
 	suffix,
@@ -35,6 +36,7 @@ export function TextField({
 	description?: ReactNode;
 	required?: boolean;
 	placeholder?: string;
+	type?: "text" | "date" | "email";
 	inputMode?: "text" | "decimal" | "numeric";
 	className?: string;
 	autoComplete?: string;
@@ -60,6 +62,7 @@ export function TextField({
 			<div className="relative">
 				<Input
 					id={id}
+					type={type}
 					value={value}
 					onChange={(event) => onChange(event.target.value)}
 					aria-invalid={error ? true : undefined}

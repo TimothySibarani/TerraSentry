@@ -272,7 +272,8 @@ def _prefetch_command(args: argparse.Namespace, datasets: SeedDatasets) -> int:
         print(f"as_of        {as_of.isoformat() if as_of else 'today'}")
         print(
             f"plan         {len(records)} records, "
-            f"{len(records)} GFW + {len(records) * firms_requests} FIRMS requests"
+            f"at least {len(records) * 8} GFW (loss + 7 context layers) + "
+            f"{len(records) * firms_requests} FIRMS requests"
         )
         for record in records:
             polygon = record.polygon

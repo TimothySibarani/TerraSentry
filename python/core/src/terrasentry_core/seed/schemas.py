@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from terrasentry_core.countries import normalize_country
 
 Archetype = Literal["compliant", "high_risk", "ambiguous"]
 Scenario = Literal["compliant_live", "high_risk_live"]
@@ -12,7 +15,16 @@ ExpectedSignal = Literal["deforestation", "fire", "legal"]
 AmbiguityReason = Literal["borderline_area", "old_fire_scar", "permit_gap"]
 Commodity = Literal["oil_palm", "wood", "rubber", "cocoa", "coffee"]
 #: Where a legality/consignment value came from; shown next to every evidence row.
-Provenance = Literal["synthetic", "supplier_declared", "document_extracted", "sap_import"]
+Provenance = Literal[
+    "synthetic",
+    "supplier_declared",
+    "document_extracted",
+    "sap_import",
+    "real_source",
+    "operator_configured",
+    "derived",
+    "legacy_unknown",
+]
 
 SEED_SCHEMA_VERSION = 2
 
@@ -31,6 +43,8 @@ CONSIGNMENT_DISCLOSURE = (
 
 
 class SeedPolygon(BaseModel):
+    country: str | None = None
+    provenance: Provenance = "synthetic"
     id: str
     label: str
     region: str
@@ -43,6 +57,12 @@ class SeedPolygon(BaseModel):
     centroid_lat: float
     centroid_lon: float
     geometry: dict[str, Any]
+    input_geometry: dict[str, Any] | None = None
+
+    @field_validator("country")
+    @classmethod
+    def _country(cls, value: str | None) -> str | None:
+        return normalize_country(value) if value is not None else None
 
 
 class SeedDataset(BaseModel):
@@ -52,8 +72,17 @@ class SeedDataset(BaseModel):
     generated_by: str = "terrasentry_core.seed"
     polygons: list[SeedPolygon]
 
+    @model_validator(mode="after")
+    def _seed_country(self) -> SeedDataset:
+        for polygon in self.polygons:
+            if polygon.country is None:
+                polygon.country = "ID"
+        return self
+
 
 class LegalityRecord(BaseModel):
+    permit_expiry: date | None = None
+    declared_holder: str | None = None
     supplier_id: str
     legal_name: str
     trading_name: str
@@ -110,12 +139,13 @@ class OperatorRecord(BaseModel):
     address_line: str
     postal_code: str
     city: str
-    country: Literal["NL"] = "NL"
+    country: str = "NL"
     email: str
     phone: str
     activity_type: Literal["IMPORT", "EXPORT", "DOMESTIC"] = "IMPORT"
-    country_of_activity: Literal["NL"] = "NL"
-    border_cross_country: Literal["NL"] = "NL"
+    country_of_activity: str = "NL"
+    border_cross_country: str = "NL"
+    provenance: Provenance = "synthetic"
     synthetic: bool = True
     disclosure: str = LEGALITY_DISCLOSURE
 
@@ -145,3 +175,10 @@ class BatchDataset(BaseModel):
     distribution: dict[str, int]
     disclosure: str = POLYGON_DISCLOSURE
     records: list[BatchRecord]
+
+    @model_validator(mode="after")
+    def _seed_country(self) -> BatchDataset:
+        for record in self.records:
+            if record.legality.synthetic and record.polygon.country is None:
+                record.polygon.country = "ID"
+        return self

@@ -108,3 +108,18 @@ def scripted_models(record: Any, *, review: VerificationReport | None = None) ->
         orchestrator=ScriptedModel(responder=responder),
         extraction=ScriptedModel(responder=responder),
     )
+
+
+def mock_context_layers(router):
+    from terrasentry_integrations.sources.gfw_layers import LAYER_DEFINITIONS
+
+    for name, (dataset, version, _, _) in LAYER_DEFINITIONS.items():
+        router.post(f"https://data-api.globalforestwatch.org/dataset/{dataset}/{version}/query/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "status": "success",
+                    "data": [{"overlap_ha": 0}] if name in {"peatlands", "forest_baseline"} else [],
+                },
+            )
+        )

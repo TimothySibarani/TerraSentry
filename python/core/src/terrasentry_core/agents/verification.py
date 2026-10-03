@@ -8,12 +8,12 @@ challenges the narrative. Both run before the writer node may release the DDS.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from terrasentry_core.assessment.pipeline import RecordAssessment
+from terrasentry_core.assessment.pipeline import RecordAssessment, assess_record
 from terrasentry_core.dds import validate_citations
 from terrasentry_core.domain.enums import FindingCode, FindingLevel
 from terrasentry_core.domain.models import Finding
@@ -21,7 +21,7 @@ from terrasentry_core.errors import LedgerLookupError, UncitedClaimError
 from terrasentry_core.evidence import EvidenceLedger
 from terrasentry_core.reference.pipeline import PolygonReport
 from terrasentry_core.scoring import RubricConfig
-from terrasentry_core.seed.schemas import BatchRecord, ExpectedSignal
+from terrasentry_core.seed.schemas import BatchRecord, ExpectedSignal, OperatorRecord
 from terrasentry_core.tools.sources import PolygonSources
 
 ChallengeKind = Literal[
@@ -77,6 +77,7 @@ def _polygon_report(record: BatchRecord, sources: PolygonSources) -> PolygonRepo
         area_ha=polygon.area_ha,
         loss=sources.loss,
         hotspots=sources.hotspots,
+        layers=sources.layers,
         errors=list(sources.errors),
     )
 
@@ -91,11 +92,8 @@ def _derived_metrics(
     supplier = record.legality
     derived: dict[FindingCode, dict[str, float | int | str]] = {}
     if sources.loss is not None:
-        post_cutoff = round(
-            sum(item.loss_ha for item in sources.loss.by_year if item.year >= config.cutoff_year),
-            4,
-        )
-        ratio = round(post_cutoff / parcel.area_ha, 4) if parcel.area_ha > 0 else 0.0
+        post_cutoff = sum(item.loss_ha for item in sources.loss.by_year if item.year >= config.cutoff_year)
+        ratio = post_cutoff / parcel.area_ha if parcel.area_ha > 0 else 0.0
         derived[FindingCode.DEFORESTATION_LOSS] = {
             "post_cutoff_loss_ha": post_cutoff,
             "loss_ratio": ratio,
@@ -243,6 +241,8 @@ def code_checks(
     record: BatchRecord,
     sources: PolygonSources,
     *,
+    operator: OperatorRecord,
+    assessment_date: date | None = None,
     retrieved_at: datetime | None = None,
     config: RubricConfig | None = None,
 ) -> VerificationReport:
@@ -268,6 +268,39 @@ def code_checks(
     metric_challenges, metric_checked = _metric_challenges(candidate, record, sources, resolved)
     challenges.extend(metric_challenges)
     checked.extend(metric_checked)
+
+    expected = assess_record(
+        _polygon_report(record, sources),
+        record,
+        operator,
+        assessment_date=assessment_date,
+        retrieved_at=retrieved_at,
+        config=resolved,
+    )
+    comparisons = {
+        "assessment_date": (candidate.assessment_date, expected.assessment_date),
+        "assessment": (candidate.assessment, expected.assessment),
+        "dds": (candidate.dds, expected.dds),
+        "fingerprint": (candidate.fingerprint, expected.fingerprint),
+        "run_state": (candidate.run_state, expected.run_state),
+        "supplier_id": (candidate.supplier_id, expected.supplier_id),
+        "polygon_id": (candidate.polygon_id, expected.polygon_id),
+        "source_polygon": (sources.polygon_id, record.polygon.id),
+        "evidence": (
+            [entry.model_dump(exclude={"retrieved_at", "cached"}) for entry in candidate.evidence],
+            [entry.model_dump(exclude={"retrieved_at", "cached"}) for entry in expected.evidence],
+        ),
+    }
+    for claim, (observed, correct) in comparisons.items():
+        checked.append(f"outcome.{claim}")
+        if observed != correct:
+            challenges.append(
+                VerificationChallenge(
+                    kind="metric_mismatch",
+                    severity="error",
+                    detail=f"candidate {claim} differs from deterministic re-derivation",
+                )
+            )
 
     findings = {finding.code: finding for finding in candidate.assessment.findings}
     design_challenges, design_checked = _design_challenges(candidate, record, findings)

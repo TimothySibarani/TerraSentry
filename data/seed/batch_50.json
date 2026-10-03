@@ -12,6 +12,8 @@
       "record_id": "REC-001",
       "supplier_id": "SUP-001",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-001",
         "label": "Live scenario B — high risk (Riau peat forests)",
         "region": "Riau peat forests",
@@ -56,9 +58,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-001",
         "legal_name": "PT Sumber Sejahtera Sriwijaya",
         "trading_name": "Sumber Sejahtera Sriwijaya (SYNTH-001)",
@@ -107,6 +112,8 @@
       "record_id": "REC-002",
       "supplier_id": "SUP-002",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-002",
         "label": "Live scenario A — compliant (Jambi lowland forest)",
         "region": "Jambi lowland forest",
@@ -139,9 +146,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-002",
         "legal_name": "PT Agro Sejahtera Borneo",
         "trading_name": "Agro Sejahtera Borneo (SYNTH-002)",
@@ -190,6 +200,8 @@
       "record_id": "REC-003",
       "supplier_id": "SUP-003",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-003",
         "label": "Demo high_risk — South Sumatra peat forest",
         "region": "South Sumatra peat forest",
@@ -230,9 +242,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-003",
         "legal_name": "PT Mitra Makmur Khatulistiwa",
         "trading_name": "Mitra Makmur Khatulistiwa (SYNTH-003)",
@@ -281,6 +296,8 @@
       "record_id": "REC-004",
       "supplier_id": "SUP-004",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-004",
         "label": "Demo high_risk — Central Kalimantan forest",
         "region": "Central Kalimantan forest",
@@ -325,9 +342,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-004",
         "legal_name": "PT Sumber Mandiri Nusantara",
         "trading_name": "Sumber Mandiri Nusantara (SYNTH-004)",
@@ -376,6 +396,8 @@
       "record_id": "REC-005",
       "supplier_id": "SUP-005",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-005",
         "label": "Demo ambiguous — East Kalimantan forest",
         "region": "East Kalimantan forest",
@@ -416,9 +438,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-005",
         "legal_name": "PT Anugerah Lestari Sriwijaya",
         "trading_name": "Anugerah Lestari Sriwijaya (SYNTH-005)",
@@ -467,6 +492,8 @@
       "record_id": "REC-006",
       "supplier_id": "SUP-006",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-006",
         "label": "Demo compliant — West Kalimantan forest",
         "region": "West Kalimantan forest",
@@ -515,9 +542,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-006",
         "legal_name": "PT Hutan Lestari Borneo",
         "trading_name": "Hutan Lestari Borneo (SYNTH-006)",
@@ -566,6 +596,8 @@
       "record_id": "REC-007",
       "supplier_id": "SUP-007",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-007",
         "label": "Demo ambiguous — Riau peat forests",
         "region": "Riau peat forests",
@@ -618,9 +650,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-007",
         "legal_name": "PT Sawit Sejahtera Sriwijaya",
         "trading_name": "Sawit Sejahtera Sriwijaya (SYNTH-007)",
@@ -669,6 +704,8 @@
       "record_id": "REC-008",
       "supplier_id": "SUP-008",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-008",
         "label": "Batch record — Jambi lowland forest (high_risk)",
         "region": "Jambi lowland forest",
@@ -709,9 +746,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-008",
         "legal_name": "PT Agro Sentosa Andalas",
         "trading_name": "Agro Sentosa Andalas (SYNTH-008)",
@@ -760,6 +800,8 @@
       "record_id": "REC-009",
       "supplier_id": "SUP-009",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-009",
         "label": "Batch record — South Sumatra peat forest (high_risk)",
         "region": "South Sumatra peat forest",
@@ -808,9 +850,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-009",
         "legal_name": "PT Karya Sejahtera Khatulistiwa",
         "trading_name": "Karya Sejahtera Khatulistiwa (SYNTH-009)",
@@ -859,6 +904,8 @@
       "record_id": "REC-010",
       "supplier_id": "SUP-010",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-010",
         "label": "Demo compliant — Central Kalimantan forest",
         "region": "Central Kalimantan forest",
@@ -903,9 +950,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-010",
         "legal_name": "PT Agro Lestari Andalas",
         "trading_name": "Agro Lestari Andalas (SYNTH-010)",
@@ -954,6 +1004,8 @@
       "record_id": "REC-011",
       "supplier_id": "SUP-011",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-011",
         "label": "Batch record — East Kalimantan forest (ambiguous)",
         "region": "East Kalimantan forest",
@@ -998,9 +1050,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-011",
         "legal_name": "PT Hutan Sentosa Borneo",
         "trading_name": "Hutan Sentosa Borneo (SYNTH-011)",
@@ -1049,6 +1104,8 @@
       "record_id": "REC-012",
       "supplier_id": "SUP-012",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-012",
         "label": "Batch record — West Kalimantan forest (compliant)",
         "region": "West Kalimantan forest",
@@ -1089,9 +1146,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-012",
         "legal_name": "PT Sawit Sejahtera Khatulistiwa",
         "trading_name": "Sawit Sejahtera Khatulistiwa (SYNTH-012)",
@@ -1140,6 +1200,8 @@
       "record_id": "REC-013",
       "supplier_id": "SUP-013",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-013",
         "label": "Batch record — Riau peat forests (compliant)",
         "region": "Riau peat forests",
@@ -1184,9 +1246,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-013",
         "legal_name": "PT Sumber Mandiri Khatulistiwa",
         "trading_name": "Sumber Mandiri Khatulistiwa (SYNTH-013)",
@@ -1235,6 +1300,8 @@
       "record_id": "REC-014",
       "supplier_id": "SUP-014",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-014",
         "label": "Batch record — Jambi lowland forest (compliant)",
         "region": "Jambi lowland forest",
@@ -1279,9 +1346,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-014",
         "legal_name": "PT Karya Sentosa Sriwijaya",
         "trading_name": "Karya Sentosa Sriwijaya (SYNTH-014)",
@@ -1330,6 +1400,8 @@
       "record_id": "REC-015",
       "supplier_id": "SUP-015",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-015",
         "label": "Batch record — South Sumatra peat forest (compliant)",
         "region": "South Sumatra peat forest",
@@ -1374,9 +1446,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-015",
         "legal_name": "PT Agro Mandiri Nusantara",
         "trading_name": "Agro Mandiri Nusantara (SYNTH-015)",
@@ -1425,6 +1500,8 @@
       "record_id": "REC-016",
       "supplier_id": "SUP-016",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-016",
         "label": "Batch record — Central Kalimantan forest (high_risk)",
         "region": "Central Kalimantan forest",
@@ -1469,9 +1546,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-016",
         "legal_name": "PT Anugerah Mandiri Sriwijaya",
         "trading_name": "Anugerah Mandiri Sriwijaya (SYNTH-016)",
@@ -1520,6 +1600,8 @@
       "record_id": "REC-017",
       "supplier_id": "SUP-017",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-017",
         "label": "Batch record — East Kalimantan forest (compliant)",
         "region": "East Kalimantan forest",
@@ -1568,9 +1650,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-017",
         "legal_name": "PT Karya Jaya Sriwijaya",
         "trading_name": "Karya Jaya Sriwijaya (SYNTH-017)",
@@ -1619,6 +1704,8 @@
       "record_id": "REC-018",
       "supplier_id": "SUP-018",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-018",
         "label": "Batch record — West Kalimantan forest (compliant)",
         "region": "West Kalimantan forest",
@@ -1659,9 +1746,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-018",
         "legal_name": "PT Karya Lestari Borneo",
         "trading_name": "Karya Lestari Borneo (SYNTH-018)",
@@ -1710,6 +1800,8 @@
       "record_id": "REC-019",
       "supplier_id": "SUP-019",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-019",
         "label": "Batch record — Riau peat forests (compliant)",
         "region": "Riau peat forests",
@@ -1754,9 +1846,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-019",
         "legal_name": "PT Anugerah Lestari Nusantara",
         "trading_name": "Anugerah Lestari Nusantara (SYNTH-019)",
@@ -1805,6 +1900,8 @@
       "record_id": "REC-020",
       "supplier_id": "SUP-020",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-020",
         "label": "Batch record — Jambi lowland forest (compliant)",
         "region": "Jambi lowland forest",
@@ -1853,9 +1950,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-020",
         "legal_name": "PT Anugerah Perkasa Sriwijaya",
         "trading_name": "Anugerah Perkasa Sriwijaya (SYNTH-020)",
@@ -1904,6 +2004,8 @@
       "record_id": "REC-021",
       "supplier_id": "SUP-021",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-021",
         "label": "Batch record — South Sumatra peat forest (compliant)",
         "region": "South Sumatra peat forest",
@@ -1952,9 +2054,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-021",
         "legal_name": "PT Sumber Makmur Sriwijaya",
         "trading_name": "Sumber Makmur Sriwijaya (SYNTH-021)",
@@ -2003,6 +2108,8 @@
       "record_id": "REC-022",
       "supplier_id": "SUP-022",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-022",
         "label": "Batch record — Central Kalimantan forest (ambiguous)",
         "region": "Central Kalimantan forest",
@@ -2047,9 +2154,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-022",
         "legal_name": "PT Hutan Mandiri Sriwijaya",
         "trading_name": "Hutan Mandiri Sriwijaya (SYNTH-022)",
@@ -2098,6 +2208,8 @@
       "record_id": "REC-023",
       "supplier_id": "SUP-023",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-023",
         "label": "Batch record — East Kalimantan forest (compliant)",
         "region": "East Kalimantan forest",
@@ -2142,9 +2254,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-023",
         "legal_name": "PT Karya Makmur Khatulistiwa",
         "trading_name": "Karya Makmur Khatulistiwa (SYNTH-023)",
@@ -2193,6 +2308,8 @@
       "record_id": "REC-024",
       "supplier_id": "SUP-024",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-024",
         "label": "Batch record — West Kalimantan forest (compliant)",
         "region": "West Kalimantan forest",
@@ -2245,9 +2362,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-024",
         "legal_name": "PT Agro Jaya Borneo",
         "trading_name": "Agro Jaya Borneo (SYNTH-024)",
@@ -2296,6 +2416,8 @@
       "record_id": "REC-025",
       "supplier_id": "SUP-025",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-025",
         "label": "Batch record — Riau peat forests (compliant)",
         "region": "Riau peat forests",
@@ -2348,9 +2470,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-025",
         "legal_name": "PT Anugerah Sentosa Borneo",
         "trading_name": "Anugerah Sentosa Borneo (SYNTH-025)",
@@ -2399,6 +2524,8 @@
       "record_id": "REC-026",
       "supplier_id": "SUP-026",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-026",
         "label": "Batch record — Jambi lowland forest (ambiguous)",
         "region": "Jambi lowland forest",
@@ -2451,9 +2578,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-026",
         "legal_name": "PT Anugerah Makmur Khatulistiwa",
         "trading_name": "Anugerah Makmur Khatulistiwa (SYNTH-026)",
@@ -2502,6 +2632,8 @@
       "record_id": "REC-027",
       "supplier_id": "SUP-027",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-027",
         "label": "Batch record — South Sumatra peat forest (compliant)",
         "region": "South Sumatra peat forest",
@@ -2546,9 +2678,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-027",
         "legal_name": "PT Hutan Sentosa Andalas",
         "trading_name": "Hutan Sentosa Andalas (SYNTH-027)",
@@ -2597,6 +2732,8 @@
       "record_id": "REC-028",
       "supplier_id": "SUP-028",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-028",
         "label": "Batch record — Central Kalimantan forest (high_risk)",
         "region": "Central Kalimantan forest",
@@ -2637,9 +2774,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-028",
         "legal_name": "PT Sawit Sejahtera Borneo",
         "trading_name": "Sawit Sejahtera Borneo (SYNTH-028)",
@@ -2688,6 +2828,8 @@
       "record_id": "REC-029",
       "supplier_id": "SUP-029",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-029",
         "label": "Batch record — East Kalimantan forest (high_risk)",
         "region": "East Kalimantan forest",
@@ -2736,9 +2878,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-029",
         "legal_name": "PT Karya Lestari Khatulistiwa",
         "trading_name": "Karya Lestari Khatulistiwa (SYNTH-029)",
@@ -2787,6 +2932,8 @@
       "record_id": "REC-030",
       "supplier_id": "SUP-030",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-030",
         "label": "Batch record — West Kalimantan forest (compliant)",
         "region": "West Kalimantan forest",
@@ -2831,9 +2978,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-030",
         "legal_name": "PT Mitra Perkasa Nusantara",
         "trading_name": "Mitra Perkasa Nusantara (SYNTH-030)",
@@ -2882,6 +3032,8 @@
       "record_id": "REC-031",
       "supplier_id": "SUP-031",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-031",
         "label": "Batch record — Riau peat forests (compliant)",
         "region": "Riau peat forests",
@@ -2930,9 +3082,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-031",
         "legal_name": "PT Sawit Perkasa Borneo",
         "trading_name": "Sawit Perkasa Borneo (SYNTH-031)",
@@ -2981,6 +3136,8 @@
       "record_id": "REC-032",
       "supplier_id": "SUP-032",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-032",
         "label": "Batch record — Jambi lowland forest (compliant)",
         "region": "Jambi lowland forest",
@@ -3033,9 +3190,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-032",
         "legal_name": "PT Hutan Sentosa Borneo",
         "trading_name": "Hutan Sentosa Borneo (SYNTH-032)",
@@ -3084,6 +3244,8 @@
       "record_id": "REC-033",
       "supplier_id": "SUP-033",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-033",
         "label": "Batch record — South Sumatra peat forest (compliant)",
         "region": "South Sumatra peat forest",
@@ -3136,9 +3298,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-033",
         "legal_name": "PT Anugerah Sejahtera Sriwijaya",
         "trading_name": "Anugerah Sejahtera Sriwijaya (SYNTH-033)",
@@ -3187,6 +3352,8 @@
       "record_id": "REC-034",
       "supplier_id": "SUP-034",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-034",
         "label": "Batch record — Central Kalimantan forest (ambiguous)",
         "region": "Central Kalimantan forest",
@@ -3239,9 +3406,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-034",
         "legal_name": "PT Anugerah Sejahtera Andalas",
         "trading_name": "Anugerah Sejahtera Andalas (SYNTH-034)",
@@ -3290,6 +3460,8 @@
       "record_id": "REC-035",
       "supplier_id": "SUP-035",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-035",
         "label": "Batch record — East Kalimantan forest (ambiguous)",
         "region": "East Kalimantan forest",
@@ -3330,9 +3502,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-035",
         "legal_name": "PT Agro Sejahtera Andalas",
         "trading_name": "Agro Sejahtera Andalas (SYNTH-035)",
@@ -3381,6 +3556,8 @@
       "record_id": "REC-036",
       "supplier_id": "SUP-036",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-036",
         "label": "Batch record — West Kalimantan forest (compliant)",
         "region": "West Kalimantan forest",
@@ -3425,9 +3602,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-036",
         "legal_name": "PT Sawit Sejahtera Nusantara",
         "trading_name": "Sawit Sejahtera Nusantara (SYNTH-036)",
@@ -3476,6 +3656,8 @@
       "record_id": "REC-037",
       "supplier_id": "SUP-037",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-037",
         "label": "Batch record — Riau peat forests (high_risk)",
         "region": "Riau peat forests",
@@ -3528,9 +3710,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-037",
         "legal_name": "PT Sumber Lestari Andalas",
         "trading_name": "Sumber Lestari Andalas (SYNTH-037)",
@@ -3579,6 +3764,8 @@
       "record_id": "REC-038",
       "supplier_id": "SUP-038",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-038",
         "label": "Batch record — Jambi lowland forest (compliant)",
         "region": "Jambi lowland forest",
@@ -3619,9 +3806,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-038",
         "legal_name": "PT Sawit Sentosa Nusantara",
         "trading_name": "Sawit Sentosa Nusantara (SYNTH-038)",
@@ -3670,6 +3860,8 @@
       "record_id": "REC-039",
       "supplier_id": "SUP-039",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-039",
         "label": "Batch record — South Sumatra peat forest (compliant)",
         "region": "South Sumatra peat forest",
@@ -3722,9 +3914,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-039",
         "legal_name": "PT Karya Perkasa Khatulistiwa",
         "trading_name": "Karya Perkasa Khatulistiwa (SYNTH-039)",
@@ -3773,6 +3968,8 @@
       "record_id": "REC-040",
       "supplier_id": "SUP-040",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-040",
         "label": "Batch record — Central Kalimantan forest (high_risk)",
         "region": "Central Kalimantan forest",
@@ -3825,9 +4022,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-040",
         "legal_name": "PT Sumber Perkasa Andalas",
         "trading_name": "Sumber Perkasa Andalas (SYNTH-040)",
@@ -3876,6 +4076,8 @@
       "record_id": "REC-041",
       "supplier_id": "SUP-041",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-041",
         "label": "Batch record — East Kalimantan forest (compliant)",
         "region": "East Kalimantan forest",
@@ -3928,9 +4130,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-041",
         "legal_name": "PT Anugerah Perkasa Nusantara",
         "trading_name": "Anugerah Perkasa Nusantara (SYNTH-041)",
@@ -3979,6 +4184,8 @@
       "record_id": "REC-042",
       "supplier_id": "SUP-042",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-042",
         "label": "Batch record — West Kalimantan forest (compliant)",
         "region": "West Kalimantan forest",
@@ -4027,9 +4234,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-042",
         "legal_name": "PT Hutan Makmur Borneo",
         "trading_name": "Hutan Makmur Borneo (SYNTH-042)",
@@ -4078,6 +4288,8 @@
       "record_id": "REC-043",
       "supplier_id": "SUP-043",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-043",
         "label": "Batch record — Riau peat forests (high_risk)",
         "region": "Riau peat forests",
@@ -4122,9 +4334,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-043",
         "legal_name": "PT Sawit Makmur Andalas",
         "trading_name": "Sawit Makmur Andalas (SYNTH-043)",
@@ -4173,6 +4388,8 @@
       "record_id": "REC-044",
       "supplier_id": "SUP-044",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-044",
         "label": "Batch record — Jambi lowland forest (compliant)",
         "region": "Jambi lowland forest",
@@ -4213,9 +4430,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-044",
         "legal_name": "PT Sumber Sejahtera Khatulistiwa",
         "trading_name": "Sumber Sejahtera Khatulistiwa (SYNTH-044)",
@@ -4264,6 +4484,8 @@
       "record_id": "REC-045",
       "supplier_id": "SUP-045",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-045",
         "label": "Batch record — South Sumatra peat forest (ambiguous)",
         "region": "South Sumatra peat forest",
@@ -4304,9 +4526,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-045",
         "legal_name": "PT Anugerah Perkasa Borneo",
         "trading_name": "Anugerah Perkasa Borneo (SYNTH-045)",
@@ -4355,6 +4580,8 @@
       "record_id": "REC-046",
       "supplier_id": "SUP-046",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-046",
         "label": "Batch record — Central Kalimantan forest (compliant)",
         "region": "Central Kalimantan forest",
@@ -4395,9 +4622,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-046",
         "legal_name": "PT Bumi Perkasa Nusantara",
         "trading_name": "Bumi Perkasa Nusantara (SYNTH-046)",
@@ -4446,6 +4676,8 @@
       "record_id": "REC-047",
       "supplier_id": "SUP-047",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-047",
         "label": "Batch record — East Kalimantan forest (compliant)",
         "region": "East Kalimantan forest",
@@ -4498,9 +4730,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-047",
         "legal_name": "PT Sawit Perkasa Borneo",
         "trading_name": "Sawit Perkasa Borneo (SYNTH-047)",
@@ -4549,6 +4784,8 @@
       "record_id": "REC-048",
       "supplier_id": "SUP-048",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-048",
         "label": "Batch record — West Kalimantan forest (compliant)",
         "region": "West Kalimantan forest",
@@ -4593,9 +4830,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-048",
         "legal_name": "PT Sawit Jaya Sriwijaya",
         "trading_name": "Sawit Jaya Sriwijaya (SYNTH-048)",
@@ -4644,6 +4884,8 @@
       "record_id": "REC-049",
       "supplier_id": "SUP-049",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-049",
         "label": "Batch record — Riau peat forests (compliant)",
         "region": "Riau peat forests",
@@ -4692,9 +4934,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-049",
         "legal_name": "PT Sawit Mandiri Nusantara",
         "trading_name": "Sawit Mandiri Nusantara (SYNTH-049)",
@@ -4743,6 +4988,8 @@
       "record_id": "REC-050",
       "supplier_id": "SUP-050",
       "polygon": {
+        "country": "ID",
+        "provenance": "synthetic",
         "id": "PLY-050",
         "label": "Batch record — Jambi lowland forest (high_risk)",
         "region": "Jambi lowland forest",
@@ -4795,9 +5042,12 @@
               ]
             ]
           ]
-        }
+        },
+        "input_geometry": null
       },
       "legality": {
+        "permit_expiry": null,
+        "declared_holder": null,
         "supplier_id": "SUP-050",
         "legal_name": "PT Mitra Perkasa Andalas",
         "trading_name": "Mitra Perkasa Andalas (SYNTH-050)",

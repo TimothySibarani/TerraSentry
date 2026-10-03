@@ -6,6 +6,7 @@ import asyncio
 import csv
 import io
 import json
+import math
 import re
 import time
 from collections.abc import Sequence
@@ -14,6 +15,7 @@ from typing import Any
 
 import httpx
 from pydantic import BaseModel, Field
+from shapely.geometry import shape
 
 from terrasentry_integrations.cache import CacheBackend, CacheEntry, geometry_hash
 from terrasentry_integrations.errors import (
@@ -21,7 +23,13 @@ from terrasentry_integrations.errors import (
     SourceResponseError,
     SourceUnavailable,
 )
+from terrasentry_integrations.geometry import crosses_antimeridian
 from terrasentry_integrations.settings import IntegrationSettings
+from terrasentry_integrations.sources.gfw_layers import (
+    LAYER_DEFINITIONS,
+    ContextLayersResult,
+    fetch_context_layer,
+)
 from terrasentry_integrations.sources.http import SourceHttpClient, SourceHttpConfig
 
 _SAFE_DATASET = re.compile(r"^[a-z0-9_]+$")
@@ -85,25 +93,37 @@ def _extract_rows(response: httpx.Response) -> list[dict[str, Any]]:
         status = payload.get("status")
         if status not in (None, "success"):
             raise SourceResponseError("gfw", f"query failed: {payload.get('message', status)}")
-        data = payload.get("data", payload.get("rows", []))
+        data = payload.get("data", payload.get("rows"))
     else:
         data = payload
     if not isinstance(data, list):
         raise SourceResponseError("gfw", "expected a list of rows from the query endpoint")
-    return [dict(row) for row in data if isinstance(row, dict)]
+    if any(not isinstance(row, dict) for row in data):
+        raise SourceResponseError("gfw", "query contains a malformed row")
+    return [dict(row) for row in data]
 
 
-def _year_and_loss(row: dict[str, Any]) -> tuple[int, float] | None:
+def _year_and_loss(row: dict[str, Any]) -> tuple[int, float]:
     year: int | None = None
     loss: float | None = None
-    for key, value in row.items():
-        lowered = str(key).lower()
-        if year is None and "year" in lowered:
-            year = int(value)
-        elif loss is None and ("loss_ha" in lowered or "area__ha" in lowered or lowered == "sum"):
-            loss = float(value)
+    try:
+        for key, value in row.items():
+            lowered = str(key).lower()
+            if year is None and "year" in lowered:
+                numeric = float(value)
+                if isinstance(value, bool) or not numeric.is_integer():
+                    raise ValueError("non-integer year")
+                year = int(numeric)
+            elif loss is None and ("loss_ha" in lowered or "area__ha" in lowered or lowered == "sum"):
+                if isinstance(value, bool):
+                    raise ValueError("boolean loss")
+                loss = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise SourceResponseError("gfw", "invalid loss year or area") from exc
     if year is None or loss is None:
-        return None
+        raise SourceResponseError("gfw", "missing loss year or area")
+    if not math.isfinite(loss) or loss < 0:
+        raise SourceResponseError("gfw", "loss area must be finite and non-negative")
     return year, loss
 
 
@@ -143,6 +163,16 @@ class GfwClient:
             raise ValueError(f"invalid GFW dataset identifier: {settings.gfw_tcl_dataset!r}")
         if not _SAFE_VERSION.match(settings.gfw_tcl_version):
             raise ValueError(f"invalid GFW dataset version: {settings.gfw_tcl_version!r}")
+        for name, release in settings.gfw_context_releases.items():
+            parts = release.split("/")
+            if (
+                name not in LAYER_DEFINITIONS
+                or len(parts) != 2
+                or not _SAFE_DATASET.fullmatch(parts[0])
+                or not _SAFE_VERSION.fullmatch(parts[1])
+                or parts[1] == "latest"
+            ):
+                raise ValueError(f"invalid GFW context release for {name!r}")
         self._settings = settings
         self._cache = cache
         self._dataset = settings.gfw_tcl_dataset
@@ -168,6 +198,32 @@ class GfwClient:
     async def close(self) -> None:
         await self._http.close()
 
+    @property
+    def coverage_end_year(self) -> int:
+        # v1.13 is the pinned annual 2025 release. Unknown releases need verified metadata.
+        if self._dataset != "umd_tree_cover_loss" or self._version != "v1.13":
+            raise SourceResponseError("gfw", "annual coverage is unverified for the configured loss release")
+        return 2025
+
+    async def context_layers(
+        self, geometry: dict[str, Any], *, country: str | None, refresh: bool = False
+    ) -> ContextLayersResult:
+        return ContextLayersResult(
+            layers=[
+                await fetch_context_layer(
+                    name=name,
+                    geometry=geometry,
+                    country=country,
+                    http=self._http,
+                    cache=self._cache,
+                    require_credentials=self.require_credentials,
+                    refresh=refresh,
+                    release=self._settings.gfw_context_releases.get(name),
+                )
+                for name in LAYER_DEFINITIONS
+            ]
+        )
+
     def loss_sql(self, start_year: int, end_year: int) -> str:
         return (
             "SELECT umd_tree_cover_loss__year, SUM(area__ha) AS loss_ha "
@@ -192,11 +248,15 @@ class GfwClient:
         if start_year > end_year:
             raise ValueError(f"start_year {start_year} is after end_year {end_year}")
 
+        if crosses_antimeridian(shape(geometry)):
+            raise SourceResponseError("gfw", "query crosses the antimeridian; split polygons required")
+
         geometry_hash_value = geometry_hash(geometry)
         date_window = f"{start_year}-{end_year}"
+        cache_window = f"{self._dataset}:{self._version}:loss-1:{date_window}"
 
         if not refresh:
-            cached = await self._cache.get("gfw", geometry_hash_value, date_window)
+            cached = await self._cache.get("gfw", geometry_hash_value, cache_window)
             if cached is not None:
                 return TreeCoverLossResult.model_validate(cached.payload).model_copy(update={"cached": True})
 
@@ -207,10 +267,10 @@ class GfwClient:
         rows = _extract_rows(response)
         by_year: list[TreeCoverLossYear] = []
         for row in rows:
-            parsed = _year_and_loss(row)
-            if parsed is not None:
-                year, loss = parsed
-                by_year.append(TreeCoverLossYear(year=year, loss_ha=round(loss, 4)))
+            year, loss = _year_and_loss(row)
+            if not start_year <= year <= end_year or any(item.year == year for item in by_year):
+                raise SourceResponseError("gfw", "duplicate or out-of-window loss year")
+            by_year.append(TreeCoverLossYear(year=year, loss_ha=loss))
         by_year.sort(key=lambda item: item.year)
         result = TreeCoverLossResult(
             dataset=self._dataset,
@@ -219,7 +279,7 @@ class GfwClient:
             date_window=date_window,
             start_year=start_year,
             end_year=end_year,
-            total_loss_ha=round(sum(item.loss_ha for item in by_year), 4),
+            total_loss_ha=sum(item.loss_ha for item in by_year),
             by_year=by_year,
             fetched_at=datetime.now(tz=UTC),
         )
@@ -227,7 +287,7 @@ class GfwClient:
             CacheEntry(
                 source="gfw",
                 geometry_hash=geometry_hash_value,
-                date_window=date_window,
+                date_window=cache_window,
                 request={"method": "POST", "path": path, "sql": sql},
                 status_code=response.status_code,
                 fetched_at=datetime.now(tz=UTC),
@@ -249,6 +309,8 @@ class GfwClient:
         """Run the same loss query for a large list of features via the async batch job API."""
         if end_year is None:
             end_year = datetime.now(tz=UTC).year - 1
+        if any(crosses_antimeridian(shape(geometry)) for _, geometry in features):
+            raise SourceResponseError("gfw", "batch query crosses the antimeridian; split polygons required")
         feature_collection = {
             "type": "FeatureCollection",
             "features": [
@@ -258,9 +320,10 @@ class GfwClient:
         }
         geometry_hash_value = geometry_hash(feature_collection)
         date_window = f"{start_year}-{end_year}"
+        cache_window = f"{self._dataset}:{self._version}:loss-1:{date_window}"
 
         if not refresh:
-            cached = await self._cache.get("gfw", geometry_hash_value, date_window)
+            cached = await self._cache.get("gfw", geometry_hash_value, cache_window)
             if cached is not None:
                 return BatchLossResult.model_validate(cached.payload).model_copy(update={"cached": True})
 
@@ -293,7 +356,7 @@ class GfwClient:
             CacheEntry(
                 source="gfw",
                 geometry_hash=geometry_hash_value,
-                date_window=date_window,
+                date_window=cache_window,
                 request={"method": "POST", "path": path, "sql": sql, "features": len(features)},
                 status_code=response.status_code,
                 fetched_at=datetime.now(tz=UTC),

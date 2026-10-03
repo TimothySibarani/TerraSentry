@@ -142,7 +142,7 @@ export function LegalityStep({ form, update, errors }: StepProps) {
 				</AlertDescription>
 			</Alert>
 			<FieldSet>
-				<FieldLegend variant="label">Permit type</FieldLegend>
+				<FieldLegend variant="label">Permit type (Indonesia)</FieldLegend>
 				<RadioGroup
 					value={form.permitType}
 					onValueChange={(value) =>
@@ -166,6 +166,25 @@ export function LegalityStep({ form, update, errors }: StepProps) {
 					))}
 				</RadioGroup>
 			</FieldSet>
+			<div className="grid gap-4 md:grid-cols-2">
+				<TextField
+					field="legality.permit_expiry"
+					label="Permit expiry"
+					type="date"
+					value={form.permitExpiry}
+					onChange={(permitExpiry) => update({ permitExpiry })}
+					error={errors["legality.permit_expiry"]}
+					description="Optional. Expiry before the assessment date is a critical flag; unknown expiry is disclosed."
+				/>
+				<TextField
+					field="legality.declared_holder"
+					label="Declared permit holder"
+					value={form.declaredHolder}
+					onChange={(declaredHolder) => update({ declaredHolder })}
+					error={errors["legality.declared_holder"]}
+					placeholder={form.legalName || "Defaults to supplier legal name"}
+				/>
+			</div>
 			{form.permitType !== "none" && (
 				<div className="grid gap-4 md:grid-cols-3">
 					<TextField

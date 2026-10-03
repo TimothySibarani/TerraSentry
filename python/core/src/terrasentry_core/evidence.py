@@ -17,13 +17,14 @@ from collections.abc import Iterable, Mapping
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from terrasentry_core.domain.enums import EvidenceSource
 from terrasentry_core.domain.models import AssessmentInput
 from terrasentry_core.errors import LedgerLookupError
+from terrasentry_core.seed.schemas import Provenance
 
-_RECORD_SCHEMA_VERSION = 1
+_RECORD_SCHEMA_VERSION = 2
 
 
 def _canonical(value: Any) -> str:
@@ -43,7 +44,22 @@ class EvidenceEntry(BaseModel):
     retrieved_at: datetime | None = None
     cached: bool = False
     synthetic: bool = False
+    provenance: Provenance = "legacy_unknown"
     disclosure: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _legacy_provenance(cls, value: Any) -> Any:
+        if isinstance(value, dict) and value.get("provenance") is None:
+            value = dict(value)
+            value["provenance"] = (
+                "real_source"
+                if value.get("source") in {"global_forest_watch", "nasa_firms"}
+                else "derived"
+                if value.get("source") == "deterministic_rubric"
+                else "legacy_unknown"
+            )
+        return value
 
 
 class EvidenceLedger:
@@ -71,8 +87,18 @@ class EvidenceLedger:
         retrieved_at: datetime | None = None,
         cached: bool = False,
         synthetic: bool = False,
+        provenance: Provenance | None = None,
         disclosure: str | None = None,
     ) -> EvidenceEntry:
+        provenance = provenance or (
+            "real_source"
+            if source in {EvidenceSource.GFW, EvidenceSource.FIRMS}
+            else "derived"
+            if source is EvidenceSource.RUBRIC
+            else "synthetic"
+            if synthetic
+            else "legacy_unknown"
+        )
         artifact_dict = dict(artifact or {})
         digest = hashlib.sha256(
             _canonical(
@@ -82,6 +108,7 @@ class EvidenceLedger:
                     "unit": unit,
                     "source": str(source),
                     "artifact": artifact_dict,
+                    "provenance": provenance,
                 }
             ).encode("utf-8")
         ).hexdigest()
@@ -99,6 +126,7 @@ class EvidenceLedger:
             retrieved_at=retrieved_at,
             cached=cached,
             synthetic=synthetic,
+            provenance=provenance,
             disclosure=disclosure,
         )
         self._entries[evidence_id] = entry
@@ -167,39 +195,88 @@ def build_source_ledger(
     parcel = input.parcel
     ledger.record(
         claim="parcel.geometry",
-        value=parcel.geometry,
+        value=parcel.input_geometry or parcel.geometry,
         source=EvidenceSource.CONCESSION,
         artifact={"polygon_id": parcel.polygon_id, "region": parcel.region},
         unit="geojson",
-        synthetic=True,
+        synthetic=parcel.provenance == "synthetic",
+        provenance=parcel.provenance,
         retrieved_at=retrieved_at,
     )
+    point_input = parcel.input_geometry is not None and parcel.input_geometry.get("type") == "Point"
+    if point_input:
+        ledger.record(
+            claim="parcel.query_geometry",
+            value=parcel.geometry,
+            source=EvidenceSource.CONCESSION,
+            artifact={
+                "polygon_id": parcel.polygon_id,
+                "calculation": "geodesic buffer of declared point area",
+            },
+            unit="geojson",
+            synthetic=False,
+            provenance="derived",
+            retrieved_at=retrieved_at,
+        )
     ledger.record(
         claim="parcel.area_ha",
         value=parcel.area_ha,
         source=EvidenceSource.CONCESSION,
-        artifact={"polygon_id": parcel.polygon_id},
+        artifact={
+            "polygon_id": parcel.polygon_id,
+            "input_provenance": parcel.provenance,
+            "calculation": "declared point area" if point_input else "WGS84 geodesic area",
+        },
         unit="ha",
-        synthetic=True,
+        synthetic=False,
+        provenance=parcel.provenance if point_input else "derived",
         retrieved_at=retrieved_at,
     )
     ledger.record(
         claim="parcel.centroid",
         value=[parcel.centroid_lon, parcel.centroid_lat],
         source=EvidenceSource.CONCESSION,
-        artifact={"polygon_id": parcel.polygon_id},
-        synthetic=True,
+        artifact={
+            "polygon_id": parcel.polygon_id,
+            "input_provenance": parcel.provenance,
+            "calculation": "geometry centroid",
+        },
+        synthetic=False,
+        provenance="derived",
         retrieved_at=retrieved_at,
     )
     ledger.record(
         claim="parcel.country",
-        value="ID",
+        value=parcel.country,
         source=EvidenceSource.CONCESSION,
         artifact={"polygon_id": parcel.polygon_id, "province": parcel.province},
-        synthetic=True,
+        synthetic=parcel.provenance == "synthetic",
+        provenance=parcel.provenance,
         retrieved_at=retrieved_at,
     )
 
+    if input.layers is not None:
+        for layer in input.layers.layers:
+            ledger.record(
+                claim=f"context.{layer.name}",
+                value=layer.model_dump(mode="json", exclude={"cached", "fetched_at"}),
+                source=EvidenceSource.GFW,
+                artifact={
+                    "dataset": layer.dataset,
+                    "version": layer.version,
+                    "geometry_hash": layer.geometry_hash,
+                    "query_revision": layer.query_revision,
+                },
+                cached=layer.cached,
+                retrieved_at=layer.fetched_at,
+            )
+    ledger.record(
+        claim="assessment.date",
+        value=input.assessment_date.isoformat() if input.assessment_date else None,
+        source=EvidenceSource.RUBRIC,
+        provenance="derived",
+        retrieved_at=retrieved_at,
+    )
     loss = input.loss
     if loss is not None:
         for claim, value, unit in (
@@ -251,6 +328,13 @@ def build_source_ledger(
         ("supplier.identifiers", [supplier.nib, supplier.npwp], None, {}),
         ("supplier.name", supplier.legal_name, None, {}),
         ("supplier.permit_status", supplier.permit_status, None, {}),
+        (
+            "supplier.permit_expiry",
+            supplier.permit_expiry.isoformat() if supplier.permit_expiry else None,
+            None,
+            {},
+        ),
+        ("supplier.declared_holder", supplier.declared_holder or supplier.legal_name, None, {}),
         ("supplier.concession_area_ha", supplier.concession_area_ha, "ha", {}),
         (
             "supplier.hgu_pbp",
@@ -270,6 +354,7 @@ def build_source_ledger(
             unit=unit,
             retrieved_at=retrieved_at,
             synthetic=supplier.synthetic,
+            provenance=supplier.provenance,
             disclosure=supplier.disclosure,
         )
 
@@ -307,6 +392,7 @@ def build_source_ledger(
                 unit=unit,
                 retrieved_at=retrieved_at,
                 synthetic=consignment.synthetic,
+                provenance=consignment.provenance,
                 disclosure=consignment.disclosure or None,
             )
 
@@ -336,6 +422,7 @@ def build_source_ledger(
                 artifact={"operator_id": operator.operator_id},
                 retrieved_at=retrieved_at,
                 synthetic=operator.synthetic,
+                provenance=operator.provenance,
                 disclosure=operator.disclosure,
             )
     return ledger

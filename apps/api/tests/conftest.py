@@ -28,6 +28,20 @@ def source_router() -> Iterator[respx.MockRouter]:
             return_value=httpx.Response(200, json={"status": "success", "data": []})
         )
         router.get(url__regex=api_helpers.FIRMS_REGEX).mock(return_value=httpx.Response(200, text=""))
+        from terrasentry_integrations.sources.gfw_layers import LAYER_DEFINITIONS
+
+        for name, (dataset, version, _, _) in LAYER_DEFINITIONS.items():
+            router.post(
+                f"https://data-api.globalforestwatch.org/dataset/{dataset}/{version}/query/json"
+            ).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "status": "success",
+                        "data": [{"overlap_ha": 0}] if name in {"peatlands", "forest_baseline"} else [],
+                    },
+                )
+            )
         yield router
 
 

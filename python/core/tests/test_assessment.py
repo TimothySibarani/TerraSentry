@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
+from conftest import clear_layers
 from terrasentry_core.assessment import (
     assess_reference_run,
     load_batch,
@@ -43,6 +44,7 @@ def make_report(
         for _ in range(hotspot_count)
     ]
     return PolygonReport(
+        layers=clear_layers(),
         polygon_id=polygon.id,
         label=polygon.label,
         region=polygon.region,

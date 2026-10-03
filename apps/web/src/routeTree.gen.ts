@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ScreenRouteImport } from './routes/screen'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as BatchIndexRouteImport } from './routes/batch.index'
 import { Route as BatchBatchIdRouteImport } from './routes/batch.$batchId'
 import { Route as RunsIndexRouteImport } from './routes/runs.index'
@@ -26,6 +27,11 @@ const IndexRoute = IndexRouteImport.update({
 const ScreenRoute = ScreenRouteImport.update({
   id: '/screen',
   path: '/screen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BatchIndexRoute = BatchIndexRouteImport.update({
@@ -62,6 +68,7 @@ const SuppliersSupplierIdRoute = SuppliersSupplierIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/screen': typeof ScreenRoute
+  '/settings': typeof SettingsRoute
   '/batch/$batchId': typeof BatchBatchIdRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/suppliers/$supplierId': typeof SuppliersSupplierIdRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/screen': typeof ScreenRoute
+  '/settings': typeof SettingsRoute
   '/batch/$batchId': typeof BatchBatchIdRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/suppliers/$supplierId': typeof SuppliersSupplierIdRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/screen': typeof ScreenRoute
+  '/settings': typeof SettingsRoute
   '/batch/$batchId': typeof BatchBatchIdRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/suppliers/$supplierId': typeof SuppliersSupplierIdRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/screen'
+    | '/settings'
     | '/batch/$batchId'
     | '/runs/$runId'
     | '/suppliers/$supplierId'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/screen'
+    | '/settings'
     | '/batch/$batchId'
     | '/runs/$runId'
     | '/suppliers/$supplierId'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/screen'
+    | '/settings'
     | '/batch/$batchId'
     | '/runs/$runId'
     | '/suppliers/$supplierId'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ScreenRoute: typeof ScreenRoute
+  SettingsRoute: typeof SettingsRoute
   BatchBatchIdRoute: typeof BatchBatchIdRoute
   RunsRunIdRoute: typeof RunsRunIdRoute
   SuppliersSupplierIdRoute: typeof SuppliersSupplierIdRoute
@@ -148,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/screen'
       fullPath: '/screen'
       preLoaderRoute: typeof ScreenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/batch/': {
@@ -198,6 +218,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ScreenRoute: ScreenRoute,
+  SettingsRoute: SettingsRoute,
   BatchBatchIdRoute: BatchBatchIdRoute,
   RunsRunIdRoute: RunsRunIdRoute,
   SuppliersSupplierIdRoute: SuppliersSupplierIdRoute,
@@ -210,10 +231,13 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
+
 import type { createStart } from '@tanstack/react-start'
+
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
+
     router: Awaited<ReturnType<typeof getRouter>>
   }
 }

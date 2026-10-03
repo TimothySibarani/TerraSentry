@@ -11,6 +11,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import math
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
@@ -26,7 +27,9 @@ from terrasentry_core.intake import (
     build_submitted_record,
     validate_geometry,
 )
+from terrasentry_core.seed.schemas import BatchRecord
 
+from terrasentry_api.models import SubmittedRecord
 from terrasentry_api.schemas import GeometryCheck, ImportResult, ImportRowError, RecordOut
 from terrasentry_api.services import AppServices, get_services, get_session
 from terrasentry_api.store import RunStore
@@ -54,12 +57,11 @@ async def _record_out(store: RunStore, row: Any) -> RecordOut:
 
 
 async def _create(
-    services: AppServices, store: RunStore, submission: RecordSubmission, *, source: str
-) -> Any:
+    store: RunStore, submission: RecordSubmission, *, source: str
+) -> tuple[SubmittedRecord, BatchRecord]:
     record, report = build_submitted_record(submission)
     row = await store.create_submitted_record(record, geometry=report.geometry, source=source)
-    services.datasets.register(record)
-    return row
+    return row, record
 
 
 @router.post("/validate-geometry", response_model=GeometryReport)
@@ -80,10 +82,11 @@ async def create_record(
     """Register one submitted plot; start screening with ``POST /runs {record_id}``."""
     store = RunStore(session)
     try:
-        row = await _create(services, store, payload, source="submitted")
+        row, record = await _create(store, payload, source="submitted")
     except IntakeError as exc:
         raise _unprocessable(exc.field, exc.message) from exc
     await session.commit()
+    services.datasets.register(record)
     return await _record_out(store, row)
 
 
@@ -121,7 +124,10 @@ def _split(value: Any) -> list[str]:
 
 def _num(value: Any) -> float | None:
     text = str(value if value is not None else "").strip()
-    return float(text) if text else None
+    number = float(text) if text else None
+    if number is not None and not math.isfinite(number):
+        raise IntakeError("row", "numeric values must be finite")
+    return number
 
 
 def _row_geometry(row: dict[str, Any]) -> dict[str, Any]:
@@ -145,6 +151,7 @@ def _row_submission(row: dict[str, Any]) -> RecordSubmission:
         {
             "plot": {
                 "geometry": _row_geometry(row),
+                "country": row.get("country") or "",
                 "label": row.get("label") or row.get("plot_label") or "",
                 "province": row.get("province") or "",
                 "kabupaten": row.get("kabupaten") or "",
@@ -160,34 +167,55 @@ def _row_submission(row: dict[str, Any]) -> RecordSubmission:
                 "beneficial_owners": _split(row.get("beneficial_owners")),
             },
             "legality": {
-                "permit_type": (row.get("permit_type") or "none").strip().lower(),
+                "permit_type": _text(row, "permit_type", "none").lower(),
                 "permit_number": row.get("permit_number") or "",
-                "permit_status": (row.get("permit_status") or "active").strip().lower(),
+                "permit_status": _text(row, "permit_status", "active").lower(),
+                "permit_expiry": row.get("permit_expiry") or None,
+                "declared_holder": row.get("declared_holder") or "",
                 "concession_area_ha": _num(row.get("concession_area_ha")),
             },
             "consignment": {
-                "commodity": (row.get("commodity") or "").strip().lower(),
+                "commodity": _text(row, "commodity").lower(),
                 "description": row.get("description") or "",
                 "hs_heading": row.get("hs_heading") or "",
                 "net_weight_kg": _num(row.get("net_weight_kg")),
-                "harvest_year": int(_num(row.get("harvest_year")) or 0),
+                "harvest_year": _num(row.get("harvest_year")) or 0,
             },
         }
     )
 
 
-def _parse_rows(filename: str, content: bytes) -> list[dict[str, Any]]:
+def _text(row: dict[str, Any], field: str, default: str = "") -> str:
+    value = row.get(field)
+    if value is None or value == "":
+        return default
+    if not isinstance(value, str):
+        raise IntakeError(field, "must be text")
+    return value.strip()
+
+
+def _parse_rows(filename: str, content: bytes) -> list[dict[str, Any] | IntakeError]:
     text = content.decode("utf-8-sig")
     if filename.lower().endswith((".geojson", ".json")):
         payload = json.loads(text)
-        features = payload.get("features") if isinstance(payload, dict) else None
+        features = (
+            payload.get("features")
+            if isinstance(payload, dict) and payload.get("type") == "FeatureCollection"
+            else None
+        )
         if not isinstance(features, list):
             raise _unprocessable("file", "GeoJSON import needs a FeatureCollection")
-        return [
-            {**(feature.get("properties") or {}), "geometry": feature.get("geometry")}
-            for feature in features
-            if isinstance(feature, dict)
-        ]
+        rows: list[dict[str, Any] | IntakeError] = []
+        for feature in features:
+            if not isinstance(feature, dict) or feature.get("type") != "Feature":
+                rows.append(IntakeError("row", "must be a GeoJSON Feature"))
+                continue
+            properties = feature.get("properties")
+            if properties is not None and not isinstance(properties, dict):
+                rows.append(IntakeError("properties", "must be an object"))
+                continue
+            rows.append({**(properties or {}), "geometry": feature.get("geometry")})
+        return rows
     dialect = csv.Sniffer().sniff(text.splitlines()[0] if text else ",", delimiters=",;\t")
     return [
         {str(key).strip().lower(): value for key, value in row.items() if key}
@@ -224,10 +252,13 @@ async def import_records(
 
     store = RunStore(session)
     result = ImportResult(total_rows=len(rows))
+    committed: list[BatchRecord] = []
     for index, row in enumerate(rows, start=1):
         try:
+            if isinstance(row, IntakeError):
+                raise row
             async with session.begin_nested():
-                created = await _create(services, store, _row_submission(row), source="import")
+                created, record = await _create(store, _row_submission(row), source="import")
         except IntakeError as exc:
             result.errors.append(ImportRowError(row=index, field=exc.field, message=exc.message))
             continue
@@ -239,7 +270,10 @@ async def import_records(
             result.errors.append(ImportRowError(row=index, field="row", message=str(exc)))
             continue
         result.created.append(await _record_out(store, created))
+        committed.append(record)
     await session.commit()
+    for record in committed:
+        services.datasets.register(record)
     return result
 
 

@@ -17,7 +17,7 @@ import statistics
 from collections import Counter
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any, cast
 from uuid import uuid4
 
@@ -30,9 +30,10 @@ from terrasentry_core.agents.verification import code_checks
 from terrasentry_core.assessment.pipeline import assess_record
 from terrasentry_core.domain.enums import RunState
 from terrasentry_core.errors import CoreError, InvalidReviewDecisionError, SeedLookupError
+from terrasentry_core.intake import IntakeError
 from terrasentry_core.reference.pipeline import PolygonReport
 from terrasentry_core.scoring import RubricConfig
-from terrasentry_core.seed.schemas import BatchRecord
+from terrasentry_core.seed.schemas import BatchRecord, OperatorRecord
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.sources import LossWindow, fetch_polygon_sources
 from terrasentry_core.tools.trace import StepHook, TraceCollector, TraceKind, TraceStep, utc_now
@@ -167,6 +168,7 @@ class RunManager:
         refresh: bool = False,
     ) -> str:
         record = self._resolve_record(record_id=record_id, scenario=scenario)
+        self._require_country(record)
         run_id = f"run-{uuid4().hex[:12]}"
         await self._create_run(run_id, "scenario", record=record, model=model)
         self._spawn(run_id, self._execute_scenario(run_id, record, model, refresh))
@@ -186,9 +188,19 @@ class RunManager:
             if record_ids
             else self._datasets.records[:size]
         )
+        for record in records:
+            self._require_country(record)
+        assessment_date = self._settings.rehearsal_date or self._clock().astimezone(UTC).date()
         async with self._session_factory() as session:
             store = RunStore(session)
-            await store.create_run(run_id=batch_run_id, kind="batch", model="deterministic")
+            operator = await store.operator_profile(self._datasets.operator)
+            await store.create_run(
+                run_id=batch_run_id,
+                kind="batch",
+                model="deterministic",
+                assessment_date=assessment_date,
+                operator=operator,
+            )
             for record in records:
                 await store.create_run(
                     run_id=self.record_run_id(batch_run_id, record),
@@ -196,6 +208,8 @@ class RunManager:
                     record=record,
                     parent_run_id=batch_run_id,
                     model="deterministic",
+                    assessment_date=assessment_date,
+                    operator=operator,
                 )
             await session.commit()
         self._spawn(batch_run_id, self._execute_batch(batch_run_id, records, refresh))
@@ -271,7 +285,10 @@ class RunManager:
 
         await self._set_state(run_id, RunState.RUNNING, started_at=started)
         writer = asyncio.create_task(self._persist_steps(run_id, trace_queue))
-        orchestrator = self._orchestrator(on_step=on_step, models=models)
+        assessment_date, operator = await self._accepted_context(run_id)
+        orchestrator = self._orchestrator(
+            on_step=on_step, models=models, as_of=assessment_date, operator=operator
+        )
         failure: str | None = None
         result: AgentRunResult | None = None
         try:
@@ -385,7 +402,7 @@ class RunManager:
         trace = TraceCollector(clock=self._clock)
         await self._set_state(run_id, RunState.RUNNING, started_at=started)
         verdict: str | None = None
-        pinned = self._settings.rehearsal_date
+        pinned, operator = await self._accepted_context(run_id)
         try:
             sources = await fetch_polygon_sources(
                 record.polygon,
@@ -408,6 +425,7 @@ class RunManager:
                 area_ha=record.polygon.area_ha,
                 loss=sources.loss,
                 hotspots=sources.hotspots,
+                layers=sources.layers,
                 errors=list(sources.errors),
             )
             trace.add(
@@ -419,7 +437,8 @@ class RunManager:
             candidate = assess_record(
                 report,
                 record,
-                self._datasets.operator,
+                operator,
+                assessment_date=pinned,
                 retrieved_at=started,
                 config=self._rubric,
             )
@@ -433,6 +452,8 @@ class RunManager:
                 candidate,
                 record,
                 sources,
+                operator=operator,
+                assessment_date=pinned,
                 retrieved_at=started,
                 config=self._rubric,
             )
@@ -465,7 +486,7 @@ class RunManager:
                 assessment=candidate if state is RunState.COMPLETE else None,
                 pending_assessment=candidate if state is RunState.AWAITING_REVIEW else None,
                 trace=trace.steps,
-                disclosures=self._datasets.disclosures_for(record),
+                disclosures=self._datasets.disclosures_for(record, operator=operator),
                 started_at=started,
                 finished_at=self._clock(),
             )
@@ -479,7 +500,7 @@ class RunManager:
                 state=RunState.FAILED,
                 summary=f"run failed: {exc}",
                 trace=trace.steps,
-                disclosures=self._datasets.disclosures_for(record),
+                disclosures=self._datasets.disclosures_for(record, operator=operator),
                 started_at=started,
                 finished_at=self._clock(),
             )
@@ -494,8 +515,33 @@ class RunManager:
     async def _create_run(self, run_id: str, kind: str, *, record: BatchRecord, model: str) -> None:
         async with self._session_factory() as session:
             store = RunStore(session)
-            await store.create_run(run_id=run_id, kind=kind, record=record, model=model)
+            operator = await store.operator_profile(self._datasets.operator)
+            assessment_date = self._settings.rehearsal_date or self._clock().astimezone(UTC).date()
+            await store.create_run(
+                run_id=run_id,
+                kind=kind,
+                record=record,
+                model=model,
+                assessment_date=assessment_date,
+                operator=operator,
+            )
             await session.commit()
+
+    @staticmethod
+    def _require_country(record: BatchRecord) -> None:
+        if record.polygon.country is None:
+            raise IntakeError(
+                "plot.country",
+                "Production country is missing on this legacy record. "
+                "Resubmit it with an ISO country before screening.",
+            )
+
+    async def _accepted_context(self, run_id: str) -> tuple[date, OperatorRecord]:
+        async with self._session_factory() as session:
+            row = await RunStore(session).get_run(run_id)
+            if row is None or row.assessment_date is None or row.operator_profile is None:
+                raise CoreError("accepted run has no immutable assessment context")
+            return row.assessment_date, OperatorRecord.model_validate(row.operator_profile)
 
     async def _set_state(
         self,
@@ -698,6 +744,8 @@ class RunManager:
         *,
         on_step: StepHook | None,
         models: ModelBundle | None = None,
+        as_of: date | None = None,
+        operator: OperatorRecord | None = None,
     ) -> RunOrchestrator:
         return RunOrchestrator(
             gfw=self._gfw,
@@ -706,7 +754,8 @@ class RunManager:
             models=models,
             window_days=self._settings.firms_window_days,
             years=self._settings.loss_window_years,
-            as_of=self._settings.rehearsal_date,
+            as_of=as_of,
+            operator=operator,
             rubric=self._rubric,
             clock=self._clock,
             on_step=on_step,

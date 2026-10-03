@@ -8,7 +8,7 @@ upserts, step appends, result persistence).
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any, cast
 
 from sqlalchemy import Nullable, func, select
@@ -26,6 +26,7 @@ from terrasentry_core.seed.schemas import (
     Archetype,
     BatchRecord,
     ExpectedSignal,
+    OperatorRecord,
 )
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.trace import TraceKind, TraceStep, utc_now
@@ -38,6 +39,7 @@ from terrasentry_api.models import (
     Evidence as EvidenceRow,
 )
 from terrasentry_api.models import (
+    OperatorSetting,
     Parcel,
     Run,
     RunStep,
@@ -95,6 +97,8 @@ class RunStore:
         if polygon.id not in parcel_ids:
             self._session.add(
                 Parcel(
+                    country=polygon.country,
+                    provenance=polygon.provenance,
                     polygon_id=polygon.id,
                     supplier_id=record.supplier_id,
                     label=polygon.label,
@@ -154,6 +158,30 @@ class RunStore:
             .limit(1)
         )
 
+    async def operator_setting(self) -> OperatorSetting | None:
+        return await self._session.get(OperatorSetting, 1)
+
+    async def operator_profile(self, fallback: OperatorRecord) -> OperatorRecord:
+        row = await self.operator_setting()
+        return OperatorRecord.model_validate(row.profile) if row else fallback.model_copy(deep=True)
+
+    async def save_operator(self, profile: OperatorRecord) -> datetime:
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+        insert = pg_insert if self._session.get_bind().dialect.name == "postgresql" else sqlite_insert
+        timestamp = utc_now()
+        statement = insert(OperatorSetting).values(
+            id=1, profile=profile.model_dump(mode="json"), updated_at=timestamp
+        )
+        await self._session.execute(
+            statement.on_conflict_do_update(
+                index_elements=["id"],
+                set_={"profile": statement.excluded.profile, "updated_at": statement.excluded.updated_at},
+            )
+        )
+        return timestamp
+
     # -- suppliers ------------------------------------------------------------
 
     async def list_suppliers(self, *, limit: int = 100, offset: int = 0) -> list[Supplier]:
@@ -180,11 +208,15 @@ class RunStore:
         record: BatchRecord | None = None,
         parent_run_id: str | None = None,
         state: RunState = RunState.QUEUED,
+        assessment_date: date | None = None,
+        operator: OperatorRecord | None = None,
         metrics: dict[str, Any] | None = None,
     ) -> Run:
         row = Run(
             id=run_id,
             kind=kind,
+            assessment_date=assessment_date,
+            operator_profile=operator.model_dump(mode="json") if operator else None,
             parent_run_id=parent_run_id,
             record_id=record.record_id if record is not None else None,
             supplier_id=record.supplier_id if record is not None else None,
@@ -319,6 +351,7 @@ class RunStore:
     ) -> RunVerdict:
         row = await self._session.scalar(select(RunVerdict).where(RunVerdict.run_id == run_id))
         values: dict[str, Any] = {
+            "assessment_date": assessment.assessment_date,
             "record_id": assessment.record_id,
             "supplier_id": assessment.supplier_id,
             "polygon_id": assessment.polygon_id,
@@ -381,6 +414,7 @@ class RunStore:
                     retrieved_at=entry.retrieved_at,
                     cached=entry.cached,
                     synthetic=entry.synthetic,
+                    provenance=entry.provenance,
                     disclosure=entry.disclosure,
                 )
             )
@@ -562,6 +596,7 @@ class RunStore:
 
     async def _record_assessment(self, verdict: RunVerdict, dds: DdsRow | None) -> RecordAssessment:
         assessment = Assessment(
+            assessment_date=verdict.assessment_date,
             record_id=verdict.record_id,
             supplier_id=verdict.supplier_id,
             polygon_id=verdict.polygon_id,
@@ -587,6 +622,7 @@ class RunStore:
                     "retrieved_at": _as_utc(row.retrieved_at),
                     "cached": row.cached,
                     "synthetic": row.synthetic,
+                    "provenance": row.provenance,
                     "disclosure": row.disclosure,
                 }
             )
@@ -596,6 +632,7 @@ class RunStore:
         if payload is None:
             raise ValueError(f"run {verdict.run_id!r} has a verdict but no persisted DDS")
         return RecordAssessment(
+            assessment_date=verdict.assessment_date,
             record_id=verdict.record_id,
             supplier_id=verdict.supplier_id,
             polygon_id=verdict.polygon_id,

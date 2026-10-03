@@ -17,9 +17,7 @@ def _last_assistant_text(messages: Messages) -> str:
     for message in reversed(messages):
         if message.get("role") != "assistant":
             continue
-        texts = [
-            text for block in message.get("content", []) if (text := block.get("text"))
-        ]
+        texts = [text for block in message.get("content", []) if (text := block.get("text"))]
         if texts:
             return " ".join(texts).strip()
     return ""

@@ -60,7 +60,25 @@ def design_sources(record: BatchRecord) -> PolygonSources:
         )
         for _ in range(hotspot_count)
     ]
+    from terrasentry_integrations.sources.gfw_layers import (
+        LAYER_DEFINITIONS,
+        ContextLayer,
+        ContextLayersResult,
+    )
+
     return PolygonSources(
+        layers=ContextLayersResult(
+            layers=[
+                ContextLayer(
+                    name=name,
+                    dataset=definition[0],
+                    version=definition[1],
+                    geometry_hash="b" * 64,
+                    status="success",
+                )
+                for name, definition in LAYER_DEFINITIONS.items()
+            ]
+        ),
         polygon_id=polygon.id,
         loss=TreeCoverLossResult(
             dataset="umd_tree_cover_loss",

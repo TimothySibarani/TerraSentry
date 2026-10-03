@@ -106,7 +106,10 @@ export function PlotStep({
 	};
 
 	const polygon: Extract<PlotGeometry, { type: "Polygon" }> | null =
-		form.shape?.type === "Polygon" ? form.shape : null;
+		form.shape?.type === "Polygon" && form.shape.coordinates.length === 1
+			? form.shape
+			: null;
+	const retained = form.shape !== null && polygon === null;
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -140,6 +143,7 @@ export function PlotStep({
 							plotMethod: "draw",
 							shape: SAMPLE_PLOT,
 							label: form.label || "Blok Siak 07",
+							country: "ID",
 							province: form.province || "Riau",
 							kabupaten: form.kabupaten || "Siak",
 						});
@@ -152,7 +156,7 @@ export function PlotStep({
 
 			<div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_17rem]">
 				<div className="flex min-w-0 flex-col gap-3">
-					{form.plotMethod === "draw" && (
+					{form.plotMethod === "draw" && !retained && (
 						<DrawMap
 							value={polygon}
 							onChange={(shape) => {
@@ -160,6 +164,21 @@ export function PlotStep({
 								update({ shape });
 							}}
 						/>
+					)}
+					{form.plotMethod === "draw" && retained && (
+						<Alert>
+							<AlertTitle>Boundary retained</AlertTitle>
+							<AlertDescription>
+								This shape cannot be edited safely in Draw. Its full boundary is
+								shown below.
+								<Button
+									variant="outline"
+									onClick={() => update({ shape: null })}
+								>
+									Replace with a new polygon
+								</Button>
+							</AlertDescription>
+						</Alert>
 					)}
 
 					{form.plotMethod === "paste" && (
@@ -256,7 +275,7 @@ export function PlotStep({
 						</FieldGroup>
 					)}
 
-					{form.plotMethod !== "draw" && geometry && (
+					{(form.plotMethod !== "draw" || retained) && geometry && (
 						<MapView
 							basemap="satellite"
 							className="min-h-72"
@@ -303,6 +322,16 @@ export function PlotStep({
 			</div>
 
 			<FieldGroup className="grid gap-4 md:grid-cols-3">
+				<TextField
+					field="plot.country"
+					label="Production country (ISO code)"
+					required
+					placeholder="ID"
+					value={form.country}
+					onChange={(country) => update({ country })}
+					error={errors["plot.country"]}
+					description="The country where this plot produces the goods; used in the DDS."
+				/>
 				<TextField
 					field="plot.label"
 					label="Plot name"

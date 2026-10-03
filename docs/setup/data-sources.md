@@ -5,7 +5,7 @@ understanding each API's shape and staying inside its quota.
 
 | Source | What we use it for | Credential | Env vars |
 | --- | --- | --- | --- |
-| Global Forest Watch Data API (Hansen GFC) | Annual tree cover loss inside a polygon | API key (1-year expiry) | `GFW_API_KEY`, `GFW_API_ORIGIN` |
+| Global Forest Watch Data API (Hansen GFC) | Annual loss and seven context layers inside a polygon | API key (1-year expiry) | `GFW_API_KEY`, `GFW_API_ORIGIN` |
 | NASA FIRMS | Near-real-time fire hotspots inside a polygon | MAP_KEY (emailed) | `FIRMS_MAP_KEY`, `FIRMS_SOURCE` |
 | Redis | Response cache keyed by `(source, geometry_hash, date_window)` | none locally | `REDIS_URL`, `CACHE_BACKEND` |
 
@@ -73,7 +73,7 @@ A successful response contains `data` rows of `{umd_tree_cover_loss__year, loss_
 - Large geometries are slow; the async batch endpoint (`/query/batch`) is the scale path:
   submit a FeatureCollection, poll `GET /job/{job_id}`, then download the result.
 - Attribution: cite *Hansen et al., 2013* and Global Forest Watch in the dossier.
-- The client caches by `(gfw, geometry_hash, start-end year)`, so rehearsal re-runs make
+- The loss client caches by `(gfw, geometry_hash, dataset:version:loss-1:start-end year)`, so rehearsal re-runs make
   zero calls.
 
 ## 2. NASA FIRMS
@@ -150,3 +150,53 @@ docker compose exec redis redis-cli --scan --pattern 'ts:cache:firms:*' | xargs 
 - Rotate GFW keys when a teammate leaves; they expire after a year regardless.
 - Do not log query URLs for FIRMS — the MAP_KEY is in the path. The HTTP layer never logs
   URLs.
+
+## 6. S2 context and cutoff contract (2026-10-02)
+
+Screening always checks loss from **2021** through the last completed year covered by
+Hansen `v1.13` (**2025**), even when a legacy caller supplies a rolling window.
+Unknown loss releases are a source gap until their annual coverage is verified.
+Coverage reference: [UMD/GLAD Hansen 2025 v1.13 release](https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/download.html).
+
+| Signal | Pinned dataset/version | Applicability |
+| --- | --- | --- |
+| Protected areas | `wdpa_protected_areas/v202512` | Global |
+| Forest moratorium | `idn_forest_moratorium/v20200923` | ID |
+| Oil-palm concessions | `gfw_oil_palm/v2025` | ID |
+| Wood-fiber concessions | `gfw_wood_fiber/v2025` | ID |
+| Logging concessions | `gfw_logging/v202106` | ID |
+| Peat | `gfw_peatlands/v20230315` | ID; broader coverage unverified |
+| Forest baseline | `jrc_global_forest_cover/v2020.3` | Global; context only, no scoring credit |
+
+Vector queries return full feature geometry, not clipped hectares. The client intersects
+it locally, measures WGS84 geodesic area with holes subtracted, ignores boundary-only
+contact, and unions footprints before totaling each layer. Evidence retains feature IDs,
+names/designations/companies, geometry, per-feature area, dataset/version, query revision,
+and retrieval time. Pages are 100 rows, bounded at 1,000 features and 10 MiB; exceeding a
+bound or receiving malformed geometry produces an explicit unavailable result.
+
+`success` with zero overlap, `unavailable`, and `not_applicable` are separate states.
+A failed applicable layer prevents a compliant verdict; successful siblings stay cached
+and only failures are retried. These historical context layers and declared permits are
+**not current legal-registry verification**. Non-ID records skip the five ID-only queries;
+missing HGU/PBPH is not applicable outside ID, while expired declared permits and sanctions
+still matter. Missing expiry remains disclosed as unknown.
+
+Context cache keys use source `gfw_layers`, the `geometry-v2` exact query-geometry hash and
+`dataset:version:clip-2`.
+`GFW_CONTEXT_RELEASES` accepts a JSON mapping, e.g.
+`{"protected_areas":"wdpa_protected_areas/v202512"}`. Only explicit versions are allowed;
+verify the new release's fields and geographic coverage before configuring it. Changing
+release or query revision invalidates the corresponding cache identity. Old S1 loss-only
+fixtures must be prefetched again before an S2 offline rehearsal.
+
+For a source smoke without Redis:
+
+```bash
+CACHE_BACKEND=memory uv run python -m terrasentry_integrations.preflight \
+  --polygons data/seed/demo_polygons.json --limit 3 --no-batch
+```
+
+The report includes full applicable-layer results and cold/warm timings. At the default
+60 GFW requests/minute, 50 cold ID plots require at least 400 GFW queries plus FIRMS;
+prefetch for demos rather than promising a two-minute cold batch.

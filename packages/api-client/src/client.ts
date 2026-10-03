@@ -18,6 +18,8 @@ import {
   GeometryReport,
   HealthResponse,
   ImportResult,
+  OperatorSettingOut,
+  type OperatorUpdate,
   RecordOut,
   type RecordSubmission,
   type RunCreateRequest,
@@ -64,6 +66,10 @@ export const decodeRunEventStream = <E, R>(
 export class ApiClient extends Context.Service<
   ApiClient,
   {
+    getOperator(): Effect.Effect<OperatorSettingOut, ApiClientError>;
+    updateOperator(
+      payload: OperatorUpdate,
+    ): Effect.Effect<OperatorSettingOut, ApiClientError>;
     getHealth(): Effect.Effect<HealthResponse, ApiClientError>;
     listSuppliers(): Effect.Effect<ReadonlyArray<SupplierOut>, ApiClientError>;
     getSupplier(
@@ -138,6 +144,8 @@ export class ApiClient extends Context.Service<
             ),
           ),
           HttpClient.filterStatusOk,
+        );
+        const reads = http.pipe(
           HttpClient.retryTransient({
             schedule: Schedule.exponential(100),
             times: 3,
@@ -158,7 +166,7 @@ export class ApiClient extends Context.Service<
           schema: S,
           url: string,
         ) =>
-          http
+          reads
             .get(url)
             .pipe(
               Effect.flatMap(HttpClientResponse.schemaBodyJson(schema)),
@@ -213,6 +221,22 @@ export class ApiClient extends Context.Service<
             : HttpClientRequest.put(url)
           ).pipe(HttpClientRequest.bodyJsonUnsafe(payload));
 
+        const getOperator = Effect.fn("ApiClient.getOperator")(function* () {
+          return yield* getJson(
+            "getOperator",
+            OperatorSettingOut,
+            "/settings/operator",
+          );
+        });
+        const updateOperator = Effect.fn("ApiClient.updateOperator")(function* (
+          payload: OperatorUpdate,
+        ) {
+          return yield* sendJson(
+            "updateOperator",
+            OperatorSettingOut,
+            body("PUT", "/settings/operator", payload),
+          );
+        });
         const getHealth = Effect.fn("ApiClient.getHealth")(function* () {
           return yield* getJson("getHealth", HealthResponse, "/health");
         });
@@ -297,7 +321,7 @@ export class ApiClient extends Context.Service<
         const getRunDdsXml = Effect.fn("ApiClient.getRunDdsXml")(function* (
           runId: string,
         ) {
-          const response = yield* http
+          const response = yield* reads
             .get(`/dds/${encodeURIComponent(runId)}/xml`)
             .pipe(Effect.mapError(fail("getRunDdsXml")));
           return yield* response.text.pipe(
@@ -439,7 +463,7 @@ export class ApiClient extends Context.Service<
         const streamRun = Effect.fn("ApiClient.streamRun")(function* (
           runId: string,
         ) {
-          const response = yield* http
+          const response = yield* reads
             .get(`/runs/${encodeURIComponent(runId)}/stream`)
             .pipe(Effect.mapError(fail("streamRun")));
           return decodeRunEventStream(response.stream);
@@ -448,7 +472,7 @@ export class ApiClient extends Context.Service<
         const streamBatchRun = Effect.fn("ApiClient.streamBatchRun")(function* (
           runId: string,
         ) {
-          const response = yield* http
+          const response = yield* reads
             .get(`/batch-runs/${encodeURIComponent(runId)}/stream`)
             .pipe(Effect.mapError(fail("streamBatchRun")));
           return decodeRunEventStream(response.stream, "streamBatchRun");
@@ -456,6 +480,8 @@ export class ApiClient extends Context.Service<
 
         return ApiClient.of({
           getHealth,
+          getOperator,
+          updateOperator,
           listSuppliers,
           getSupplier,
           createRun,

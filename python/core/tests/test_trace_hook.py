@@ -69,6 +69,7 @@ async def test_resume_emits_the_review_step(factories, source_clients) -> None:
     data, record = _ambiguous_datasets(factories)
     seen: list[Any] = []
     with respx.mock(assert_all_called=False) as router:
+        agent_helpers.mock_context_layers(router)
         router.post(agent_helpers.GFW_URL).mock(
             return_value=httpx.Response(200, json={"status": "success", "data": []})
         )

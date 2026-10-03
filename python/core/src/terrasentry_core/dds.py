@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import base64
 import json
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from xml.etree import ElementTree as ET
 
@@ -35,6 +35,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
+from terrasentry_integrations.geometry import has_polygon_holes
 
 from terrasentry_core.domain.models import Assessment, AssessmentInput
 from terrasentry_core.errors import (
@@ -179,6 +180,7 @@ class DdsAssessmentSummary(BaseModel):
     model_config = _EUDR_MODEL_CONFIG
 
     record_id: str | None = None
+    assessment_date: date | None = None
     supplier_id: str
     polygon_id: str
     rubric_version: str
@@ -253,7 +255,7 @@ def build_geojson_feature_collection(
     centroid_lat: float,
     geometry: dict[str, Any],
     producer_name: str,
-    producer_country: str = "ID",
+    producer_country: str,
 ) -> dict[str, Any]:
     """A GeoJSON FeatureCollection matching the Information System's file format.
 
@@ -268,6 +270,8 @@ def build_geojson_feature_collection(
         raise InvalidGeometryError(polygon_id, "geometry is not valid")
     if parsed.is_empty:
         raise InvalidGeometryError(polygon_id, "geometry is empty")
+    if has_polygon_holes(parsed):
+        raise InvalidGeometryError(polygon_id, "plots with holes must be split into polygons without holes")
 
     if area_ha > POINT_PLOT_MAX_HA:
         if parsed.geom_type not in {"Polygon", "MultiPolygon"}:
@@ -320,6 +324,11 @@ def build_dds(
         raise MissingAssessmentInputError(
             f"record {input.record_id or input.parcel.polygon_id} has no operator profile"
         )
+    producer_country = input.parcel.country
+    if producer_country is None:
+        raise MissingAssessmentInputError(
+            "production country missing; resubmit the record with an ISO country"
+        )
     consignment = input.consignment
     operator = input.operator
     parcel = input.parcel
@@ -333,6 +342,7 @@ def build_dds(
         centroid_lat=parcel.centroid_lat,
         geometry=parcel.geometry,
         producer_name=supplier.legal_name,
+        producer_country=producer_country,
     )
     geometry_b64 = encode_geojson(geojson)
 
@@ -376,7 +386,7 @@ def build_dds(
                 producers=[
                     EudrProducer(
                         position=1,
-                        country="ID",
+                        country=producer_country,
                         name=supplier.legal_name,
                         geometry_geojson=geometry_b64,
                     ),
@@ -394,6 +404,7 @@ def build_dds(
         statement=statement,
         assessment=DdsAssessmentSummary(
             record_id=assessment.record_id,
+            assessment_date=assessment.assessment_date,
             supplier_id=assessment.supplier_id,
             polygon_id=assessment.polygon_id,
             rubric_version=assessment.rubric_version,

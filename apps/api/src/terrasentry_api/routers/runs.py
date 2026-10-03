@@ -109,6 +109,7 @@ async def get_evidence(run_id: str, session: SessionDep) -> list[EvidenceEntry]:
                 "retrieved_at": row.retrieved_at,
                 "cached": row.cached,
                 "synthetic": row.synthetic,
+                "provenance": row.provenance,
                 "disclosure": row.disclosure,
             }
         )

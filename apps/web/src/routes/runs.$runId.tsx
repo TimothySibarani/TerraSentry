@@ -1,6 +1,6 @@
-import type { TraceStep } from "@terrasentry/api-client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import type { TraceStep } from "@terrasentry/api-client";
 import { ArrowLeftIcon, RefreshCwIcon } from "lucide-react";
 import { useMemo } from "react";
 
@@ -142,6 +142,14 @@ function RunDetailScreen({ runId }: { runId: string }) {
 				}
 			/>
 
+			{record.operator_profile && (
+				<p className="text-body-sm text-muted-foreground">
+					Accepted operator: {record.operator_profile.legal_name} ·{" "}
+					{record.operator_profile.identifier_value}
+					{record.assessment_date ? ` · as of ${record.assessment_date}` : ""}
+				</p>
+			)}
+
 			{record.kind === "batch" ? (
 				<Alert>
 					<AlertTitle>This is a batch parent run</AlertTitle>
@@ -221,6 +229,7 @@ function RunDetailScreen({ runId }: { runId: string }) {
 				</TabsContent>
 				<TabsContent value="assessment" className="pt-4">
 					<AssessmentPanel
+						runId={runId}
 						verdict={releasedVerdict ?? pendingVerdict}
 						verification={record.verification}
 						disclosures={record.disclosures}

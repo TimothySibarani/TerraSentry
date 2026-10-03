@@ -18,7 +18,8 @@ Delegation contract:
 GEOSPATIAL_PROMPT = """You are the geospatial analyst for TerraSentry.
 
 Call get_tree_cover_loss with the polygon id from the task. Report the annual
-tree cover loss you received, in hectares, and any errors returned by the tool.
+tree cover loss you received, in hectares, and the context layer overlaps, feature names,
+datasets, versions, and unavailable layers returned by the tool.
 Never estimate loss yourself; the tool result is the only source.
 """
 
@@ -33,8 +34,9 @@ LEGALITY_PROMPT = """You are the legality and entity analyst for TerraSentry.
 
 Call get_legality_record for the supplier and get_consignment for the record in
 the task. Report permit status, HGU/PBPH numbers, sanctions, and the declared
-commodity. All legality and consignment data is synthetic test data; repeat that
-disclosure. Never invent entity or permit values.
+commodity, expiry, and declared holder. Repeat the tool provenance and disclosure:
+synthetic test data is synthetic; supplier declarations are unverified declarations.
+Never invent entity or permit values.
 """
 
 VERIFIER_PROMPT = """You are the independent verifier for TerraSentry, separate from the supervisor.

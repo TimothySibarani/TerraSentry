@@ -1,7 +1,7 @@
 import type {
 	Assessment,
-	VerificationReport,
 	VerdictOut,
+	VerificationReport,
 } from "@terrasentry/api-client";
 import { AlertTriangleIcon, CheckCircle2Icon } from "lucide-react";
 
@@ -30,7 +30,13 @@ const SEVERITY_VARIANT: Record<string, "outline" | "review" | "risk"> = {
 	error: "risk",
 };
 
-function FindingsList({ assessment }: { assessment: Assessment }) {
+function FindingsList({
+	assessment,
+	runId,
+}: {
+	assessment: Assessment;
+	runId: string;
+}) {
 	if (assessment.findings.length === 0) {
 		return (
 			<p className="text-body-sm text-muted-foreground">
@@ -63,6 +69,17 @@ function FindingsList({ assessment }: { assessment: Assessment }) {
 						</span>
 					</div>
 					<p className="text-body-sm text-muted-foreground">{finding.detail}</p>
+					<div className="flex flex-wrap gap-2">
+						{finding.evidence_ids.map((id) => (
+							<a
+								key={id}
+								href={`/runs/${encodeURIComponent(runId)}?tab=evidence#${encodeURIComponent(id)}`}
+								className="text-xs text-primary underline"
+							>
+								{id}
+							</a>
+						))}
+					</div>
 					{Object.keys(finding.metrics).length > 0 && (
 						<p className="text-caption-mono-sm text-muted-foreground">
 							{Object.entries(finding.metrics)
@@ -158,7 +175,9 @@ export function AssessmentPanel({
 	verdict,
 	verification,
 	disclosures,
+	runId,
 }: {
+	runId: string;
 	verdict: VerdictOut | null;
 	verification: VerificationReport | null;
 	disclosures: ReadonlyArray<string>;
@@ -178,6 +197,24 @@ export function AssessmentPanel({
 	}
 
 	const assessment = verdict.assessment;
+	const critical = new Set([
+		"legal_permit",
+		"protected_area",
+		"moratorium",
+		"concession_conflict",
+	]);
+	const rank = (finding: Assessment["findings"][number]) =>
+		finding.level === "flag"
+			? critical.has(finding.code)
+				? 0
+				: 1
+			: finding.level === "borderline"
+				? 2
+				: 3;
+	const reasons = [...assessment.findings]
+		.sort((a, b) => rank(a) - rank(b) || a.code.localeCompare(b.code))
+		.filter((finding) => finding.level !== "clear")
+		.slice(0, 3);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -208,13 +245,25 @@ export function AssessmentPanel({
 			<div className="grid gap-4 lg:grid-cols-2">
 				<Card>
 					<CardHeader>
-						<CardTitle>Findings</CardTitle>
+						<CardTitle>Why this verdict?</CardTitle>
 						<CardDescription>
 							Deterministic points and citations per signal.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<FindingsList assessment={assessment} />
+						<p className="mb-3 text-body-sm text-muted-foreground">
+							{reasons.length
+								? reasons.map((finding) => finding.detail).join(" ")
+								: assessment.data_gaps.length
+									? "Required data is unavailable, so this result needs human review."
+									: "No scored risk signals or required source gaps were found; declarations remain unverified."}
+						</p>
+						{assessment.assessment_date && (
+							<p className="mb-3 text-caption-mono-sm text-muted-foreground">
+								Assessed as of {assessment.assessment_date}
+							</p>
+						)}
+						<FindingsList assessment={assessment} runId={runId} />
 					</CardContent>
 				</Card>
 				<Card>
@@ -246,7 +295,7 @@ export function AssessmentPanel({
 					<p className="text-body-sm text-muted-foreground">
 						Expected archetype{" "}
 						<span className="text-foreground">
-							{verdict.expected_archetype}
+							{verdict.expected_archetype ?? "Unlabelled submitted record"}
 						</span>
 						{verdict.expected_signal
 							? ` · signal ${verdict.expected_signal}`

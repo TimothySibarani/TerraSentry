@@ -37,7 +37,13 @@ def _candidate(factories: dict[str, Any]) -> tuple[Any, PolygonSources, RecordAs
 
 def test_clean_candidate_passes_and_reports_checks(factories: dict[str, Any]) -> None:
     record, sources, candidate = _candidate(factories)
-    report = code_checks(candidate, record, sources, retrieved_at=agent_helpers.FIXED_TIME)
+    report = code_checks(
+        candidate,
+        record,
+        sources,
+        operator=agent_helpers.datasets().operator,
+        retrieved_at=agent_helpers.FIXED_TIME,
+    )
     assert report.accepted
     assert "dds.citations" in report.checked_claims
     assert f"metric.{FindingCode.DEFORESTATION_LOSS.value}" in report.checked_claims
@@ -50,7 +56,13 @@ def test_tampered_metric_is_rejected(factories: dict[str, Any]) -> None:
         item for item in candidate.assessment.findings if item.code is FindingCode.DEFORESTATION_LOSS
     )
     finding.metrics["post_cutoff_loss_ha"] = 999.0
-    report = code_checks(candidate, record, sources, retrieved_at=agent_helpers.FIXED_TIME)
+    report = code_checks(
+        candidate,
+        record,
+        sources,
+        operator=agent_helpers.datasets().operator,
+        retrieved_at=agent_helpers.FIXED_TIME,
+    )
     assert not report.accepted
     assert any(
         challenge.kind == "metric_mismatch" and challenge.severity == "error"
@@ -61,7 +73,13 @@ def test_tampered_metric_is_rejected(factories: dict[str, Any]) -> None:
 def test_missing_evidence_is_a_citation_failure(factories: dict[str, Any]) -> None:
     record, sources, candidate = _candidate(factories)
     candidate.evidence = []
-    report = code_checks(candidate, record, sources, retrieved_at=agent_helpers.FIXED_TIME)
+    report = code_checks(
+        candidate,
+        record,
+        sources,
+        operator=agent_helpers.datasets().operator,
+        retrieved_at=agent_helpers.FIXED_TIME,
+    )
     assert not report.accepted
     assert any(challenge.kind == "citation_failure" for challenge in report.challenges)
 
@@ -69,7 +87,25 @@ def test_missing_evidence_is_a_citation_failure(factories: dict[str, Any]) -> No
 def test_source_gap_is_a_warning_not_a_rejection(factories: dict[str, Any]) -> None:
     record, _sources, candidate = _candidate(factories)
     empty = PolygonSources(polygon_id=record.polygon.id, errors=["gfw: timeout", "firms: timeout"])
-    report = code_checks(candidate, record, empty, retrieved_at=agent_helpers.FIXED_TIME)
+    candidate = assess_record(
+        PolygonReport(
+            polygon_id=record.polygon.id,
+            label=record.polygon.label,
+            region=record.polygon.region,
+            area_ha=record.polygon.area_ha,
+            errors=empty.errors,
+        ),
+        record,
+        agent_helpers.datasets().operator,
+        retrieved_at=agent_helpers.FIXED_TIME,
+    )
+    report = code_checks(
+        candidate,
+        record,
+        empty,
+        operator=agent_helpers.datasets().operator,
+        retrieved_at=agent_helpers.FIXED_TIME,
+    )
     assert report.accepted
     assert any(
         challenge.kind == "missing_source" and challenge.severity == "warning"
@@ -81,7 +117,7 @@ def test_candidate_record_mismatch_is_a_programming_error(factories: dict[str, A
     record, sources, candidate = _candidate(factories)
     candidate.record_id = "REC-OTHER"
     with pytest.raises(ValueError, match="REC-OTHER"):
-        code_checks(candidate, record, sources)
+        code_checks(candidate, record, sources, operator=agent_helpers.datasets().operator)
 
 
 def test_design_mismatch_is_reported_as_a_challenge(factories: dict[str, Any]) -> None:
@@ -107,6 +143,32 @@ def test_design_mismatch_is_reported_as_a_challenge(factories: dict[str, Any]) -
     )
     operator = agent_helpers.datasets().operator
     candidate = assess_record(polygon_report, record, operator, retrieved_at=agent_helpers.FIXED_TIME)
-    report = code_checks(candidate, record, sources, retrieved_at=agent_helpers.FIXED_TIME)
+    report = code_checks(
+        candidate,
+        record,
+        sources,
+        operator=agent_helpers.datasets().operator,
+        retrieved_at=agent_helpers.FIXED_TIME,
+    )
     assert report.accepted
     assert any(challenge.kind == "design_mismatch" for challenge in report.challenges)
+
+
+@pytest.mark.parametrize("target", ["score", "verdict", "fingerprint", "points", "dds", "evidence"])
+def test_tampered_outcomes_are_rejected(factories: dict[str, Any], target: str) -> None:
+    from terrasentry_core.domain.enums import Verdict
+
+    record, sources, candidate = _candidate(factories)
+    if target == "score":
+        candidate.assessment.score = -1
+    elif target == "verdict":
+        candidate.assessment.verdict = Verdict.COMPLIANT
+    elif target == "fingerprint":
+        candidate.fingerprint = "fake"
+    elif target == "points":
+        candidate.assessment.findings[0].points += 1
+    elif target == "dds":
+        candidate.dds.statement.commodities[0].producers[0].country = "BR"
+    else:
+        candidate.evidence[0].value = "altered"
+    assert not code_checks(candidate, record, sources, operator=agent_helpers.datasets().operator).accepted

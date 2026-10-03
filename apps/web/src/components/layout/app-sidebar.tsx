@@ -6,6 +6,7 @@ import {
 	LayoutDashboardIcon,
 	RadarIcon,
 	SatelliteIcon,
+	SettingsIcon,
 } from "lucide-react";
 
 import { ApiStatus } from "#/components/api-status";
@@ -24,6 +25,7 @@ import {
 } from "#/components/ui/sidebar";
 
 const NAV_ITEMS = [
+	{ to: "/settings", label: "Settings", icon: SettingsIcon },
 	{ to: "/", label: "Overview", icon: LayoutDashboardIcon },
 	{ to: "/screen", label: "Screen a plot", icon: RadarIcon },
 	{ to: "/runs", label: "Runs", icon: ActivityIcon },

@@ -88,11 +88,11 @@ class SeedDatasets:
             }
         )
 
-    def disclosures_for(self, record: BatchRecord) -> list[str]:
+    def disclosures_for(self, record: BatchRecord, *, operator: OperatorRecord | None = None) -> list[str]:
         """Disclosures that apply to one record's run (not the whole seed)."""
         return sorted(
             {
-                self._operator.disclosure,
+                (operator or self._operator).disclosure,
                 record.legality.disclosure,
                 record.consignment.disclosure,
                 *([self._batch.disclosure] if record.record_id not in self._submitted else []),

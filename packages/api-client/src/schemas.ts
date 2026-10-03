@@ -41,6 +41,11 @@ export const FindingCode = Schema.Literals([
   "legal_permit",
   "area_mismatch",
   "certification",
+  "protected_area",
+  "moratorium",
+  "peatland",
+  "concession_conflict",
+  "forest_baseline",
 ]);
 export type FindingCode = typeof FindingCode.Type;
 
@@ -57,6 +62,48 @@ export const EvidenceSource = Schema.Literals([
   "deterministic_rubric",
 ]);
 export type EvidenceSource = typeof EvidenceSource.Type;
+
+export const Provenance = Schema.Literals([
+  "synthetic",
+  "supplier_declared",
+  "document_extracted",
+  "sap_import",
+  "real_source",
+  "operator_configured",
+  "derived",
+  "legacy_unknown",
+]);
+export type Provenance = typeof Provenance.Type;
+
+export const OperatorUpdate = Schema.Struct({
+  legal_name: Schema.String,
+  identifier_type: Schema.Literals(["eori"]),
+  identifier_value: Schema.String,
+  address_line: Schema.String,
+  postal_code: Schema.String,
+  city: Schema.String,
+  country: Schema.String,
+  email: Schema.String,
+  phone: Schema.String,
+  activity_type: Schema.Literals(["IMPORT", "EXPORT", "DOMESTIC"]),
+  country_of_activity: Schema.String,
+  border_cross_country: Schema.String,
+});
+export type OperatorUpdate = typeof OperatorUpdate.Type;
+export const OperatorRecord = Schema.Struct({
+  ...OperatorUpdate.fields,
+  operator_id: Schema.String,
+  synthetic: Schema.Boolean,
+  provenance: Provenance,
+  disclosure: Schema.String,
+});
+export type OperatorRecord = typeof OperatorRecord.Type;
+export const OperatorSettingOut = Schema.Struct({
+  profile: OperatorRecord,
+  configured: Schema.Boolean,
+  updated_at: Schema.NullOr(Schema.DateTimeUtcFromString),
+});
+export type OperatorSettingOut = typeof OperatorSettingOut.Type;
 
 export const TraceKind = Schema.Literals([
   "run",
@@ -88,6 +135,7 @@ export const Finding = Schema.Struct({
 export type Finding = typeof Finding.Type;
 
 export const Assessment = Schema.Struct({
+  assessment_date: Schema.optional(Schema.NullOr(Schema.String)),
   record_id: Schema.NullOr(Schema.String),
   supplier_id: Schema.String,
   polygon_id: Schema.String,
@@ -182,6 +230,8 @@ const runSummaryFields = {
   polygon_id: Schema.NullOr(Schema.String),
   parent_run_id: Schema.NullOr(Schema.String),
   model: Schema.String,
+  assessment_date: Schema.optional(Schema.NullOr(Schema.String)),
+  operator_profile: Schema.optional(Schema.NullOr(OperatorRecord)),
   summary: Schema.String,
   error: Schema.NullOr(Schema.String),
   verdict: Schema.NullOr(Verdict),
@@ -252,6 +302,8 @@ export const BatchSummary = Schema.Struct({
 export type BatchSummary = typeof BatchSummary.Type;
 
 export const ParcelOut = Schema.Struct({
+  country: Schema.optional(Schema.NullOr(Schema.String)),
+  provenance: Schema.optional(Provenance),
   polygon_id: Schema.String,
   supplier_id: Schema.String,
   label: Schema.String,
@@ -277,6 +329,8 @@ const supplierFields = {
   hgu_number: Schema.NullOr(Schema.String),
   pbp_number: Schema.NullOr(Schema.String),
   permit_status: Schema.String,
+  permit_expiry: Schema.optional(Schema.NullOr(Schema.String)),
+  declared_holder: Schema.optional(Schema.NullOr(Schema.String)),
   concession_area_ha: Schema.Number,
   province: Schema.String,
   kabupaten: Schema.String,
@@ -299,6 +353,7 @@ export const SupplierDetail = Schema.Struct({
 export type SupplierDetail = typeof SupplierDetail.Type;
 
 export const EvidenceEntry = Schema.Struct({
+  provenance: Schema.optional(Provenance),
   schema_version: Schema.Int,
   evidence_id: Schema.String,
   claim: Schema.String,
@@ -411,6 +466,7 @@ const GeoJsonObject = Schema.Record(Schema.String, Schema.Unknown);
 export const RecordSubmission = Schema.Struct({
   plot: Schema.Struct({
     geometry: GeoJsonObject,
+    country: Schema.String,
     label: Schema.String,
     province: Schema.optional(Schema.String),
     kabupaten: Schema.optional(Schema.String),
@@ -427,6 +483,8 @@ export const RecordSubmission = Schema.Struct({
   }),
   legality: Schema.optional(
     Schema.Struct({
+      permit_expiry: Schema.optional(Schema.NullOr(Schema.String)),
+      declared_holder: Schema.optional(Schema.String),
       permit_type: Schema.optional(PermitType),
       permit_number: Schema.optional(Schema.String),
       permit_status: Schema.optional(PermitStatus),
@@ -474,6 +532,8 @@ export const LatestRunOut = Schema.Struct({
 export type LatestRunOut = typeof LatestRunOut.Type;
 
 export const RecordOut = Schema.Struct({
+  country: Schema.optional(Schema.NullOr(Schema.String)),
+  geometry_provenance: Schema.optional(Provenance),
   record_id: Schema.String,
   supplier_id: Schema.String,
   polygon_id: Schema.String,
@@ -492,6 +552,8 @@ export const RecordOut = Schema.Struct({
   hs_heading: Schema.String,
   net_weight_kg: Schema.Number,
   permit_status: Schema.String,
+  permit_expiry: Schema.optional(Schema.NullOr(Schema.String)),
+  declared_holder: Schema.optional(Schema.NullOr(Schema.String)),
   hgu_number: Schema.NullOr(Schema.String),
   pbp_number: Schema.NullOr(Schema.String),
   provenance: Schema.String,

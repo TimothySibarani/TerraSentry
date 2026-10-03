@@ -20,20 +20,10 @@ from terrasentry_integrations.errors import CacheMissError, IntegrationError
 from terrasentry_integrations.settings import IntegrationSettings
 
 
-def _canonicalize(value: Any, decimals: int = 6) -> Any:
-    if isinstance(value, dict):
-        return {str(key): _canonicalize(value[key], decimals) for key in sorted(value)}
-    if isinstance(value, (list, tuple)):
-        return [_canonicalize(item, decimals) for item in value]
-    if isinstance(value, float):
-        return round(value, decimals)
-    return value
-
-
 def geometry_hash(geometry: dict[str, Any]) -> str:
-    """Stable SHA-256 over a canonicalized GeoJSON geometry or feature collection."""
-    canonical = json.dumps(_canonicalize(geometry), separators=(",", ":"), sort_keys=True)
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    """Versioned identity of the exact query geometry; never round derived buffers."""
+    canonical = json.dumps(geometry, separators=(",", ":"), sort_keys=True, allow_nan=False)
+    return hashlib.sha256(f"geometry-v2:{canonical}".encode()).hexdigest()
 
 
 class CacheEntry(BaseModel):

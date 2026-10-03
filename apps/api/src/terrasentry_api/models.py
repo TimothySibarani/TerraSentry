@@ -14,12 +14,14 @@ Portability rules:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
+    Date,
     DateTime,
     Enum,
     Float,
@@ -73,6 +75,8 @@ class Supplier(Base):
     npwp: Mapped[str] = mapped_column(String(32))
     hgu_number: Mapped[str | None] = mapped_column(String(64), default=None)
     pbp_number: Mapped[str | None] = mapped_column(String(64), default=None)
+    permit_expiry: Mapped[date | None] = mapped_column(Date, default=None)
+    declared_holder: Mapped[str | None] = mapped_column(String(200), default=None)
     permit_status: Mapped[str] = mapped_column(String(16), default="active")
     concession_area_ha: Mapped[float] = mapped_column(Float)
     province: Mapped[str] = mapped_column(String(64))
@@ -96,6 +100,10 @@ class Parcel(Base):
     polygon_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     supplier_id: Mapped[str] = mapped_column(
         ForeignKey("suppliers.supplier_id", ondelete="CASCADE"), index=True
+    )
+    country: Mapped[str | None] = mapped_column(String(2), default=None)
+    provenance: Mapped[str] = mapped_column(
+        String(24), default="legacy_unknown", server_default="legacy_unknown"
     )
     label: Mapped[str] = mapped_column(String(255))
     region: Mapped[str] = mapped_column(String(128))
@@ -133,6 +141,15 @@ class SubmittedRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
+class OperatorSetting(Base):
+    __tablename__ = "operator_settings"
+    __table_args__ = (CheckConstraint("id = 1", name="singleton"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    profile: Mapped[dict[str, Any]] = mapped_column(JSONType)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class Run(Base):
     """A scenario run, a batch parent, or one record inside a batch."""
 
@@ -147,6 +164,8 @@ class Run(Base):
     supplier_id: Mapped[str | None] = mapped_column(ForeignKey("suppliers.supplier_id"), default=None)
     polygon_id: Mapped[str | None] = mapped_column(ForeignKey("parcels.polygon_id"), default=None)
     state: Mapped[RunState] = mapped_column(_enum_column(RunState), default=RunState.QUEUED)
+    assessment_date: Mapped[date | None] = mapped_column(Date, default=None)
+    operator_profile: Mapped[dict[str, Any] | None] = mapped_column(JSONType, default=None)
     model: Mapped[str] = mapped_column(String(32), default="scripted")
     summary: Mapped[str] = mapped_column(Text, default="")
     error: Mapped[str | None] = mapped_column(Text, default=None)
@@ -212,6 +231,7 @@ class Evidence(Base):
     retrieved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     cached: Mapped[bool] = mapped_column(Boolean, default=False)
     synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
+    provenance: Mapped[str | None] = mapped_column(String(24), default=None)
     disclosure: Mapped[str | None] = mapped_column(Text, default=None)
 
     run: Mapped[Run] = relationship()
@@ -228,6 +248,7 @@ class RunVerdict(Base):
     record_id: Mapped[str] = mapped_column(String(64))
     supplier_id: Mapped[str] = mapped_column(String(64))
     polygon_id: Mapped[str] = mapped_column(String(64))
+    assessment_date: Mapped[date | None] = mapped_column(Date, default=None)
     rubric_version: Mapped[str] = mapped_column(String(32))
     score: Mapped[int]
     verdict: Mapped[Verdict] = mapped_column(_enum_column(Verdict))

@@ -4,6 +4,18 @@
       "Assessment": {
         "description": "Reproducible outcome of the rubric for one supplier/parcel.",
         "properties": {
+          "assessment_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Date"
+          },
           "citations": {
             "additionalProperties": {
               "items": {
@@ -454,6 +466,21 @@
             "title": "Evidence Id",
             "type": "string"
           },
+          "provenance": {
+            "default": "legacy_unknown",
+            "enum": [
+              "synthetic",
+              "supplier_declared",
+              "document_extracted",
+              "sap_import",
+              "real_source",
+              "operator_configured",
+              "derived",
+              "legacy_unknown"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          },
           "retrieved_at": {
             "anyOf": [
               {
@@ -467,7 +494,7 @@
             "title": "Retrieved At"
           },
           "schema_version": {
-            "default": 1,
+            "default": 2,
             "title": "Schema Version",
             "type": "integer"
           },
@@ -580,7 +607,12 @@
           "fire_cluster",
           "legal_permit",
           "area_mismatch",
-          "certification"
+          "certification",
+          "protected_area",
+          "moratorium",
+          "peatland",
+          "concession_conflict",
+          "forest_baseline"
         ],
         "title": "FindingCode",
         "type": "string"
@@ -853,6 +885,24 @@
             ],
             "title": "Concession Area Ha"
           },
+          "declared_holder": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Declared Holder",
+            "type": "string"
+          },
+          "permit_expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permit Expiry"
+          },
           "permit_number": {
             "default": "",
             "maxLength": 64,
@@ -892,6 +942,235 @@
         "title": "LegalityInput",
         "type": "object"
       },
+      "OperatorRecord": {
+        "description": "The synthetic EU operator on whose behalf the DDS is prepared.",
+        "properties": {
+          "activity_type": {
+            "default": "IMPORT",
+            "enum": [
+              "IMPORT",
+              "EXPORT",
+              "DOMESTIC"
+            ],
+            "title": "Activity Type",
+            "type": "string"
+          },
+          "address_line": {
+            "title": "Address Line",
+            "type": "string"
+          },
+          "border_cross_country": {
+            "default": "NL",
+            "title": "Border Cross Country",
+            "type": "string"
+          },
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "country": {
+            "default": "NL",
+            "title": "Country",
+            "type": "string"
+          },
+          "country_of_activity": {
+            "default": "NL",
+            "title": "Country Of Activity",
+            "type": "string"
+          },
+          "disclosure": {
+            "default": "SYNTHETIC TEST DATA \u2014 companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person.",
+            "title": "Disclosure",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "identifier_type": {
+            "default": "eori",
+            "enum": [
+              "eori",
+              "vat",
+              "tin",
+              "comp_num",
+              "oni"
+            ],
+            "title": "Identifier Type",
+            "type": "string"
+          },
+          "identifier_value": {
+            "title": "Identifier Value",
+            "type": "string"
+          },
+          "legal_name": {
+            "title": "Legal Name",
+            "type": "string"
+          },
+          "operator_id": {
+            "title": "Operator Id",
+            "type": "string"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          },
+          "postal_code": {
+            "title": "Postal Code",
+            "type": "string"
+          },
+          "provenance": {
+            "default": "synthetic",
+            "enum": [
+              "synthetic",
+              "supplier_declared",
+              "document_extracted",
+              "sap_import",
+              "real_source",
+              "operator_configured",
+              "derived",
+              "legacy_unknown"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "operator_id",
+          "legal_name",
+          "identifier_value",
+          "address_line",
+          "postal_code",
+          "city",
+          "email",
+          "phone"
+        ],
+        "title": "OperatorRecord",
+        "type": "object"
+      },
+      "OperatorSettingOut": {
+        "properties": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/OperatorRecord"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "profile",
+          "configured"
+        ],
+        "title": "OperatorSettingOut",
+        "type": "object"
+      },
+      "OperatorUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "activity_type": {
+            "default": "IMPORT",
+            "enum": [
+              "IMPORT",
+              "EXPORT",
+              "DOMESTIC"
+            ],
+            "title": "Activity Type",
+            "type": "string"
+          },
+          "address_line": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Address Line",
+            "type": "string"
+          },
+          "border_cross_country": {
+            "title": "Border Cross Country",
+            "type": "string"
+          },
+          "city": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "City",
+            "type": "string"
+          },
+          "country": {
+            "title": "Country",
+            "type": "string"
+          },
+          "country_of_activity": {
+            "title": "Country Of Activity",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "identifier_type": {
+            "const": "eori",
+            "default": "eori",
+            "title": "Identifier Type",
+            "type": "string"
+          },
+          "identifier_value": {
+            "maxLength": 17,
+            "minLength": 3,
+            "title": "Identifier Value",
+            "type": "string"
+          },
+          "legal_name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Legal Name",
+            "type": "string"
+          },
+          "phone": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Phone",
+            "type": "string"
+          },
+          "postal_code": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Postal Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "legal_name",
+          "identifier_value",
+          "address_line",
+          "postal_code",
+          "city",
+          "country",
+          "email",
+          "phone",
+          "country_of_activity",
+          "border_cross_country"
+        ],
+        "title": "OperatorUpdate",
+        "type": "object"
+      },
       "ParcelOut": {
         "properties": {
           "archetype": {
@@ -917,6 +1196,17 @@
             "title": "Centroid Lon",
             "type": "number"
           },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
           "geometry": {
             "additionalProperties": true,
             "title": "Geometry",
@@ -932,6 +1222,21 @@
           },
           "polygon_id": {
             "title": "Polygon Id",
+            "type": "string"
+          },
+          "provenance": {
+            "default": "legacy_unknown",
+            "enum": [
+              "synthetic",
+              "supplier_declared",
+              "document_extracted",
+              "sap_import",
+              "real_source",
+              "operator_configured",
+              "derived",
+              "legacy_unknown"
+            ],
+            "title": "Provenance",
             "type": "string"
           },
           "province": {
@@ -975,6 +1280,10 @@
       },
       "PlotInput": {
         "properties": {
+          "country": {
+            "title": "Country",
+            "type": "string"
+          },
           "declared_area_ha": {
             "anyOf": [
               {
@@ -1014,6 +1323,7 @@
           }
         },
         "required": [
+          "country",
           "geometry",
           "label"
         ],
@@ -1021,7 +1331,6 @@
         "type": "object"
       },
       "RecordOut": {
-        "description": "A submitted plot record, as stored, with the latest screening run.",
         "properties": {
           "area_ha": {
             "title": "Area Ha",
@@ -1039,10 +1348,32 @@
             "title": "Commodity",
             "type": "string"
           },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "declared_holder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Holder"
           },
           "description": {
             "title": "Description",
@@ -1056,6 +1387,21 @@
             "additionalProperties": true,
             "title": "Geometry",
             "type": "object"
+          },
+          "geometry_provenance": {
+            "default": "legacy_unknown",
+            "enum": [
+              "synthetic",
+              "supplier_declared",
+              "document_extracted",
+              "sap_import",
+              "real_source",
+              "operator_configured",
+              "derived",
+              "legacy_unknown"
+            ],
+            "title": "Geometry Provenance",
+            "type": "string"
           },
           "geometry_type": {
             "title": "Geometry Type",
@@ -1108,6 +1454,18 @@
               }
             ],
             "title": "Pbp Number"
+          },
+          "permit_expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permit Expiry"
           },
           "permit_status": {
             "title": "Permit Status",
@@ -1293,6 +1651,18 @@
               }
             ]
           },
+          "assessment_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Date"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -1372,6 +1742,16 @@
           "model": {
             "title": "Model",
             "type": "string"
+          },
+          "operator_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperatorRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "parent_run_id": {
             "anyOf": [
@@ -1541,6 +1921,18 @@
       "RunSummary": {
         "description": "One run row as it appears in list views and the cockpit table.",
         "properties": {
+          "assessment_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Date"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -1603,6 +1995,16 @@
           "model": {
             "title": "Model",
             "type": "string"
+          },
+          "operator_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperatorRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "parent_run_id": {
             "anyOf": [
@@ -1852,6 +2254,17 @@
             "title": "Concession Area Ha",
             "type": "number"
           },
+          "declared_holder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Holder"
+          },
           "disclosure": {
             "default": "",
             "title": "Disclosure",
@@ -1905,6 +2318,18 @@
               }
             ],
             "title": "Pbp Number"
+          },
+          "permit_expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permit Expiry"
           },
           "permit_status": {
             "title": "Permit Status",
@@ -2042,6 +2467,17 @@
             "title": "Concession Area Ha",
             "type": "number"
           },
+          "declared_holder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Holder"
+          },
           "disclosure": {
             "default": "",
             "title": "Disclosure",
@@ -2088,6 +2524,18 @@
               }
             ],
             "title": "Pbp Number"
+          },
+          "permit_expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permit Expiry"
           },
           "permit_status": {
             "title": "Permit Status",
@@ -3705,6 +4153,66 @@
         "summary": "Stream Run",
         "tags": [
           "runs"
+        ]
+      }
+    },
+    "/settings/operator": {
+      "get": {
+        "operationId": "get_operator_settings_operator_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorSettingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Operator",
+        "tags": [
+          "settings"
+        ]
+      },
+      "put": {
+        "operationId": "put_operator_settings_operator_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperatorUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorSettingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Operator",
+        "tags": [
+          "settings"
         ]
       }
     },

@@ -387,7 +387,7 @@ Pydantic models mirroring the published OData metadata is enough at this scope.
 `packages/api-client/openapi.json`, and runs `openapi-typescript` to produce
 `packages/api-client/src/schema.d.ts` (the compile-time contract: paths, params, response shapes).
 At runtime, `packages/api-client/src/client.ts` calls the API with the Effect `HttpClient`, retries
-transient failures, and decodes responses with Effect `Schema` (`schemas.ts`), so untrusted
+transient GET failures (writes execute once), and decodes responses with Effect `Schema` (`schemas.ts`), so untrusted
 payloads are validated before they reach the UI.
 
 **Why:** two complementary guarantees. An API change that removes or renames a field fails `tsc`
@@ -574,8 +574,9 @@ web app only receives `VITE_*` values at build time.
 | Thermal & Anomaly (NASA FIRMS) | Real API | same, separate source client + specialist |
 | Independent Verifier | Real (LLM cross-check) | `python/core/.../agents/verifier.py` |
 | Plot intake (submitted records) | Real — validated WGS84 geometry, persisted across restarts, provenance on every field | `python/core/.../intake.py`, `apps/api/.../routers/records.py`, `/screen` |
-| Legality & Entity | Submitted: declared by the supplier (the GFW cross-checks land in S2); seed demo data: simulated and labelled | `python/core/.../intake.py` + `data/seed/` + legality specialist |
+| Legality & Entity | Supplier declarations or labelled seed data, cross-checked against versioned GFW context layers | `python/core/.../intake.py` + `data/seed/` + legality specialist |
 | Supervisor | Real (Strands graph) | `python/core/.../agents/supervisor.py` |
+| Operator settings | Shared, validated operator declaration; snapshotted at run/batch acceptance, EORI registration unverified | `/settings`, `operator_settings`, `runs.operator_profile` |
 | Compliance & DDS Writer | Real (JSON/XML) | `python/core/.../dds.py` |
 | SAP actions | Stub by default (schema-accurate); sandbox/live ready and disclosed per action | `python/integrations/.../sap/` + `apps/api/.../sap_actions.py` |
 | 2 live scenarios | Real data, full trace | seeded polygons in `data/seed/` + fixtures cache |
@@ -791,6 +792,52 @@ diff-stable via `pnpm gen:api`. U1 closed 2026-09-27: the live path runs on Bedr
 (`openai.gpt-oss-120b-1:0`, `BEDROCK_REASONING_EFFORT=low`; GPT-6 needs the Paid plan) — the
 preflight passes both roles and `high_risk_live` completed live with a 23-step real trace, released
 DDS, and a SAP block under a least-privilege IAM policy (`docs/milestones.md` 2026-09-27).
+
+
+S1 repairs and S2 landed (2026-10-02): shared winding-independent geodesic area and hole
+rejection at intake/DDS, strict normalized inputs/import errors, registration after durable
+commit, one-shot writes and reusable registered records, current geometry validation gates,
+whole-geometry editing, decoded map totals, and configured model defaults. Route generation
+now preserves the Start registration through both the CLI and Vite; generated contracts
+and routes remain generated.
+
+Production country (ISO alpha-2), declared permit expiry/holder and provenance flow through
+intake, persistence, sources, rubric and DDS. Point input/declared area remain distinct from
+the derived query buffer. New assessments use rubric **1.1.0**, evidence schema **2** and a
+pinned UTC assessment date. WDPA overlap and moratorium overlap above 0.1 ha are critical;
+smaller moratorium and peat overlap require review. Concessions produce one strongest
+holder/commodity finding. Certifications never clear critical flags; forest baseline grants
+no credit. The verifier re-derives the complete assessment, evidence, fingerprint and DDS
+from the trusted record, sources, accepted operator/date and rubric configuration.
+
+`GET/PUT /settings/operator` reads/writes one shared, authenticated profile. The store reads
+it at acceptance, persists a snapshot and date on every single/batch child, and retains that
+context through settings edits, restart and review. A synthetic disclosed fallback remains
+when unconfigured. Alembic revisions `c6e27a901b34` and `d915f2b473a8` add the contracts and
+singleton; only synthetic seed parcels gain an ID backfill. Legacy submissions lacking
+country remain readable but require resubmission before a new run; prior payloads and DDS
+are preserved. Apply with `pnpm db:upgrade` before running the updated API.
+
+The cockpit adds production country/expiry/holder, `/settings`, accepted run context,
+deterministic explanations linked to evidence anchors, expandable named source artifacts,
+and eight provenance labels including derived and historical unknown origins. Current
+verification and external limits are recorded in [milestones](milestones.md) and
+[source setup](setup/data-sources.md); historical S1 live-model proof is not S2 proof.
+Fresh S2 Bedrock runs on the repaired code pass verification and release configured-operator
+DDS: WDPA high-risk (`run-0647f39f0be5`) and ID control compliant (`run-3cd3c56a43e6`); see
+[KPI evidence](kpi.md). Browser interaction acceptance for S2 remains open.
+
+The S2 review repairs add shared per-ring antimeridian checks (including derived point
+buffers and legacy source queries), exact versioned geometry cache identity (`geometry-v2`),
+strict finite numeric/null raster aggregates (`clip-2`), explicit missing annual coverage
+intervals, and one coalesced source acquisition per run. Refresh bypasses upstream caches
+on first acquisition; later roles share the accepted snapshot, including partial failures.
+Acquisition cancellation/failure permits retry without a stuck lock. Independent layer facts
+remain visible if loss is unavailable. Model tools omit feature geometry and duplicate context;
+feature facts exceeding 8 KiB per layer are explicitly omitted with their count and an artifact
+reference, retaining aggregate risk/status. Full geometry/facts remain in the ledger, API and
+deterministic verifier. Re-prefetch old fixtures before offline replay. The 50-record live-source
+prefetch and PostgreSQL replay are now measured in [KPI evidence](kpi.md).
 
 ---
 

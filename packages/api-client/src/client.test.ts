@@ -71,6 +71,29 @@ function apiLayer(handler: Handler) {
 }
 
 describe("ApiClient", () => {
+  it.live("retries transient reads but attempts transient writes once", () => {
+    let calls = 0;
+    return Effect.gen(function* () {
+      const api = yield* ApiClient;
+      yield* api.getRun("run-1");
+      assert.strictEqual(calls, 2);
+      calls = 0;
+      const error = yield* api
+        .createRun({ record_id: "REC-001" })
+        .pipe(Effect.flip);
+      assert.strictEqual(error.status, 503);
+      assert.strictEqual(calls, 1);
+    }).pipe(
+      Effect.provide(
+        apiLayer((request) => {
+          calls++;
+          return request.method === "POST" || calls === 1
+            ? jsonResponse({ detail: "temporarily unavailable" }, 503)
+            : jsonResponse(runDetail);
+        }),
+      ),
+    );
+  });
   it.effect("GETs and decodes a typed health response", () =>
     Effect.gen(function* () {
       const api = yield* ApiClient;

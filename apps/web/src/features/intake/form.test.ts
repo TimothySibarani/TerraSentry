@@ -11,6 +11,7 @@ import {
 
 const complete = {
 	...initialForm(),
+	country: "ID",
 	shape: SAMPLE_PLOT,
 	label: "Blok 7",
 	legalName: "PT Contoh",
@@ -23,6 +24,7 @@ describe("intake form", () => {
 	it("blocks each step on its own required fields", () => {
 		const empty = initialForm();
 		expect(Object.keys(validateStep("plot", empty))).toEqual([
+			"plot.country",
 			"plot.geometry",
 			"plot.label",
 		]);

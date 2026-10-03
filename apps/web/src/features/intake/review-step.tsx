@@ -145,6 +145,7 @@ export function ReviewStep({
 				<div className="grid gap-4 md:grid-cols-2">
 					<Summary title="Plot" onEdit={() => onEdit("plot")}>
 						<Row label="Name">{form.label}</Row>
+						<Row label="Country">{form.country.toUpperCase()}</Row>
 						<Row label="Location">
 							{[form.kabupaten, form.province].filter(Boolean).join(", ") ||
 								"—"}
@@ -182,6 +183,8 @@ export function ReviewStep({
 						<Row label="Status">
 							{form.permitType === "none" ? "—" : form.permitStatus}
 						</Row>
+						<Row label="Expiry">{form.permitExpiry || "Unknown"}</Row>
+						<Row label="Holder">{form.declaredHolder || form.legalName}</Row>
 						<Row label="Provenance">
 							<Badge variant="outline">supplier-declared</Badge>
 						</Row>

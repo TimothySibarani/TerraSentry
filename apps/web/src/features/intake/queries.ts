@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiClientError } from "@terrasentry/api-client";
-import { useEffect, useState } from "react";
+import { ApiClientError, type RecordOut } from "@terrasentry/api-client";
+import { useEffect, useRef, useState } from "react";
 import type { IntakeForm } from "#/features/intake/form";
 import { toSubmission } from "#/features/intake/form";
 import type { PlotGeometry } from "#/features/intake/geometry";
@@ -24,11 +24,11 @@ export function useGeometryCheck(
 	geometry: PlotGeometry | null,
 	declaredAreaHa: number | null,
 ) {
-	const key = useDebounced(
-		geometry ? JSON.stringify([geometry, declaredAreaHa]) : null,
-		350,
-	);
-	return useQuery({
+	const immediateKey = geometry
+		? JSON.stringify([geometry, declaredAreaHa])
+		: null;
+	const key = useDebounced(immediateKey, 350);
+	const query = useQuery({
 		queryKey: ["intake", "geometry", key],
 		enabled: key !== null,
 		retry: false,
@@ -43,6 +43,14 @@ export function useGeometryCheck(
 			);
 		},
 	});
+	const current = immediateKey !== null && immediateKey === key;
+	return {
+		...query,
+		data: current ? query.data : undefined,
+		error: current ? query.error : null,
+		isFetching: immediateKey !== null && (!current || query.isFetching),
+		isCurrentValid: current && query.isSuccess,
+	};
 }
 
 export function geometryIssue(error: unknown): string | null {
@@ -55,6 +63,7 @@ export function geometryIssue(error: unknown): string | null {
 /** Register the plot, then start the agent run on it. */
 export function useScreenPlot() {
 	const queryClient = useQueryClient();
+	const registered = useRef<{ key: string; record: RecordOut } | null>(null);
 	return useMutation({
 		mutationFn: async ({
 			form,
@@ -63,9 +72,16 @@ export function useScreenPlot() {
 			form: IntakeForm;
 			model: "scripted" | "bedrock";
 		}) => {
-			const record = await runApi((api) =>
-				api.createRecord(toSubmission(form)),
-			);
+			const submission = toSubmission(form);
+			const key = JSON.stringify(submission);
+			if (registered.current?.key !== key) {
+				registered.current = null;
+				const record = await runApi((api) => api.createRecord(submission));
+				registered.current = { key, record };
+				void queryClient.invalidateQueries({ queryKey: ["records"] });
+				void queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+			}
+			const record = registered.current.record;
 			const run = await runApi((api) =>
 				api.createRun({ record_id: record.record_id, model }),
 			);

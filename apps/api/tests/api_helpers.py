@@ -185,6 +185,8 @@ def test_settings(
 
 async def _create_all(engine: AsyncEngine) -> None:
     async with engine.begin() as connection:
+        # SQLite test readers must not block the concurrent batch writer; production uses Postgres.
+        await connection.exec_driver_sql("PRAGMA journal_mode=WAL")
         await connection.run_sync(Base.metadata.create_all)
 
 

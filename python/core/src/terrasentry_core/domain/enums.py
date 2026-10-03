@@ -57,6 +57,11 @@ class FindingCode(StrEnum):
     LEGAL_PERMIT = "legal_permit"
     AREA_MISMATCH = "area_mismatch"
     CERTIFICATION = "certification"
+    PROTECTED_AREA = "protected_area"
+    MORATORIUM = "moratorium"
+    PEATLAND = "peatland"
+    CONCESSION_CONFLICT = "concession_conflict"
+    FOREST_BASELINE = "forest_baseline"
 
 
 class FindingLevel(StrEnum):

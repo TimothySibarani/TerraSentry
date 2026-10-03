@@ -79,5 +79,8 @@ export function ModelSelect({
 /** The model a new run should start with: live when available and preferred. */
 export function useDefaultModel(): ModelMode {
 	const health = useQuery(healthQuery());
-	return health.data?.bedrockConfigured ? "bedrock" : "scripted";
+	return health.data?.bedrockConfigured &&
+		health.data.defaultModel === "bedrock"
+		? "bedrock"
+		: "scripted";
 }

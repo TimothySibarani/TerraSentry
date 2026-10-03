@@ -6,9 +6,9 @@ import json
 import math
 import random
 
-from pyproj import Geod
 from shapely.affinity import scale
 from shapely.geometry import Polygon, mapping
+from terrasentry_integrations.geometry import geodesic_area_ha
 
 from terrasentry_core.seed.consignment import generate_consignment, generate_operator
 from terrasentry_core.seed.legality import generate_legality
@@ -30,7 +30,6 @@ DEFAULT_RNG_SEED = 20260911
 BATCH_DISTRIBUTION: dict[str, int] = {"compliant": 30, "high_risk": 12, "ambiguous": 8}
 DEMO_QUOTA: dict[str, int] = {"compliant": 3, "high_risk": 3, "ambiguous": 2}
 _HA_PER_SQ_DEGREE = 1_230_000.0
-_GEOD = Geod(ellps="WGS84")
 _EXPECTED_SIGNALS: tuple[ExpectedSignal, ...] = ("deforestation", "fire", "legal")
 _EXPECTED_AMBIGUITIES: tuple[AmbiguityReason, ...] = (
     "borderline_area",
@@ -43,11 +42,6 @@ _AREA_RANGES: dict[str, tuple[float, float]] = {
     "high_risk": (500.0, 6000.0),
     "ambiguous": (100.0, 1500.0),
 }
-
-
-def geodesic_area_ha(polygon: Polygon) -> float:
-    area, _ = _GEOD.geometry_area_perimeter(polygon)
-    return abs(area) / 10_000.0
 
 
 def _vertices_polygon(rng: random.Random, lon: float, lat: float, target_ha: float) -> Polygon:
@@ -106,6 +100,7 @@ def _to_seed_polygon(
     else:
         label = f"Batch record — {region.name} ({archetype})"
     return SeedPolygon(
+        country="ID",
         id=f"PLY-{index:03d}",
         label=label,
         region=region.name,

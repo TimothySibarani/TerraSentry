@@ -5,6 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,6 +18,7 @@ class IntegrationSettings(BaseSettings):
     gfw_tcl_dataset: str = "umd_tree_cover_loss"
     gfw_tcl_version: str = "v1.13"
     gfw_rate_limit_per_min: int = 60
+    gfw_context_releases: dict[str, str] = Field(default_factory=dict)
 
     firms_map_key: str = ""
     firms_api_base_url: str = "https://firms.modaps.eosdis.nasa.gov/api"

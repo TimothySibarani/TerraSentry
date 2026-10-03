@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
 import { useMemo } from "react";
-
 import { ErrorState } from "#/components/error-state";
-import { MapView, type MapTone } from "#/components/map/map-view";
+import { type MapTone, MapView } from "#/components/map/map-view";
 import { MetricCard } from "#/components/metric-card";
 import { PageHeader } from "#/components/page-header";
+import { ProvenanceBadge } from "#/components/provenance-badge";
 import { SupplierSapCard } from "#/components/sap-panel";
 import { Badge } from "#/components/ui/badge";
 import {
@@ -96,11 +96,7 @@ function SupplierDetailPage() {
 				eyebrow="Supplier"
 				title={record.legal_name}
 				description={`${record.trading_name} · ${record.group}`}
-				actions={
-					<Badge variant={record.synthetic ? "review" : "compliant"}>
-						{record.synthetic ? "synthetic data" : "real data"}
-					</Badge>
-				}
+				actions={<ProvenanceBadge provenance={record.provenance} />}
 			/>
 
 			<div className="grid gap-4 sm:grid-cols-3">

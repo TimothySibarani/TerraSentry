@@ -5,6 +5,8 @@
   "generated_by": "terrasentry_core.seed",
   "polygons": [
     {
+      "country": "ID",
+      "provenance": "synthetic",
       "id": "PLY-001",
       "label": "Live scenario B — high risk (Riau peat forests)",
       "region": "Riau peat forests",
@@ -49,9 +51,12 @@
             ]
           ]
         ]
-      }
+      },
+      "input_geometry": null
     },
     {
+      "country": "ID",
+      "provenance": "synthetic",
       "id": "PLY-002",
       "label": "Live scenario A — compliant (Jambi lowland forest)",
       "region": "Jambi lowland forest",
@@ -84,9 +89,12 @@
             ]
           ]
         ]
-      }
+      },
+      "input_geometry": null
     },
     {
+      "country": "ID",
+      "provenance": "synthetic",
       "id": "PLY-003",
       "label": "Demo high_risk — South Sumatra peat forest",
       "region": "South Sumatra peat forest",
@@ -127,9 +135,12 @@
             ]
           ]
         ]
-      }
+      },
+      "input_geometry": null
     },
     {
+      "country": "ID",
+      "provenance": "synthetic",
       "id": "PLY-004",
       "label": "Demo high_risk — Central Kalimantan forest",
       "region": "Central Kalimantan forest",
@@ -174,9 +185,12 @@
             ]
           ]
         ]
-      }
+      },
+      "input_geometry": null
     },
     {
+      "country": "ID",
+      "provenance": "synthetic",
       "id": "PLY-005",
       "label": "Demo ambiguous — East Kalimantan forest",
       "region": "East Kalimantan forest",
@@ -217,9 +231,12 @@
             ]
           ]
         ]
-      }
+      },
+      "input_geometry": null
     },
     {
+      "country": "ID",
+      "provenance": "synthetic",
       "id": "PLY-006",
       "label": "Demo compliant — West Kalimantan forest",
       "region": "West Kalimantan forest",
@@ -268,9 +285,12 @@
             ]
           ]
         ]
-      }
+      },
+      "input_geometry": null
     },
     {
+      "country": "ID",
+      "provenance": "synthetic",
       "id": "PLY-007",
       "label": "Demo ambiguous — Riau peat forests",
       "region": "Riau peat forests",
@@ -323,9 +343,12 @@
             ]
           ]
         ]
-      }
+      },
+      "input_geometry": null
     },
     {
+      "country": "ID",
+      "provenance": "synthetic",
       "id": "PLY-010",
       "label": "Demo compliant — Central Kalimantan forest",
       "region": "Central Kalimantan forest",
@@ -370,7 +393,8 @@
             ]
           ]
         ]
-      }
+      },
+      "input_geometry": null
     }
   ]
 }

@@ -51,6 +51,7 @@ export interface IntakeForm {
 	pointLon: string;
 	declaredAreaHa: string;
 	label: string;
+	country: string;
 	province: string;
 	kabupaten: string;
 	legalName: string;
@@ -62,6 +63,8 @@ export interface IntakeForm {
 	owners: string;
 	permitType: PermitType;
 	permitNumber: string;
+	permitExpiry: string;
+	declaredHolder: string;
 	permitStatus: PermitStatus;
 	concessionAreaHa: string;
 	commodity: Commodity;
@@ -166,6 +169,7 @@ export function initialForm(): IntakeForm {
 		pointLon: "",
 		declaredAreaHa: "",
 		label: "",
+		country: "",
 		province: "",
 		kabupaten: "",
 		legalName: "",
@@ -177,6 +181,8 @@ export function initialForm(): IntakeForm {
 		owners: "",
 		permitType: "hgu",
 		permitNumber: "",
+		permitExpiry: "",
+		declaredHolder: "",
 		permitStatus: "active",
 		concessionAreaHa: "",
 		commodity: "oil_palm",
@@ -232,6 +238,10 @@ export type FieldErrors = Readonly<Record<string, string>>;
 export function validateStep(step: StepId, form: IntakeForm): FieldErrors {
 	const errors: Record<string, string> = {};
 	if (step === "plot") {
+		if (!/^[A-Z]{2}$/.test(form.country.trim().toUpperCase())) {
+			errors["plot.country"] =
+				"Enter the ISO country code, e.g. ID for Indonesia.";
+		}
 		const geometry = currentGeometry(form);
 		if (!geometry) {
 			errors["plot.geometry"] =
@@ -257,6 +267,13 @@ export function validateStep(step: StepId, form: IntakeForm): FieldErrors {
 			"Enter the supplier's registered legal name.";
 	}
 	if (step === "legality") {
+		if (
+			form.permitExpiry &&
+			(!/^\d{4}-\d{2}-\d{2}$/.test(form.permitExpiry) ||
+				!Number.isFinite(Date.parse(form.permitExpiry)))
+		) {
+			errors["legality.permit_expiry"] = "Enter a valid date.";
+		}
 		if (form.permitType !== "none" && !form.permitNumber.trim()) {
 			errors["legality.permit_number"] = "Enter the permit number.";
 		}
@@ -320,6 +337,7 @@ export function toSubmission(form: IntakeForm): RecordSubmission {
 	return {
 		plot: {
 			geometry: geometry as unknown as Record<string, unknown>,
+			country: form.country.trim().toUpperCase(),
 			label: form.label.trim(),
 			province: form.province.trim(),
 			kabupaten: form.kabupaten.trim(),
@@ -335,6 +353,8 @@ export function toSubmission(form: IntakeForm): RecordSubmission {
 			beneficial_owners: lines(form.owners),
 		},
 		legality: {
+			permit_expiry: form.permitExpiry || null,
+			declared_holder: form.declaredHolder.trim(),
 			permit_type: form.permitType,
 			permit_number: form.permitType === "none" ? "" : form.permitNumber.trim(),
 			permit_status: form.permitType === "none" ? "none" : form.permitStatus,

@@ -80,6 +80,20 @@ function renderStep(initial?: Partial<IntakeForm>) {
 afterEach(cleanup);
 
 describe("PlotStep", () => {
+	it("retains a MultiPolygon in Draw until replacement is explicit", () => {
+		validateGeometry.mockResolvedValue(report());
+		const shape = {
+			type: "MultiPolygon" as const,
+			coordinates: [SQUARE.coordinates],
+		};
+		renderStep({ shape });
+		expect(screen.getByText("Boundary retained")).toBeDefined();
+		expect(screen.getByTestId("map-view")).toBeDefined();
+		expect(screen.queryByTestId("draw-map")).toBeNull();
+		fireEvent.click(screen.getByText("Replace with a new polygon"));
+		expect(screen.getByTestId("draw-map")).toBeDefined();
+		expect(screen.queryByTestId("map-view")).toBeNull();
+	});
 	it("shows the server measurement for a pasted polygon", async () => {
 		validateGeometry.mockResolvedValue(report());
 		renderStep({ plotMethod: "paste" });

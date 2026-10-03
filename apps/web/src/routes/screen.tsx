@@ -1,6 +1,6 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ModelMode } from "@terrasentry/api-client";
 import { ApiClientError } from "@terrasentry/api-client";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeftIcon, ArrowRightIcon, RadarIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -24,6 +24,8 @@ import {
 } from "#/features/intake/detail-steps";
 import { fieldId } from "#/features/intake/fields";
 import {
+	currentGeometry,
+	declaredArea,
 	type FieldErrors,
 	type IntakeForm,
 	initialForm,
@@ -35,7 +37,11 @@ import {
 	validateStep,
 } from "#/features/intake/form";
 import { PlotStep } from "#/features/intake/plot-step";
-import { useScreenPlot } from "#/features/intake/queries";
+import {
+	geometryIssue,
+	useGeometryCheck,
+	useScreenPlot,
+} from "#/features/intake/queries";
 import { ReviewStep } from "#/features/intake/review-step";
 import { useDefaultModel } from "#/features/runs/model-select";
 
@@ -59,17 +65,23 @@ function ScreenPlotPage() {
 	const [modelChoice, setModelChoice] = useState<ModelMode | null>(null);
 	const model = modelChoice ?? defaultModel;
 	const screen = useScreenPlot();
+	const geometryCheck = useGeometryCheck(
+		currentGeometry(form),
+		declaredArea(form),
+	);
 	const headingRef = useRef<HTMLHeadingElement>(null);
 
 	// A step is reachable only when every earlier step validates, so a deep
 	// link to ?step=review on an empty form lands on the first gap instead.
 	const firstInvalid = useMemo(
 		() =>
-			STEP_IDS.find(
-				(id) =>
-					id !== "review" && Object.keys(validateStep(id, form)).length > 0,
-			) ?? null,
-		[form],
+			!geometryCheck.isCurrentValid
+				? "plot"
+				: (STEP_IDS.find(
+						(id) =>
+							id !== "review" && Object.keys(validateStep(id, form)).length > 0,
+					) ?? null),
+		[form, geometryCheck.isCurrentValid],
 	);
 	const reachable = (id: StepId) => {
 		const limit = firstInvalid
@@ -99,7 +111,12 @@ function ScreenPlotPage() {
 	};
 
 	const next = () => {
-		const stepErrors = validateStep(step, form);
+		const stepErrors = { ...validateStep(step, form) };
+		if (step === "plot" && !geometryCheck.isCurrentValid) {
+			stepErrors["plot.geometry"] =
+				geometryIssue(geometryCheck.error) ??
+				"Wait for a successful server measurement of this plot.";
+		}
 		setErrors(stepErrors);
 		const first = Object.keys(stepErrors)[0];
 		if (first) {

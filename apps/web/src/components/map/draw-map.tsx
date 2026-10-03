@@ -205,7 +205,7 @@ export function DrawMap({
 		emittedRef.current = serialised;
 		syncingRef.current = true;
 		draw.clear();
-		if (value) {
+		if (value && value.coordinates.length === 1) {
 			const ring = value.coordinates[0] ?? [];
 			draw.addFeatures([
 				{

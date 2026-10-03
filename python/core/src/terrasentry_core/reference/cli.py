@@ -7,6 +7,7 @@ import asyncio
 import json
 import sys
 from collections.abc import Sequence
+from datetime import date
 from pathlib import Path
 
 from terrasentry_integrations.cache import build_cache
@@ -50,6 +51,7 @@ async def _run(args: argparse.Namespace) -> int:
             window_days=args.window,
             years=args.years,
             offline=args.offline,
+            as_of=args.as_of,
         )
     finally:
         await gfw.close()
@@ -76,13 +78,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--seed", default="data/seed/demo_polygons.json", help="seed polygon file")
     parser.add_argument("--window", type=int, default=30, help="FIRMS lookback window in days")
-    parser.add_argument("--years", type=int, default=5, help="GFW loss window in years")
+    parser.add_argument(
+        "--years",
+        type=int,
+        default=5,
+        help="legacy option; compliance always queries 2021 through verified annual coverage",
+    )
     parser.add_argument("--out", default="data/runs", help="run artifact directory")
     parser.add_argument(
         "--offline",
         action="store_true",
         help="serve exclusively from the cache; fail on a cache miss",
     )
+    parser.add_argument("--as-of", type=date.fromisoformat, help="Assessment date (YYYY-MM-DD)")
     args = parser.parse_args(argv)
     try:
         return asyncio.run(_run(args))

@@ -1,13 +1,14 @@
-import type { SupplierOut } from "@terrasentry/api-client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createColumnHelper } from "@tanstack/react-table";
+import type { SupplierOut } from "@terrasentry/api-client";
 import { SearchIcon } from "lucide-react";
 import { useMemo } from "react";
 
 import { DataTable, type TableFeatureSet } from "#/components/data-table";
 import { ErrorState } from "#/components/error-state";
 import { PageHeader } from "#/components/page-header";
+import { ProvenanceBadge } from "#/components/provenance-badge";
 import { Badge } from "#/components/ui/badge";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
@@ -107,14 +108,9 @@ const columns = helper.columns([
 				</span>
 			),
 	}),
-	helper.accessor("synthetic", {
-		header: "Data",
-		cell: (info) =>
-			info.getValue() ? (
-				<Badge variant="review">synthetic</Badge>
-			) : (
-				<Badge variant="compliant">real</Badge>
-			),
+	helper.accessor("provenance", {
+		header: "Data origin",
+		cell: (info) => <ProvenanceBadge provenance={info.getValue()} />,
 	}),
 ]);
 
@@ -149,7 +145,7 @@ function SuppliersPage() {
 			<PageHeader
 				eyebrow="Master data"
 				title="Suppliers"
-				description="The 50 synthetic operators behind the batch. Legality fields are generated in realistic HGU/PBPH formats and labelled synthetic everywhere."
+				description="Seed and submitted suppliers, with declared identity and legality fields labelled by origin."
 				actions={
 					<div className="relative w-full sm:w-72">
 						<SearchIcon

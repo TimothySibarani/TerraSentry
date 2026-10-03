@@ -10,15 +10,18 @@ geodesically with pyproj.
 from __future__ import annotations
 
 import math
+from datetime import date
 from typing import Any, Literal
 from uuid import uuid4
 
 import shapely
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pyproj import Geod
 from shapely.geometry import MultiPolygon, Point, Polygon, mapping, shape
 from shapely.validation import explain_validity
+from terrasentry_integrations.geometry import crosses_antimeridian, geodesic_area_ha, has_polygon_holes
 
+from terrasentry_core.countries import normalize_country
 from terrasentry_core.errors import CoreError
 from terrasentry_core.seed.schemas import (
     BatchRecord,
@@ -66,6 +69,10 @@ class IntakeError(CoreError):
 
 
 class PlotInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, allow_inf_nan=False)
+    country: str
+
+    _country = field_validator("country")(normalize_country)
     geometry: dict[str, Any] = Field(
         description="GeoJSON Polygon, MultiPolygon, Point, or a Feature wrapping one."
     )
@@ -78,6 +85,7 @@ class PlotInput(BaseModel):
 
 
 class SupplierInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, allow_inf_nan=False)
     legal_name: str = Field(min_length=2, max_length=200)
     trading_name: str = Field(default="", max_length=200)
     group: str = Field(default="", max_length=200)
@@ -88,6 +96,9 @@ class SupplierInput(BaseModel):
 
 
 class LegalityInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, allow_inf_nan=False)
+    permit_expiry: date | None = None
+    declared_holder: str = Field(default="", max_length=200)
     permit_type: PermitType = "none"
     permit_number: str = Field(default="", max_length=64)
     permit_status: PermitStatus = "active"
@@ -96,6 +107,7 @@ class LegalityInput(BaseModel):
 
 
 class ConsignmentInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, allow_inf_nan=False)
     commodity: Commodity
     description: str = Field(min_length=2, max_length=300)
     hs_heading: str = Field(default="", max_length=10)
@@ -132,11 +144,6 @@ class GeometryReport(BaseModel):
     centroid_lat: float
     centroid_lon: float
     vertex_count: int
-
-
-def geodesic_area_ha(geometry: Polygon | MultiPolygon) -> float:
-    area, _ = _GEOD.geometry_area_perimeter(geometry)
-    return abs(area) / 10_000.0
 
 
 def _unwrap(raw: dict[str, Any]) -> dict[str, Any]:
@@ -196,6 +203,14 @@ def validate_geometry(raw: dict[str, Any], *, declared_area_ha: float | None = N
 
     if not parsed.is_valid:
         raise IntakeError("plot.geometry", f"invalid geometry: {explain_validity(parsed)}")
+    if crosses_antimeridian(parsed):
+        raise IntakeError(
+            "plot.geometry", "plots crossing the antimeridian must be split into separate polygons"
+        )
+    if has_polygon_holes(parsed):
+        raise IntakeError(
+            "plot.geometry", "plots with holes cannot be exported; split the plot into polygons without holes"
+        )
     # Round to 6 decimals (~0.1 m, the DDS precision) and re-check: rounding
     # can collapse or self-intersect a sliver.
     parsed = shapely.set_precision(parsed, _COORD_PRECISION, mode="pointwise")
@@ -207,6 +222,8 @@ def validate_geometry(raw: dict[str, Any], *, declared_area_ha: float | None = N
     if isinstance(parsed, Point):
         if declared_area_ha is None:
             raise IntakeError("plot.declared_area_ha", "a point plot needs a declared area (at most 4 ha)")
+        if not math.isfinite(declared_area_ha) or declared_area_ha <= 0:
+            raise IntakeError("plot.declared_area_ha", "declared area must be a finite positive number")
         if declared_area_ha > POINT_MAX_HA:
             raise IntakeError(
                 "plot.declared_area_ha",
@@ -220,6 +237,15 @@ def validate_geometry(raw: dict[str, Any], *, declared_area_ha: float | None = N
         area = geodesic_area_ha(parsed)
         query = parsed
         centroid = parsed.centroid
+
+    if crosses_antimeridian(query):
+        raise IntakeError(
+            "plot.geometry", "query geometry crosses the antimeridian; use split polygons instead"
+        )
+    if query.is_empty or not query.is_valid:
+        raise IntakeError(
+            "plot.geometry", "derived query geometry is invalid; describe the plot with polygons"
+        )
 
     if area < MIN_AREA_HA:
         raise IntakeError("plot.geometry", f"plot area {area:.4f} ha is below the {MIN_AREA_HA} ha minimum")
@@ -260,6 +286,8 @@ def build_submitted_record(submission: RecordSubmission) -> tuple[BatchRecord, G
         or "Submitted plot"
     )
     polygon = SeedPolygon(
+        country=plot.country,
+        provenance="supplier_declared",
         id=polygon_id,
         label=plot.label.strip(),
         region=region,
@@ -273,9 +301,12 @@ def build_submitted_record(submission: RecordSubmission) -> tuple[BatchRecord, G
         # Sources query the (buffered for points) query geometry; the DDS writes
         # a point for plots <= 4 ha from the centroid, so both stay correct.
         geometry=report.query_geometry,
+        input_geometry=report.geometry if report.geometry_type == "Point" else None,
     )
     supplier = submission.supplier
     legality = LegalityRecord(
+        permit_expiry=legality_in.permit_expiry,
+        declared_holder=legality_in.declared_holder or supplier.legal_name,
         supplier_id=supplier_id,
         legal_name=supplier.legal_name.strip(),
         trading_name=supplier.trading_name.strip() or supplier.legal_name.strip(),

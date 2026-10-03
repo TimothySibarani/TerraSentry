@@ -13,7 +13,7 @@ machine, the verify-before-write edge, and the human-review hold. Callers
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from uuid import uuid4
 
 from strands.multiagent import GraphBuilder
@@ -34,7 +34,7 @@ from terrasentry_core.domain.run_state import advance, decision_event
 from terrasentry_core.errors import AgentRunError, InvalidReviewDecisionError
 from terrasentry_core.reference.pipeline import PolygonReport
 from terrasentry_core.scoring import RubricConfig
-from terrasentry_core.seed.schemas import BatchRecord
+from terrasentry_core.seed.schemas import BatchRecord, OperatorRecord
 from terrasentry_core.tools.agent_tools import ToolContext
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.sources import resolve_loss_window
@@ -69,6 +69,7 @@ class RunOrchestrator:
         window_days: int = 30,
         years: int = 5,
         as_of: date | None = None,
+        operator: OperatorRecord | None = None,
         rubric: RubricConfig | None = None,
         clock: Callable[[], datetime] = utc_now,
         on_step: StepHook | None = None,
@@ -80,6 +81,7 @@ class RunOrchestrator:
         self._window_days = window_days
         self._years = years
         self._as_of = as_of
+        self._operator = (operator or datasets.operator).model_copy(deep=True)
         self._rubric = rubric
         self._clock = clock
         self._on_step = on_step
@@ -93,6 +95,7 @@ class RunOrchestrator:
     ) -> AgentRunResult:
         """Run the graph for one seed record and return its state and artifacts."""
         started = self._clock()
+        assessment_date = self._as_of or started.astimezone(UTC).date()
         record = self._datasets.get_record(record_id)
         resolved_run_id = run_id or f"agent-{started:%Y%m%dT%H%M%S}-{uuid4().hex[:6]}"
         trace = TraceCollector(clock=self._clock, on_step=self._on_step)
@@ -104,8 +107,8 @@ class RunOrchestrator:
             datasets=self._datasets,
             trace=trace,
             window_days=self._window_days,
-            loss_window=resolve_loss_window(self._years, as_of=self._as_of, now=started),
-            as_of=self._as_of,
+            loss_window=resolve_loss_window(self._years, as_of=assessment_date, now=started),
+            as_of=assessment_date,
             retrieved_at=started,
             refresh=refresh,
         )
@@ -180,6 +183,7 @@ class RunOrchestrator:
                 agent=verifier_agent,
                 context=context,
                 record=record,
+                operator=self._operator,
                 retrieved_at=context.retrieved_at,
                 config=self._rubric,
             ),
@@ -203,12 +207,14 @@ class RunOrchestrator:
                 area_ha=polygon.area_ha,
                 loss=sources.loss,
                 hotspots=sources.hotspots,
+                layers=sources.layers,
                 errors=list(sources.errors),
             )
             candidate = assess_record(
                 report,
                 record,
-                self._datasets.operator,
+                self._operator,
+                assessment_date=context.as_of,
                 retrieved_at=context.retrieved_at,
                 config=self._rubric,
             )
@@ -308,7 +314,7 @@ class RunOrchestrator:
             assessment=assessment,
             pending_assessment=pending,
             trace=trace.steps,
-            disclosures=self._datasets.disclosures_for(record),
+            disclosures=self._datasets.disclosures_for(record, operator=self._operator),
             started_at=started,
             finished_at=self._clock(),
         )

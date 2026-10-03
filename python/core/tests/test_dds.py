@@ -185,6 +185,34 @@ def test_invalid_geometry_is_a_typed_failure() -> None:
         build_dds(input, assessment, ledger)
 
 
+def test_legacy_holes_are_rejected_before_dds_export() -> None:
+    from terrasentry_core.dds import build_geojson_feature_collection
+
+    with pytest.raises(InvalidGeometryError, match="holes"):
+        build_geojson_feature_collection(
+            polygon_id="PLY-HOLE",
+            label="legacy",
+            area_ha=100,
+            centroid_lon=101.01,
+            centroid_lat=0.51,
+            producer_name="Supplier",
+            producer_country="ID",
+            geometry={
+                "type": "Polygon",
+                "coordinates": [
+                    [[101, 0.5], [101.02, 0.5], [101.02, 0.52], [101, 0.52], [101, 0.5]],
+                    [
+                        [101.005, 0.505],
+                        [101.015, 0.505],
+                        [101.015, 0.515],
+                        [101.005, 0.515],
+                        [101.005, 0.505],
+                    ],
+                ],
+            },
+        )
+
+
 def test_producer_name_comes_from_the_supplier_legal_name() -> None:
     input = make_input(
         supplier=make_supplier(legal_name="PT Karya Sentosa Borneo"),

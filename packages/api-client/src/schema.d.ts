@@ -389,6 +389,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/settings/operator": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Operator */
+        get: operations["get_operator_settings_operator_get"];
+        /** Put Operator */
+        put: operations["put_operator_settings_operator_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/suppliers": {
         parameters: {
             query?: never;
@@ -432,6 +450,8 @@ export interface components {
          * @description Reproducible outcome of the rubric for one supplier/parcel.
          */
         Assessment: {
+            /** Assessment Date */
+            assessment_date?: string | null;
             /** Citations */
             citations?: {
                 [key: string]: string[];
@@ -625,11 +645,17 @@ export interface components {
             disclosure?: string | null;
             /** Evidence Id */
             evidence_id: string;
+            /**
+             * Provenance
+             * @default legacy_unknown
+             * @enum {string}
+             */
+            provenance: "synthetic" | "supplier_declared" | "document_extracted" | "sap_import" | "real_source" | "operator_configured" | "derived" | "legacy_unknown";
             /** Retrieved At */
             retrieved_at?: string | null;
             /**
              * Schema Version
-             * @default 1
+             * @default 2
              */
             schema_version: number;
             source: components["schemas"]["EvidenceSource"];
@@ -677,7 +703,7 @@ export interface components {
          * @description Deterministic signals the rubric evaluates.
          * @enum {string}
          */
-        FindingCode: "deforestation_loss" | "fire_cluster" | "legal_permit" | "area_mismatch" | "certification";
+        FindingCode: "deforestation_loss" | "fire_cluster" | "legal_permit" | "area_mismatch" | "certification" | "protected_area" | "moratorium" | "peatland" | "concession_conflict" | "forest_baseline";
         /**
          * FindingLevel
          * @description Strength of a signal: a flag is above threshold, borderline is near it.
@@ -817,6 +843,13 @@ export interface components {
             /** Concession Area Ha */
             concession_area_ha?: number | null;
             /**
+             * Declared Holder
+             * @default
+             */
+            declared_holder: string;
+            /** Permit Expiry */
+            permit_expiry?: string | null;
+            /**
              * Permit Number
              * @default
              */
@@ -836,6 +869,114 @@ export interface components {
             /** Sanctions */
             sanctions?: string[];
         };
+        /**
+         * OperatorRecord
+         * @description The synthetic EU operator on whose behalf the DDS is prepared.
+         */
+        OperatorRecord: {
+            /**
+             * Activity Type
+             * @default IMPORT
+             * @enum {string}
+             */
+            activity_type: "IMPORT" | "EXPORT" | "DOMESTIC";
+            /** Address Line */
+            address_line: string;
+            /**
+             * Border Cross Country
+             * @default NL
+             */
+            border_cross_country: string;
+            /** City */
+            city: string;
+            /**
+             * Country
+             * @default NL
+             */
+            country: string;
+            /**
+             * Country Of Activity
+             * @default NL
+             */
+            country_of_activity: string;
+            /**
+             * Disclosure
+             * @default SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person.
+             */
+            disclosure: string;
+            /** Email */
+            email: string;
+            /**
+             * Identifier Type
+             * @default eori
+             * @enum {string}
+             */
+            identifier_type: "eori" | "vat" | "tin" | "comp_num" | "oni";
+            /** Identifier Value */
+            identifier_value: string;
+            /** Legal Name */
+            legal_name: string;
+            /** Operator Id */
+            operator_id: string;
+            /** Phone */
+            phone: string;
+            /** Postal Code */
+            postal_code: string;
+            /**
+             * Provenance
+             * @default synthetic
+             * @enum {string}
+             */
+            provenance: "synthetic" | "supplier_declared" | "document_extracted" | "sap_import" | "real_source" | "operator_configured" | "derived" | "legacy_unknown";
+            /**
+             * Synthetic
+             * @default true
+             */
+            synthetic: boolean;
+        };
+        /** OperatorSettingOut */
+        OperatorSettingOut: {
+            /** Configured */
+            configured: boolean;
+            profile: components["schemas"]["OperatorRecord"];
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** OperatorUpdate */
+        OperatorUpdate: {
+            /**
+             * Activity Type
+             * @default IMPORT
+             * @enum {string}
+             */
+            activity_type: "IMPORT" | "EXPORT" | "DOMESTIC";
+            /** Address Line */
+            address_line: string;
+            /** Border Cross Country */
+            border_cross_country: string;
+            /** City */
+            city: string;
+            /** Country */
+            country: string;
+            /** Country Of Activity */
+            country_of_activity: string;
+            /** Email */
+            email: string;
+            /**
+             * Identifier Type
+             * @default eori
+             * @constant
+             */
+            identifier_type: "eori";
+            /** Identifier Value */
+            identifier_value: string;
+            /** Legal Name */
+            legal_name: string;
+            /** Phone */
+            phone: string;
+            /** Postal Code */
+            postal_code: string;
+        };
         /** ParcelOut */
         ParcelOut: {
             /** Archetype */
@@ -846,6 +987,8 @@ export interface components {
             centroid_lat: number;
             /** Centroid Lon */
             centroid_lon: number;
+            /** Country */
+            country?: string | null;
             /** Geometry */
             geometry: {
                 [key: string]: unknown;
@@ -856,6 +999,12 @@ export interface components {
             label: string;
             /** Polygon Id */
             polygon_id: string;
+            /**
+             * Provenance
+             * @default legacy_unknown
+             * @enum {string}
+             */
+            provenance: "synthetic" | "supplier_declared" | "document_extracted" | "sap_import" | "real_source" | "operator_configured" | "derived" | "legacy_unknown";
             /** Province */
             province: string;
             /** Region */
@@ -867,6 +1016,8 @@ export interface components {
         };
         /** PlotInput */
         PlotInput: {
+            /** Country */
+            country: string;
             /**
              * Declared Area Ha
              * @description Required for a Point; must be <= 4 ha (EUDR).
@@ -892,10 +1043,7 @@ export interface components {
              */
             province: string;
         };
-        /**
-         * RecordOut
-         * @description A submitted plot record, as stored, with the latest screening run.
-         */
+        /** RecordOut */
         RecordOut: {
             /** Area Ha */
             area_ha: number;
@@ -905,11 +1053,15 @@ export interface components {
             centroid_lon: number;
             /** Commodity */
             commodity: string;
+            /** Country */
+            country?: string | null;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
+            /** Declared Holder */
+            declared_holder?: string | null;
             /** Description */
             description: string;
             /** Disclosure */
@@ -918,6 +1070,12 @@ export interface components {
             geometry: {
                 [key: string]: unknown;
             };
+            /**
+             * Geometry Provenance
+             * @default legacy_unknown
+             * @enum {string}
+             */
+            geometry_provenance: "synthetic" | "supplier_declared" | "document_extracted" | "sap_import" | "real_source" | "operator_configured" | "derived" | "legacy_unknown";
             /** Geometry Type */
             geometry_type: string;
             /** Hgu Number */
@@ -933,6 +1091,8 @@ export interface components {
             net_weight_kg: number;
             /** Pbp Number */
             pbp_number?: string | null;
+            /** Permit Expiry */
+            permit_expiry?: string | null;
             /** Permit Status */
             permit_status: string;
             /** Polygon Id */
@@ -1001,6 +1161,8 @@ export interface components {
          */
         RunDetail: {
             assessment?: components["schemas"]["VerdictOut"] | null;
+            /** Assessment Date */
+            assessment_date?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1025,6 +1187,7 @@ export interface components {
             };
             /** Model */
             model: string;
+            operator_profile?: components["schemas"]["OperatorRecord"] | null;
             /** Parent Run Id */
             parent_run_id?: string | null;
             pending_assessment?: components["schemas"]["VerdictOut"] | null;
@@ -1069,6 +1232,8 @@ export interface components {
          * @description One run row as it appears in list views and the cockpit table.
          */
         RunSummary: {
+            /** Assessment Date */
+            assessment_date?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1090,6 +1255,7 @@ export interface components {
             };
             /** Model */
             model: string;
+            operator_profile?: components["schemas"]["OperatorRecord"] | null;
             /** Parent Run Id */
             parent_run_id?: string | null;
             /** Polygon Id */
@@ -1173,6 +1339,8 @@ export interface components {
             certifications?: string[];
             /** Concession Area Ha */
             concession_area_ha: number;
+            /** Declared Holder */
+            declared_holder?: string | null;
             /**
              * Disclosure
              * @default
@@ -1194,6 +1362,8 @@ export interface components {
             parcels?: components["schemas"]["ParcelOut"][];
             /** Pbp Number */
             pbp_number?: string | null;
+            /** Permit Expiry */
+            permit_expiry?: string | null;
             /** Permit Status */
             permit_status: string;
             /**
@@ -1252,6 +1422,8 @@ export interface components {
             certifications?: string[];
             /** Concession Area Ha */
             concession_area_ha: number;
+            /** Declared Holder */
+            declared_holder?: string | null;
             /**
              * Disclosure
              * @default
@@ -1271,6 +1443,8 @@ export interface components {
             npwp: string;
             /** Pbp Number */
             pbp_number?: string | null;
+            /** Permit Expiry */
+            permit_expiry?: string | null;
             /** Permit Status */
             permit_status: string;
             /**
@@ -2242,6 +2416,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_operator_settings_operator_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperatorSettingOut"];
+                };
+            };
+        };
+    };
+    put_operator_settings_operator_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OperatorUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperatorSettingOut"];
                 };
             };
             /** @description Validation Error */

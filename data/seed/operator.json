@@ -16,6 +16,7 @@
     "activity_type": "IMPORT",
     "country_of_activity": "NL",
     "border_cross_country": "NL",
+    "provenance": "synthetic",
     "synthetic": true,
     "disclosure": "SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person."
   }

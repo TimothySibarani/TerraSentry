@@ -1,7 +1,7 @@
-import type { EvidenceEntry } from "@terrasentry/api-client";
 import { createColumnHelper } from "@tanstack/react-table";
-
+import type { EvidenceEntry } from "@terrasentry/api-client";
 import { DataTable, type TableFeatureSet } from "#/components/data-table";
+import { ProvenanceBadge } from "#/components/provenance-badge";
 import { Badge } from "#/components/ui/badge";
 import { formatDateTime, formatValue } from "#/lib/format";
 
@@ -11,7 +11,10 @@ const columns = helper.columns([
 	helper.accessor("claim", {
 		header: "Claim",
 		cell: (info) => (
-			<span className="font-mono text-xs text-foreground">
+			<span
+				id={info.row.original.evidence_id}
+				className="font-mono text-xs text-foreground"
+			>
 				{info.getValue()}
 			</span>
 		),
@@ -24,12 +27,18 @@ const columns = helper.columns([
 		header: "Value",
 		enableSorting: false,
 		cell: (info) => (
-			<span
-				className="block max-w-96 truncate text-body-sm text-muted-foreground"
-				title={JSON.stringify(info.getValue())}
-			>
-				{formatValue(info.getValue())}
-			</span>
+			<details className="max-w-96 text-body-sm text-muted-foreground">
+				<summary className="cursor-pointer">
+					{formatValue(info.getValue())}
+				</summary>
+				<pre className="max-h-96 overflow-auto whitespace-pre-wrap break-all text-xs">
+					{JSON.stringify(
+						{ value: info.getValue(), artifact: info.row.original.artifact },
+						null,
+						2,
+					)}
+				</pre>
+			</details>
 		),
 	}),
 	helper.accessor("unit", {
@@ -54,7 +63,7 @@ const columns = helper.columns([
 			return (
 				<span className="flex gap-1">
 					{entry.cached && <Badge variant="secondary">cached</Badge>}
-					{entry.synthetic && <Badge variant="review">synthetic</Badge>}
+					<ProvenanceBadge provenance={entry.provenance} />
 				</span>
 			);
 		},

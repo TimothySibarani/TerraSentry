@@ -8,6 +8,8 @@ a step to the run trace so the cockpit can show it later (M5).
 
 from __future__ import annotations
 
+import asyncio
+import json
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
@@ -16,6 +18,7 @@ from strands import tool
 from strands.types.tools import AgentTool
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
+from terrasentry_integrations.sources.gfw_layers import ContextLayer
 
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.sources import LossWindow, PolygonSources, fetch_polygon_sources
@@ -24,6 +27,8 @@ from terrasentry_core.tools.trace import TraceCollector
 if TYPE_CHECKING:
     from terrasentry_core.agents.verification import VerificationReport
     from terrasentry_core.assessment.pipeline import RecordAssessment
+
+_MODEL_LAYER_BYTES = 8 * 1024
 
 
 @dataclass
@@ -43,36 +48,61 @@ class ToolContext:
     verification: VerificationReport | None = None
     summary: str = ""
     _sources: dict[str, PolygonSources] = field(default_factory=dict, init=False, repr=False)
+    # ponytail: one acquisition lock per run; per-polygon locks if runs gain multiple parcels.
+    _source_lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False, repr=False)
 
     async def polygon_sources(self, polygon_id: str, *, refresh: bool = False) -> PolygonSources:
-        """Return the sources already fetched for a polygon, fetching once otherwise."""
-        if not refresh and polygon_id in self._sources:
-            return self._sources[polygon_id]
-        record = self.datasets.record_for_polygon(polygon_id)
-        sources = await fetch_polygon_sources(
-            record.polygon,
-            gfw=self.gfw,
-            firms=self.firms,
-            window_days=self.window_days,
-            loss_window=self.loss_window,
-            refresh=refresh or self.refresh,
-            as_of=self.as_of,
-        )
-        self._sources[polygon_id] = sources
-        return sources
+        """Share one accepted snapshot; refresh bypasses upstream cache on acquisition only."""
+        async with self._source_lock:
+            if polygon_id in self._sources:
+                return self._sources[polygon_id]
+            record = self.datasets.record_for_polygon(polygon_id)
+            sources = await fetch_polygon_sources(
+                record.polygon,
+                gfw=self.gfw,
+                firms=self.firms,
+                window_days=self.window_days,
+                loss_window=self.loss_window,
+                refresh=refresh or self.refresh,
+                as_of=self.as_of,
+            )
+            self._sources[polygon_id] = sources
+            return sources
 
     @property
     def collected_sources(self) -> list[PolygonSources]:
         return list(self._sources.values())
 
 
+def _layer_payload(layer: ContextLayer) -> dict[str, Any]:
+    """Keep investigation facts; full source geometry lives in the persisted ledger."""
+    payload = layer.model_dump(mode="json", exclude={"features": {"__all__": {"geometry"}}})
+    payload["feature_count"] = len(layer.features)
+    if len(json.dumps(payload).encode()) > _MODEL_LAYER_BYTES:
+        payload["features"] = []
+        payload["feature_details_error"] = (
+            "Feature details exceed the model payload budget; inspect the full evidence artifact. "
+            "Aggregate overlap and source status remain available."
+        )
+    return payload
+
+
+def _context_payload(sources: PolygonSources) -> dict[str, Any] | None:
+    return {"layers": [_layer_payload(layer) for layer in sources.layers.layers]} if sources.layers else None
+
+
 def _loss_payload(polygon_id: str, sources: PolygonSources) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "polygon_id": polygon_id,
+        "context_layers": _context_payload(sources),
+        "errors": list(sources.errors),
+    }
     loss = sources.loss
     if loss is None:
         reason = "; ".join(sources.errors)
-        return {"polygon_id": polygon_id, "error": f"tree cover loss unavailable: {reason}"}
+        return {**payload, "error": f"tree cover loss unavailable: {reason}"}
     return {
-        "polygon_id": polygon_id,
+        **payload,
         "dataset": loss.dataset,
         "version": loss.version,
         "date_window": loss.date_window,
@@ -135,7 +165,7 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
 
     @tool
     async def get_legality_record(supplier_id: str) -> dict[str, Any]:
-        """Read the synthetic HGU/PBPH permit and entity record for a supplier.
+        """Read the declared HGU/PBPH permit and entity record for a supplier.
 
         Args:
             supplier_id: Seed supplier identifier, for example SUP-001.
@@ -152,6 +182,9 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
             "supplier_id": supplier_id,
             "legal_name": legality.legal_name,
             "permit_status": legality.permit_status,
+            "permit_expiry": legality.permit_expiry.isoformat() if legality.permit_expiry else None,
+            "declared_holder": legality.declared_holder or legality.legal_name,
+            "provenance": legality.provenance,
             "hgu_number": legality.hgu_number,
             "pbp_number": legality.pbp_number,
             "sanctions": legality.sanctions,
@@ -162,7 +195,7 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
 
     @tool
     async def get_consignment(record_id: str) -> dict[str, Any]:
-        """Read the synthetic consignment declared in the DDS for a record.
+        """Read the declared consignment declared in the DDS for a record.
 
         Args:
             record_id: Seed batch record identifier, for example REC-001.
@@ -182,6 +215,7 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
             "hs_heading": consignment.hs_heading,
             "net_weight_kg": consignment.net_weight_kg,
             "synthetic": consignment.synthetic,
+            "provenance": consignment.provenance,
             "disclosure": consignment.disclosure,
         }
 
@@ -205,10 +239,13 @@ def build_verifier_tools(context: ToolContext) -> list[AgentTool]:
             polygon_id,
             payload={"polygon_id": polygon_id},
         )
+        loss = _loss_payload(polygon_id, sources)
+        loss.pop("context_layers", None)
         return {
             "polygon_id": polygon_id,
-            "loss": _loss_payload(polygon_id, sources),
+            "loss": loss,
             "hotspots": _hotspot_payload(polygon_id, sources),
+            "context_layers": _context_payload(sources),
             "errors": list(sources.errors),
         }
 
@@ -259,7 +296,10 @@ def build_verifier_tools(context: ToolContext) -> list[AgentTool]:
         for entry in candidate.evidence:
             if entry.evidence_id == evidence_id:
                 context.trace.add("verifier", "get_evidence_entry", evidence_id)
-                return entry.model_dump(mode="json")
+                payload = entry.model_dump(mode="json")
+                if entry.claim.startswith("context."):
+                    payload["value"] = _layer_payload(ContextLayer.model_validate(entry.value))
+                return payload
         return {"evidence_id": evidence_id, "error": "evidence id is not in the ledger"}
 
     return [get_source_claims, get_assessment, list_evidence_claims, get_evidence_entry]

@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends
 
 from terrasentry_api.auth import require_write_token
-from terrasentry_api.routers import batch, dds, health, mock_sap, records, runs, suppliers
+from terrasentry_api.routers import batch, dds, health, mock_sap, records, runs, settings, suppliers
 
 api_router = APIRouter(dependencies=[Depends(require_write_token)])
+api_router.include_router(settings.router)
 api_router.include_router(health.router)
 api_router.include_router(suppliers.router)
 api_router.include_router(records.router)

@@ -5,7 +5,7 @@ import httpx
 import pytest
 import respx
 from terrasentry_integrations.cache import MemoryCache
-from terrasentry_integrations.errors import MissingCredentialError
+from terrasentry_integrations.errors import MissingCredentialError, SourceResponseError
 from terrasentry_integrations.settings import IntegrationSettings
 from terrasentry_integrations.sources.firms import FirmsClient, parse_detections
 
@@ -41,6 +41,22 @@ def _settings() -> IntegrationSettings:
 def test_parse_detections_handles_empty_and_no_data() -> None:
     assert parse_detections("") == []
     assert parse_detections("No data") == []
+
+
+async def test_dateline_hotspots_fail_before_http_or_cache() -> None:
+    geometry = {
+        "type": "Polygon",
+        "coordinates": [[[179.999, 0], [-179.999, 0], [-179.999, 0.01], [179.999, 0.01], [179.999, 0]]],
+    }
+    cache = MemoryCache()
+    client = FirmsClient(_settings(), cache=cache)
+    with respx.mock(assert_all_called=False) as router:
+        try:
+            with pytest.raises(SourceResponseError, match="antimeridian"):
+                await client.hotspots_in_polygon(geometry)
+            assert len(router.calls) == 0 and cache.stats().writes == 0
+        finally:
+            await client.close()
 
 
 def test_parse_detections_supports_both_viirs_and_modis_columns() -> None:
