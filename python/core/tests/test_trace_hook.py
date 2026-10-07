@@ -94,3 +94,79 @@ async def test_resume_emits_the_review_step(factories, source_clients) -> None:
     assert len(seen) == before_resume + 1
     assert seen[-1].kind == "review"
     assert seen[-1].step_id == f"STEP-{before_resume + 1:03d}"
+
+
+def _event(name: str, tool_input: Any) -> Any:
+    from types import SimpleNamespace
+
+    return SimpleNamespace(tool_use={"name": name, "toolUseId": "t", "input": tool_input})
+
+
+def test_second_delegation_to_a_specialist_is_a_visible_retask() -> None:
+    from terrasentry_core.agents.supervisor import make_delegation_hook
+    from terrasentry_core.tools.trace import TraceCollector
+
+    trace = TraceCollector(clock=lambda: agent_helpers.FIXED_TIME)
+    hook = make_delegation_hook({"legality_analyst", "thermal_analyst"}, trace)
+    reason = "check concession overlap and permit coverage for polygon PLY-001, supplier SUP-001"
+    hook(_event("legality_analyst", {"input": "standard pass"}))
+    hook(_event("thermal_analyst", {"input": "screen"}))
+    hook(_event("legality_analyst", {"input": reason}))
+    hook(_event("legality_analyst", {"input": reason}))
+    assert [(step.kind, step.name) for step in trace.steps] == [
+        ("agent", "legality_analyst"),
+        ("agent", "thermal_analyst"),
+        ("retask", "legality_analyst"),
+        ("retask", "legality_analyst"),
+    ]
+    retask = trace.steps[2]
+    assert retask.detail == reason and retask.payload == {"reason": reason, "ordinal": 2}
+    assert trace.steps[3].payload["ordinal"] == 3
+
+
+def test_retask_detail_is_bounded_but_the_payload_keeps_the_full_reason() -> None:
+    from terrasentry_core.agents.supervisor import RETASK_DETAIL_LIMIT, make_delegation_hook
+    from terrasentry_core.tools.trace import TraceCollector
+
+    trace = TraceCollector(clock=lambda: agent_helpers.FIXED_TIME)
+    hook = make_delegation_hook({"legality_analyst"}, trace)
+    long_reason = "signal " * 100
+    hook(_event("legality_analyst", {"input": "first"}))
+    hook(_event("legality_analyst", {"input": long_reason}))
+    step = trace.steps[1]
+    assert len(step.detail) == RETASK_DETAIL_LIMIT and step.payload["reason"] == long_reason.strip()
+
+
+def test_retask_tolerates_missing_or_non_string_input_and_ignores_unknown_tools() -> None:
+    from terrasentry_core.agents.supervisor import NO_REASON, make_delegation_hook
+    from terrasentry_core.tools.trace import TraceCollector
+
+    trace = TraceCollector(clock=lambda: agent_helpers.FIXED_TIME)
+    hook = make_delegation_hook({"legality_analyst"}, trace)
+    hook(_event("legality_analyst", None))
+    hook(_event("legality_analyst", None))
+    hook(_event("legality_analyst", {"input": 42}))
+    hook(_event("legality_analyst", "plain string reason"))
+    hook(_event("get_tree_cover_loss", {"input": "x"}))
+    assert [step.kind for step in trace.steps] == ["agent", "retask", "retask", "retask"]
+    assert [step.detail for step in trace.steps[1:]] == [NO_REASON, NO_REASON, "plain string reason"]
+
+
+def test_specialists_expose_exactly_their_assigned_tools(source_clients: Any) -> None:
+    from terrasentry_core.agents.specialists import build_specialists
+    from terrasentry_core.tools.agent_tools import ToolContext
+    from terrasentry_core.tools.trace import TraceCollector
+
+    context = ToolContext(
+        gfw=source_clients.gfw,
+        firms=source_clients.firms,
+        datasets=agent_helpers.datasets(),
+        trace=TraceCollector(clock=lambda: agent_helpers.FIXED_TIME),
+    )
+    models = agent_helpers.scripted_models(context.datasets.records[0])
+    exposed = {agent.name: set(agent.tool_names) for agent in build_specialists(models.extraction, context)}
+    assert exposed == {
+        "geospatial_analyst": {"get_tree_cover_loss", "get_context_layers"},
+        "thermal_analyst": {"get_fire_hotspots"},
+        "legality_analyst": {"get_legality_record", "get_consignment", "check_concession_overlap"},
+    }

@@ -261,6 +261,18 @@ def _holder(value: str) -> str:
     return " ".join(re.sub(r"[^\w\s]", " ", unicodedata.normalize("NFKC", value).casefold()).split())
 
 
+def concession_commodity(layer_name: str) -> str:
+    """Commodity a concession dataset authorises; shared by the rubric and the agent deep dive."""
+    return "oil_palm" if layer_name == "oil_palm_concessions" else "wood"
+
+
+def holder_matches(company: object, declared_holder: str) -> bool | None:
+    """Compare a concession company to the declared holder; None when the company is unknown."""
+    if not isinstance(company, str) or not company.strip():
+        return None
+    return _holder(company) == _holder(declared_holder)
+
+
 def _evaluate_context(
     input: AssessmentInput, ledger: EvidenceLedger, config: RubricConfig
 ) -> tuple[list[Finding], list[str]]:
@@ -334,10 +346,10 @@ def _evaluate_context(
     if relevant:
         level, points = FindingLevel.CLEAR, 0
         reasons: list[str] = []
-        holder = _holder(input.supplier.declared_holder or input.supplier.legal_name)
+        declared = input.supplier.declared_holder or input.supplier.legal_name
         for layer in relevant:
             compatible = input.consignment is not None and input.consignment.commodity == (
-                "oil_palm" if layer.name == "oil_palm_concessions" else "wood"
+                concession_commodity(layer.name)
             )
             if not compatible:
                 if level is not FindingLevel.FLAG:
@@ -345,9 +357,10 @@ def _evaluate_context(
                 reasons.append(f"commodity conflicts with {layer.name}")
             for feature in layer.features:
                 company = feature.properties.get("company")
-                if not isinstance(company, str) or not company.strip():
+                matches = holder_matches(company, declared)
+                if matches is None:
                     gaps.append(f"gfw:{layer.name}:holder unknown for {feature.feature_id}")
-                elif _holder(company) != holder:
+                elif not matches:
                     level, points = FindingLevel.FLAG, config.concession_flag_points
                     reasons.append(
                         f"{layer.dataset}/{feature.feature_id}: holder {company!r} "

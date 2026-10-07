@@ -19,6 +19,9 @@ from redis.asyncio import Redis
 from terrasentry_integrations.errors import CacheMissError, IntegrationError
 from terrasentry_integrations.settings import IntegrationSettings
 
+#: Fail fast when Redis is down instead of hanging a source fetch.
+REDIS_TIMEOUT_SECONDS = 2.0
+
 
 def geometry_hash(geometry: dict[str, Any]) -> str:
     """Versioned identity of the exact query geometry; never round derived buffers."""
@@ -72,6 +75,8 @@ class CacheBackend(Protocol):
     async def iter_entries(self) -> list[CacheEntry]: ...
 
     def stats(self) -> CacheStats: ...
+
+    async def ping(self) -> None: ...
 
     async def close(self) -> None: ...
 
@@ -132,6 +137,9 @@ class MemoryCache(BaseCache):
     async def iter_entries(self) -> list[CacheEntry]:
         return list(self._entries.values())
 
+    async def ping(self) -> None:
+        return None
+
     async def close(self) -> None:
         self._entries.clear()
 
@@ -161,7 +169,12 @@ class RedisCache(BaseCache):
         offline: bool = False,
     ) -> RedisCache:
         return cls(
-            Redis.from_url(url, decode_responses=True),
+            Redis.from_url(
+                url,
+                decode_responses=True,
+                socket_connect_timeout=REDIS_TIMEOUT_SECONDS,
+                socket_timeout=REDIS_TIMEOUT_SECONDS,
+            ),
             prefix=prefix,
             ttl_seconds=ttl_seconds,
             offline=offline,
@@ -213,6 +226,9 @@ class RedisCache(BaseCache):
                 raise IntegrationError(f"corrupt cache entry at {key!r}: {exc}") from exc
         entries.sort(key=lambda entry: (entry.source, entry.geometry_hash, entry.date_window))
         return entries
+
+    async def ping(self) -> None:
+        await self._redis.ping()
 
     async def close(self) -> None:
         await self._redis.aclose()

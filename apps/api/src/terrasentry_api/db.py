@@ -16,12 +16,29 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from terrasentry_integrations.cache import CacheBackend
 
 from terrasentry_api.models import Supplier
 
 
 class DatabaseNotReadyError(RuntimeError):
     """The audit store is unreachable or unmigrated; the message carries remediation."""
+
+
+class CacheNotReadyError(RuntimeError):
+    """The source cache is unreachable; the message carries remediation."""
+
+
+async def check_cache(cache: CacheBackend, redis_url: str) -> None:
+    """Fail fast with operator guidance when the configured cache is down."""
+    target = make_url(redis_url).render_as_string(hide_password=True)
+    try:
+        await cache.ping()
+    except Exception as exc:
+        raise CacheNotReadyError(
+            f"the source cache at {target} is unreachable. Start local infrastructure"
+            " with `pnpm db:up` (Postgres + Redis) or set CACHE_BACKEND=memory in .env."
+        ) from exc
 
 
 async def check_database(engine: AsyncEngine, database_url: str) -> None:
@@ -58,4 +75,10 @@ def create_engine_and_session(
     return engine, async_sessionmaker(engine, expire_on_commit=False)
 
 
-__all__ = ["DatabaseNotReadyError", "check_database", "create_engine_and_session"]
+__all__ = [
+    "CacheNotReadyError",
+    "DatabaseNotReadyError",
+    "check_cache",
+    "check_database",
+    "create_engine_and_session",
+]

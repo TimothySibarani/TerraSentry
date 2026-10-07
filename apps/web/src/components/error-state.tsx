@@ -1,4 +1,3 @@
-import { ApiClientError } from "@terrasentry/api-client";
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { RotateCcwIcon } from "lucide-react";
@@ -10,6 +9,7 @@ import {
 	AlertTitle,
 } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
+import { asApiError } from "#/lib/api-error";
 
 interface ErrorCopy {
 	title: string;
@@ -18,8 +18,9 @@ interface ErrorCopy {
 }
 
 export function describeError(error: unknown): ErrorCopy {
-	if (error instanceof ApiClientError) {
-		switch (error.status) {
+	const api = asApiError(error);
+	if (api !== null) {
+		switch (api.status) {
 			case 404:
 				return {
 					title: "Not found",
@@ -37,22 +38,23 @@ export function describeError(error: unknown): ErrorCopy {
 				return {
 					title: "Invalid request",
 					message: "The API rejected the payload for this request.",
-					hint: `Operation: ${error.operation}`,
+					hint: `Operation: ${api.operation}`,
 				};
 			default:
 				return {
 					title: "API unreachable",
 					message:
-						error.status === null
-							? `The ${error.operation} request could not reach the API.`
-							: `The ${error.operation} request failed with status ${error.status}.`,
-					hint: "Start the API with pnpm dev or docker compose up, then retry.",
+						api.status === null
+							? `The ${api.operation} request could not reach the API.`
+							: `The ${api.operation} request failed with status ${api.status}.`,
+					hint: "Start the stack with pnpm dev (it starts Postgres and Redis), or run pnpm db:up && pnpm db:upgrade, then retry.",
 				};
 		}
 	}
+	const message = error instanceof Error ? error.message : String(error);
 	return {
 		title: "Something went wrong",
-		message: error instanceof Error ? error.message : String(error),
+		message: message || "An unexpected error occurred.",
 	};
 }
 

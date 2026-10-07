@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     agent_model: str = "scripted"
     run_timeout_seconds: int = 900
     batch_concurrency: int = 4
+    # Agent-mode batches run the full agent graph per record; bound them separately.
+    batch_agent_concurrency: int = 4
     sse_ping_seconds: int = 15
     firms_window_days: int = 30
     loss_window_years: int = 5

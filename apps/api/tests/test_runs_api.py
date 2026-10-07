@@ -109,6 +109,30 @@ def test_list_runs_reports_state_and_steps(client: TestClient, source_router: ob
     assert any(run["run_id"] == first and run["step_count"] > 0 for run in runs)
 
 
+def test_list_endpoints_use_a_constant_number_of_queries(client: TestClient, source_router: object) -> None:
+    from sqlalchemy import event
+
+    for _ in range(3):
+        api_helpers.wait_for_state(client, _create(client, {"record_id": "REC-001"}), {"complete"})
+    batch = client.post("/batch-runs", json={"size": 4}).json()["run_id"]
+    api_helpers.wait_for_state(client, batch, {"complete"})
+
+    statements: list[str] = []
+    engine = client.app.state.services.engine.sync_engine  # type: ignore[attr-defined]
+
+    def record(*args: object) -> None:
+        statements.append(str(args[2]))
+
+    event.listen(engine, "before_cursor_execute", record)
+    try:
+        for path in ("/runs", "/batch-runs", f"/batch-runs/{batch}/records"):
+            statements.clear()
+            assert client.get(path).status_code == 200
+            assert len(statements) <= 6, (path, len(statements))
+    finally:
+        event.remove(engine, "before_cursor_execute", record)
+
+
 def test_validation_and_not_found_paths(client: TestClient) -> None:
     assert client.post("/runs", json={}).status_code == 422
     both = {"record_id": "REC-001", "scenario": "compliant_live"}
@@ -119,3 +143,43 @@ def test_validation_and_not_found_paths(client: TestClient) -> None:
     assert client.get("/runs/nope/evidence").status_code == 404
     assert client.get("/runs/nope/stream").status_code == 404
     assert client.post("/runs/nope/decision", json={"decision": "approve"}).status_code == 404
+
+
+def test_high_risk_scenario_shows_retasks_with_reasons(client: TestClient, signal_router: object) -> None:
+    run_id = _create(client, {"scenario": "high_risk_live", "model": "scripted"})
+    detail = api_helpers.wait_for_state(client, run_id, {"complete"})
+
+    retasks = [step for step in detail["steps"] if step["kind"] == "retask"]
+    assert sorted(step["name"] for step in retasks) == ["geospatial_analyst", "legality_analyst"]
+    assert all(step["detail"] and step["payload"]["ordinal"] == 2 for step in retasks)
+    tools = {step["name"] for step in detail["steps"] if step["kind"] == "tool"}
+    assert {"get_context_layers", "check_concession_overlap"} <= tools
+    assert detail["verification"]["accepted"] is True
+    assert all("protected_overlap" in step["detail"] for step in retasks)
+
+
+def test_clean_scenario_has_no_retask(client: TestClient, source_router: object) -> None:
+    run_id = _create(client, {"scenario": "compliant_live", "model": "scripted"})
+    detail = api_helpers.wait_for_state(client, run_id, {"complete"})
+
+    assert not [step for step in detail["steps"] if step["kind"] == "retask"]
+
+
+def test_coverage_catch_fault_scenario_is_rejected_by_the_verifier(
+    client: TestClient, signal_router: object
+) -> None:
+    run_id = _create(client, {"scenario": "coverage_catch", "model": "scripted"})
+    detail = api_helpers.wait_for_state(client, run_id, {"failed"})
+
+    assert detail["verification"]["accepted"] is False
+    coverage = [item for item in detail["verification"]["challenges"] if item["kind"] == "coverage"]
+    assert {item["severity"] for item in coverage} == {"error"} and len(coverage) == 2
+    assert detail["error"].startswith("Verifier rejected the run: coverage:")
+    assert "dds_writer" not in [step["name"] for step in detail["steps"]]
+    assert detail["dds"] is None and detail["assessment"] is None
+
+
+def test_coverage_catch_is_not_available_on_bedrock(client: TestClient) -> None:
+    response = client.post("/runs", json={"scenario": "coverage_catch", "model": "bedrock"})
+    assert response.status_code == 422
+    assert "fault injection" in response.json()["detail"]

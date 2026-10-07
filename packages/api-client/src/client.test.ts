@@ -1,5 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Effect, Layer } from "effect";
+import { Effect, Fiber, Layer } from "effect";
+import { TestClock } from "effect/testing";
 import {
   HttpClient,
   type HttpClientRequest,
@@ -57,6 +58,31 @@ const runDetail = {
   sap_action: null,
   steps: [],
   dds: null,
+};
+
+const batchSummaryBody = {
+  run_id: "batch-1",
+  state: "queued",
+  mode: "agent",
+  model: "bedrock",
+  record_count: 10,
+  unlabelled_count: 3,
+  states: {},
+  verdict_breakdown: {},
+  expected_breakdown: {},
+  wall_clock_seconds: null,
+  average_seconds_per_record: null,
+  median_seconds_per_record: null,
+  p95_seconds_per_record: null,
+  throughput_records_per_second: null,
+  total_record_seconds: null,
+  cache_stats: null,
+  confusion: {},
+  batch_concurrency: null,
+  sap_actions: {},
+  started_at: null,
+  finished_at: null,
+  metrics: {},
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -143,6 +169,55 @@ describe("ApiClient", () => {
     ),
   );
 
+  it.effect("POSTs an agent batch with its mode and model", () =>
+    Effect.gen(function* () {
+      const api = yield* ApiClient;
+      const batch = yield* api.createBatchRun({
+        size: 10,
+        mode: "agent",
+        model: "bedrock",
+      });
+      assert.strictEqual(batch.mode, "agent");
+      assert.strictEqual(batch.model, "bedrock");
+      assert.strictEqual(batch.unlabelled_count, 3);
+    }).pipe(
+      Effect.provide(
+        apiLayer((request, url) => {
+          assert.strictEqual(url.href, "http://terrasentry.test/batch-runs");
+          if (request.body._tag === "Uint8Array") {
+            assert.deepStrictEqual(JSON.parse(request.body.text ?? ""), {
+              size: 10,
+              mode: "agent",
+              model: "bedrock",
+            });
+          }
+          return jsonResponse(batchSummaryBody, 202);
+        }),
+      ),
+    ),
+  );
+
+  it.effect("omits the model from a screening batch request", () =>
+    Effect.gen(function* () {
+      const api = yield* ApiClient;
+      yield* api.createBatchRun({ size: 50, mode: "screening" });
+    }).pipe(
+      Effect.provide(
+        apiLayer((request) => {
+          if (request.body._tag === "Uint8Array") {
+            const sent = JSON.parse(request.body.text ?? "");
+            assert.deepStrictEqual(sent, { size: 50, mode: "screening" });
+            assert.isFalse("model" in sent);
+          }
+          return jsonResponse(
+            { ...batchSummaryBody, mode: "screening", model: null },
+            202,
+          );
+        }),
+      ),
+    ),
+  );
+
   it.effect("URL-encodes path parameters", () =>
     Effect.gen(function* () {
       const api = yield* ApiClient;
@@ -222,5 +297,27 @@ describe("ApiClient", () => {
         ),
       ),
     ),
+  );
+
+  it.effect("fails a stalled request with an unreachable-API error", () =>
+    Effect.gen(function* () {
+      const stalled = Layer.succeed(
+        HttpClient.HttpClient,
+        HttpClient.make(() => Effect.never),
+      );
+      const fiber = yield* Effect.gen(function* () {
+        const api = yield* ApiClient;
+        return yield* api.getHealth();
+      }).pipe(
+        Effect.flip,
+        Effect.provide(ApiClient.layer("http://terrasentry.test", stalled)),
+        Effect.forkChild,
+      );
+      yield* TestClock.adjust("11 seconds");
+      const error = yield* Fiber.join(fiber);
+      assert.instanceOf(error, ApiClientError);
+      assert.strictEqual(error.status, null);
+      assert.strictEqual(error.operation, "getHealth");
+    }),
   );
 });

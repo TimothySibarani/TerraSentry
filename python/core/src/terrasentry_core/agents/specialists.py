@@ -18,9 +18,12 @@ def build_specialists(model: Model, context: ToolContext) -> list[Agent]:
         Agent(
             model=model,
             name="geospatial_analyst",
-            description="Fetches Hansen GFC loss and pinned land-use context for a polygon.",
+            description=(
+                "Fetches Hansen GFC loss and screens context layers for a polygon; "
+                "re-task it to read feature-level context layers."
+            ),
             system_prompt=prompts.GEOSPATIAL_PROMPT,
-            tools=[tools["get_tree_cover_loss"]],
+            tools=[tools["get_tree_cover_loss"], tools["get_context_layers"]],
             callback_handler=None,
         ),
         Agent(
@@ -34,9 +37,16 @@ def build_specialists(model: Model, context: ToolContext) -> list[Agent]:
         Agent(
             model=model,
             name="legality_analyst",
-            description="Reads the declared legality and consignment records.",
+            description=(
+                "Reads the declared legality and consignment records; "
+                "re-task it to check concession overlap and permit coverage."
+            ),
             system_prompt=prompts.LEGALITY_PROMPT,
-            tools=[tools["get_legality_record"], tools["get_consignment"]],
+            tools=[
+                tools["get_legality_record"],
+                tools["get_consignment"],
+                tools["check_concession_overlap"],
+            ],
             callback_handler=None,
         ),
     ]

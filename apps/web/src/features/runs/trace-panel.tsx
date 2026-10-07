@@ -4,6 +4,7 @@ import {
 	BotIcon,
 	FileOutputIcon,
 	LandmarkIcon,
+	RouteIcon,
 	ShieldCheckIcon,
 	UserCheckIcon,
 	WrenchIcon,
@@ -22,10 +23,12 @@ import { Skeleton } from "#/components/ui/skeleton";
 import { Spinner } from "#/components/ui/spinner";
 import type { RunStreamStatus } from "#/features/runs/use-run-stream";
 import { formatDateTime } from "#/lib/format";
+import { cn } from "#/lib/utils";
 
 const KIND_ICON: Record<string, typeof ActivityIcon> = {
 	run: ActivityIcon,
 	agent: BotIcon,
+	retask: RouteIcon,
 	tool: WrenchIcon,
 	verifier: ShieldCheckIcon,
 	writer: FileOutputIcon,
@@ -76,9 +79,11 @@ export function TracePanel({
 		);
 	}
 
+	const retasks = steps.filter((step) => step.kind === "retask");
+
 	return (
 		<div className="flex flex-col gap-3">
-			<div className="flex items-center gap-2">
+			<div className="flex flex-wrap items-center gap-2">
 				{status === "live" ? (
 					<Badge variant="compliant">Live trace</Badge>
 				) : status === "closed" ? (
@@ -89,6 +94,12 @@ export function TracePanel({
 				<span className="text-caption-mono-sm text-muted-foreground">
 					{steps.length} steps
 				</span>
+				{retasks.length > 0 && (
+					<Badge variant="review">
+						{retasks.length} re-task{retasks.length === 1 ? "" : "s"}:{" "}
+						{retasks.map((step) => step.name).join(", ")}
+					</Badge>
+				)}
 			</div>
 			<ol
 				aria-live="polite"
@@ -98,14 +109,24 @@ export function TracePanel({
 				{steps.map((step, index) => {
 					const Icon = KIND_ICON[step.kind] ?? ActivityIcon;
 					const payloadKeys = Object.keys(step.payload ?? {});
+					const isRetask = step.kind === "retask";
 					return (
 						<li
 							key={step.step_id}
-							className="relative flex gap-3 border-l border-border pb-5 pl-4 last:pb-0"
+							data-kind={step.kind}
+							className={cn(
+								"relative flex gap-3 border-l pb-5 pl-4 last:pb-0",
+								isRetask
+									? "border-status-review bg-status-review/10 py-2 pr-2"
+									: "border-border",
+							)}
 						>
 							<span
 								aria-hidden="true"
-								className="absolute -left-[5px] top-0.5 size-2.5 rounded-full bg-muted ring-2 ring-background"
+								className={cn(
+									"absolute -left-[5px] top-0.5 size-2.5 rounded-full ring-2 ring-background",
+									isRetask ? "bg-status-review" : "bg-muted",
+								)}
 							/>
 							<div className="flex min-w-0 flex-1 flex-col gap-1">
 								<div className="flex flex-wrap items-center gap-2">
@@ -116,7 +137,11 @@ export function TracePanel({
 									<span className="text-body-sm text-foreground">
 										{step.name}
 									</span>
-									<Badge variant="outline">{step.kind}</Badge>
+									{isRetask ? (
+										<Badge variant="review">re-task</Badge>
+									) : (
+										<Badge variant="outline">{step.kind}</Badge>
+									)}
 									<span className="text-caption-mono-sm text-muted-foreground">
 										#{String(index + 1).padStart(2, "0")}
 									</span>
@@ -126,6 +151,14 @@ export function TracePanel({
 								</div>
 								{step.detail && (
 									<p className="text-body-sm text-muted-foreground">
+										{isRetask ? (
+											<>
+												<span className="sr-only">
+													Re-task of {step.name}.{" "}
+												</span>
+												<span className="text-foreground">Reason: </span>
+											</>
+										) : null}
 										{step.detail}
 									</p>
 								)}

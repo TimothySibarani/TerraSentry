@@ -265,16 +265,20 @@ async def test_independent_context_facts_survive_partial_failures_and_geometry_s
     assert context.candidate.assessment.verdict == "high_risk"
     tools: dict[str, Any] = {tool.tool_name: tool for tool in build_source_tools(context)}
     payload = await tools["get_tree_cover_loss"](polygon_id=record.polygon.id)
-    assert payload["context_layers"]["layers"][0]["overlap_ha"] == 1
-    feature = payload["context_layers"]["layers"][0]["features"][0]
-    assert feature["properties"]["name"] == "Review reserve" and "geometry" not in feature
+    summary = payload["context_summary"]
+    assert summary[0]["overlap_ha"] == 1 and summary[0]["feature_count"] == 1
+    assert "features" not in summary[0] and "protected_overlap" in payload["screening_signals"]
     assert ("error" in payload) == (not loss_available)
     assert payload["errors"] == sources.errors
     if loss_available:
-        assert payload["context_layers"]["layers"][1]["error"] == "injected moratorium failure"
+        assert summary[1]["error"] == "injected moratorium failure"
+    deep = await tools["get_context_layers"](polygon_id=record.polygon.id)
+    feature = deep["layers"][0]["features"][0]
+    assert feature["properties"]["name"] == "Review reserve" and "geometry" not in feature
+    assert ("error" in deep) == loss_available
     verifier: dict[str, Any] = {tool.tool_name: tool for tool in build_verifier_tools(context)}
     claims = await verifier["get_source_claims"](polygon_id=record.polygon.id)
-    assert "context_layers" not in claims["loss"] and claims["context_layers"] == payload["context_layers"]
+    assert "context_summary" not in claims["loss"] and claims["context_layers"] == {"layers": deep["layers"]}
     entry = next(entry for entry in context.candidate.evidence if entry.claim == "context.protected_areas")
     compact_entry = await verifier["get_evidence_entry"](evidence_id=entry.evidence_id)
     assert "geometry" not in compact_entry["value"]["features"][0]

@@ -33,7 +33,7 @@ from terrasentry_integrations.sources.gfw import GfwClient
 
 from terrasentry_api.config import Settings
 from terrasentry_api.config import settings as default_settings
-from terrasentry_api.db import check_database, create_engine_and_session
+from terrasentry_api.db import check_cache, check_database, create_engine_and_session
 from terrasentry_api.runner import RunManager
 from terrasentry_api.sap_actions import SapActionService
 from terrasentry_api.seed_loader import restore_submitted_records, seed_if_empty
@@ -94,6 +94,7 @@ async def build_services(
     sap: SapGateway | None = None
     try:
         await check_database(engine, settings.database_url)
+        await check_cache(cache, resolved.redis_url)
         fixtures_loaded = 0
         if resolved.cache_fixtures_dir:
             fixtures_loaded = await prime_fixtures(cache, Path(resolved.cache_fixtures_dir))

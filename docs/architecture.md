@@ -841,6 +841,28 @@ prefetch and PostgreSQL replay are now measured in [KPI evidence](kpi.md).
 
 ---
 
+S3 landed (2026-10-04): the agent graph is adaptive. `agents/investigation.py` holds the
+deterministic rules: `screening_signals(sources)` lists the screening facts that warrant a deep
+dive, and `required_deep_dives(findings)` lists the deep dives a candidate requires (any
+BORDERLINE or FLAG finding in deforestation, fire, protected area, moratorium, peat or concession
+requires `get_context_layers` and `check_concession_overlap`, on top of baseline screening and the
+legality read). The Supervisor works in two phases: phase 1 delegates geospatial, thermal and a
+standard legality pass; if any specialist reports signals it re-tasks legality and geospatial, and
+`supervisor.py` records each repeat delegation as a `retask` trace step carrying the delegation
+text as its reason. Source tool steps record ids and `status` (`ok`/`error`); `coverage_checks`
+(called by `VerifierNode` after `code_checks`, never by batch screening) rejects a run whose
+trusted tool steps lack a required deep dive with matching ids, counts an attempted-but-failed
+dive as covered with an info data-gap challenge, and never counts model text or `retask` steps.
+A rejected run fails with an explicit reason. Verdicts stay owned by the rubric, so scripted,
+live and reference paths keep identical fingerprints. `FAULT_SCENARIOS` maps the scripted-only
+`coverage_catch` scenario to the high-risk record with the deep dive skipped (422 on Bedrock).
+Batches take `mode: screening | agent`; agent children reuse `RunManager._orchestrate` under
+`BATCH_AGENT_CONCURRENCY`, keep their accepted date/operator snapshots, and metrics carry mode,
+model, the concurrency actually used, `unlabelled_count` and graph-level token usage. The `retask`
+kind and `coverage` challenges flow through the regenerated OpenAPI contract, the Effect client and
+the cockpit trace/assessment panels. Live Bedrock and browser acceptance are tracked in
+`docs/milestones.md`.
+
 ## 12. Open questions to revisit
 
 | Question | Impact | Trigger to revisit |

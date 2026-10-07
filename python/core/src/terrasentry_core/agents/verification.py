@@ -13,6 +13,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from terrasentry_core.agents.investigation import (
+    BASELINE_TOOLS,
+    DeepDive,
+    required_deep_dives,
+    triggering_codes,
+)
 from terrasentry_core.assessment.pipeline import RecordAssessment, assess_record
 from terrasentry_core.dds import validate_citations
 from terrasentry_core.domain.enums import FindingCode, FindingLevel
@@ -23,12 +29,14 @@ from terrasentry_core.reference.pipeline import PolygonReport
 from terrasentry_core.scoring import RubricConfig
 from terrasentry_core.seed.schemas import BatchRecord, ExpectedSignal, OperatorRecord
 from terrasentry_core.tools.sources import PolygonSources
+from terrasentry_core.tools.trace import TraceStep
 
 ChallengeKind = Literal[
     "missing_source",
     "metric_mismatch",
     "citation_failure",
     "design_mismatch",
+    "coverage",
     "llm_review",
 ]
 ChallengeSeverity = Literal["info", "warning", "error"]
@@ -316,6 +324,81 @@ def code_checks(
             f"deterministic re-derivation accepted={accepted}",
             f"retrieved_at={retrieved_at.isoformat() if retrieved_at else 'unset'}",
         ],
+    )
+
+
+def coverage_checks(
+    candidate: RecordAssessment, record: BatchRecord, steps: list[TraceStep]
+) -> VerificationReport:
+    """Reject a candidate whose server-recorded tool steps skipped a required investigation.
+
+    Only ``tool`` steps recorded by server code count, matched on name and ids. Model
+    summaries and ``retask`` steps never do. An attempted deep dive whose step reports an
+    error counts as covered and leaves an info data-gap note.
+    """
+    expected_ids = {"polygon_id": record.polygon.id, "supplier_id": record.legality.supplier_id}
+    codes = triggering_codes(candidate.assessment.findings)
+    deep_dives = required_deep_dives(candidate.assessment.findings)
+    tool_steps = [step for step in steps if step.kind == "tool"]
+    challenges: list[VerificationChallenge] = []
+    checked: list[str] = []
+
+    def matching(requirement: DeepDive) -> list[TraceStep]:
+        wanted = {field: expected_ids[field] for field in requirement.id_fields}
+        return [
+            step
+            for step in tool_steps
+            if step.name == requirement.tool and all(step.payload.get(k) == v for k, v in wanted.items())
+        ]
+
+    for requirement in [*BASELINE_TOOLS, *sorted(deep_dives, key=lambda item: item.tool)]:
+        checked.append(f"coverage.{requirement.tool}")
+        expected = ", ".join(f"{field}={expected_ids[field]}" for field in requirement.id_fields)
+        found = matching(requirement)
+        is_deep_dive = requirement in deep_dives
+        if not found:
+            reason = (
+                f" (required by findings: {', '.join(codes)})" if is_deep_dive else " (baseline screening)"
+            )
+            challenges.append(
+                VerificationChallenge(
+                    kind="coverage",
+                    severity="error",
+                    detail=f"required tool {requirement.tool} was not called{reason}",
+                    source="trace",
+                    expected=expected,
+                    observed="no matching tool step recorded",
+                )
+            )
+        elif is_deep_dive and all(step.payload.get("status") == "error" for step in found):
+            challenges.append(
+                VerificationChallenge(
+                    kind="coverage",
+                    severity="info",
+                    detail=f"{requirement.tool} was attempted but its sources were unavailable; data gap",
+                    source="trace",
+                    expected=expected,
+                    observed="attempted; status=error",
+                )
+            )
+    accepted = not any(challenge.severity == "error" for challenge in challenges)
+    return VerificationReport(
+        accepted=accepted,
+        checked_claims=checked,
+        challenges=challenges,
+        notes=[f"coverage accepted={accepted}"],
+    )
+
+
+def merge_coverage(deterministic: VerificationReport, coverage: VerificationReport) -> VerificationReport:
+    """Fold the coverage gate into the deterministic report; errors keep their veto."""
+    return deterministic.model_copy(
+        update={
+            "accepted": deterministic.accepted and coverage.accepted,
+            "checked_claims": [*deterministic.checked_claims, *coverage.checked_claims],
+            "challenges": [*deterministic.challenges, *coverage.challenges],
+            "notes": [*deterministic.notes, *coverage.notes],
+        }
     )
 
 

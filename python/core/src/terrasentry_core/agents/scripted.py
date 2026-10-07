@@ -9,6 +9,7 @@ so an SDK upgrade touches this file alone.
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import AsyncGenerator, AsyncIterable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from threading import Event as CancelSignal
@@ -21,6 +22,7 @@ from strands.types.content import Messages, SystemContentBlock
 from strands.types.streaming import StreamEvent
 from strands.types.tools import ToolChoice, ToolSpec
 
+from terrasentry_core.agents.investigation import format_signals_line, parse_signals
 from terrasentry_core.agents.specialists import SPECIALIST_NAMES
 from terrasentry_core.errors import AgentRunError
 from terrasentry_core.seed.schemas import BatchRecord
@@ -291,7 +293,170 @@ class AutopilotResponder:
         return None
 
 
+_SIGNALS_FIELD = re.compile(r"screening_signals[\"']?\s*:\s*\[([^\]]*)\]")
+
+
+def _block_texts(blocks: Sequence[Mapping[str, Any]]) -> list[str]:
+    return [
+        str(block["text"]) if "text" in block else json.dumps(block["json"])
+        for block in blocks
+        if "text" in block or "json" in block
+    ]
+
+
+def _tool_result_texts(context: ScriptedContext) -> list[str]:
+    return [
+        text
+        for message in context.messages
+        for block in message.get("content", [])
+        if (result := block.get("toolResult")) is not None
+        for text in _block_texts(result.get("content", []))
+    ]
+
+
+def _task_text(context: ScriptedContext) -> str:
+    """The first user message: for a specialist, the supervisor's delegation input."""
+    for message in context.messages:
+        if message.get("role") == "user":
+            return " ".join(_block_texts(message.get("content", [])))
+    return ""
+
+
+def _payload_signals(texts: Sequence[str]) -> list[str]:
+    found: set[str] = set()
+    for text in texts:
+        for match in _SIGNALS_FIELD.finditer(text):
+            found.update(re.findall(r"[\"']([^\"']+)[\"']", match.group(1)))
+    return sorted(found)
+
+
+class AdaptiveAutopilotResponder:
+    """Offline stand-in for the adaptive Supervisor and its specialists.
+
+    Role is inferred from the offered tools. Specialists run their phase tool(s) and end with a
+    machine-readable ``SCREENING_SIGNALS`` line taken from their tool results. The Supervisor only
+    sees those specialist reports, exactly as in a live run: it delegates phase 1, parses the
+    signals, then re-tasks legality and geospatial for the deep dive. ``skip_deep_dives`` ignores the
+    signals; it exists so the verifier's coverage gate has a deterministic skipped-investigation
+    to catch. The fixed-route :class:`AutopilotResponder` stays for parity tests.
+    """
+
+    def __init__(
+        self,
+        record: BatchRecord,
+        *,
+        structured_outputs: Mapping[type[BaseModel], BaseModel] | None = None,
+        skip_deep_dives: bool = False,
+        final_text: str = "Evidence gathered for the record.",
+    ) -> None:
+        self._record = record
+        self._structured = dict(structured_outputs or {})
+        self._skip = skip_deep_dives
+        self._final_text = final_text
+
+    @classmethod
+    def for_record(
+        cls,
+        record: BatchRecord,
+        *,
+        structured_outputs: Mapping[type[BaseModel], BaseModel] | None = None,
+        skip_deep_dives: bool = False,
+        final_text: str = "Evidence gathered for the record.",
+    ) -> AdaptiveAutopilotResponder:
+        return cls(
+            record,
+            structured_outputs=structured_outputs,
+            skip_deep_dives=skip_deep_dives,
+            final_text=final_text,
+        )
+
+    def __call__(self, context: ScriptedContext) -> ScriptedTurn | None:
+        for model, report in self._structured.items():
+            if any(spec.get("name") == model.__name__ for spec in context.tool_specs):
+                return ScriptedTurn(structured_output=report)
+        names = set(context.tool_names)
+        if set(SPECIALIST_NAMES) <= names:
+            return self._supervise(context)
+        if "get_tree_cover_loss" in names:
+            deep = "context layers" in _task_text(context).lower()
+            wanted = [("get_context_layers" if deep else "get_tree_cover_loss", self._polygon())]
+        elif "get_fire_hotspots" in names:
+            wanted = [("get_fire_hotspots", self._polygon())]
+        elif "get_legality_record" in names:
+            wanted = [
+                ("get_legality_record", {"supplier_id": self._record.supplier_id}),
+                ("get_consignment", {"record_id": self._record.record_id}),
+            ]
+            if "concession" in _task_text(context).lower():
+                wanted.append(
+                    (
+                        "check_concession_overlap",
+                        {**self._polygon(), "supplier_id": self._record.supplier_id},
+                    )
+                )
+        else:
+            return None
+        completed = set(context.completed_tools())
+        for name, arguments in wanted:
+            if name not in completed:
+                return ScriptedTurn(tool_calls=(ToolCall(name, arguments),))
+        signals = sorted(
+            {*_payload_signals(_tool_result_texts(context)), *parse_signals(_task_text(context))}
+        )
+        return ScriptedTurn(text=f"{self._final_text}\n{format_signals_line(signals)}")
+
+    def _polygon(self) -> dict[str, Any]:
+        return {"polygon_id": self._record.polygon.id}
+
+    def _supervise(self, context: ScriptedContext) -> ScriptedTurn:
+        record = self._record
+        completed = context.completed_tools()
+        if not completed:
+            return ScriptedTurn(
+                tool_calls=(
+                    ToolCall(
+                        "geospatial_analyst",
+                        {"input": f"Screen polygon {record.polygon.id}: report loss and layer overlaps."},
+                    ),
+                    ToolCall(
+                        "thermal_analyst",
+                        {"input": f"Screen polygon {record.polygon.id}: report fire hotspots."},
+                    ),
+                    ToolCall(
+                        "legality_analyst",
+                        {
+                            "input": f"Standard legality pass for supplier {record.supplier_id}, "
+                            f"record {record.record_id}."
+                        },
+                    ),
+                )
+            )
+        signals = sorted({s for text in _tool_result_texts(context) for s in parse_signals(text)})
+        if signals and not self._skip and completed.count("legality_analyst") == 1:
+            line = format_signals_line(signals)
+            reason = f"Screening signals {', '.join(signals)} call for a deep dive. {line}"
+            return ScriptedTurn(
+                tool_calls=(
+                    ToolCall(
+                        "legality_analyst",
+                        {
+                            "input": f"check concession overlap and permit coverage for polygon "
+                            f"{record.polygon.id}, supplier {record.supplier_id}. {reason}"
+                        },
+                    ),
+                    ToolCall(
+                        "geospatial_analyst",
+                        {"input": f"get context layers for polygon {record.polygon.id}. {reason}"},
+                    ),
+                )
+            )
+        if signals and not self._skip:
+            return ScriptedTurn(text=f"{self._final_text} Deep dives ran for signals: {', '.join(signals)}.")
+        return ScriptedTurn(text=self._final_text)
+
+
 __all__ = [
+    "AdaptiveAutopilotResponder",
     "AutopilotResponder",
     "ScriptedContext",
     "ScriptedModel",

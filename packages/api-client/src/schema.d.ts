@@ -16,7 +16,7 @@ export interface paths {
         put?: never;
         /**
          * Create Batch
-         * @description Queue a batch; records run concurrently on the deterministic assess path.
+         * @description Queue a batch; screening mode runs the deterministic path, agent mode the agent graph.
          */
         post: operations["create_batch_batch_runs_post"];
         delete?: never;
@@ -477,9 +477,20 @@ export interface components {
         };
         /**
          * BatchCreate
-         * @description Queue a deterministic batch run over the seed records or explicit record ids.
+         * @description Queue a batch over the seed records or explicit record ids.
+         *
+         *     ``screening`` runs the deterministic rubric and verifier with no LLM; ``agent`` runs the
+         *     full supervisor/specialist/verifier graph per record on ``model``.
          */
         BatchCreate: {
+            /**
+             * Mode
+             * @default screening
+             * @enum {string}
+             */
+            mode: "screening" | "agent";
+            /** Model */
+            model?: ("scripted" | "bedrock") | null;
             /** Record Ids */
             record_ids?: string[] | null;
             /**
@@ -524,6 +535,14 @@ export interface components {
             metrics?: {
                 [key: string]: unknown;
             };
+            /**
+             * Mode
+             * @default screening
+             * @enum {string}
+             */
+            mode: "screening" | "agent";
+            /** Model */
+            model?: string | null;
             /** P95 Seconds Per Record */
             p95_seconds_per_record?: number | null;
             /** Record Count */
@@ -545,6 +564,11 @@ export interface components {
             throughput_records_per_second?: number | null;
             /** Total Record Seconds */
             total_record_seconds?: number | null;
+            /**
+             * Unlabelled Count
+             * @default 0
+             */
+            unlabelled_count: number;
             /** Verdict Breakdown */
             verdict_breakdown?: {
                 [key: string]: number;
@@ -1513,7 +1537,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "run" | "agent" | "tool" | "verifier" | "writer" | "review" | "state" | "sap";
+            kind: "run" | "agent" | "retask" | "tool" | "verifier" | "writer" | "review" | "state" | "sap";
             /** Name */
             name: string;
             /** Payload */
@@ -1581,7 +1605,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "missing_source" | "metric_mismatch" | "citation_failure" | "design_mismatch" | "llm_review";
+            kind: "missing_source" | "metric_mismatch" | "citation_failure" | "design_mismatch" | "coverage" | "llm_review";
             /** Observed */
             observed?: string | null;
             /**

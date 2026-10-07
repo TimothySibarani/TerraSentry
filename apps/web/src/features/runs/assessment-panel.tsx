@@ -30,6 +30,18 @@ const SEVERITY_VARIANT: Record<string, "outline" | "review" | "risk"> = {
 	error: "risk",
 };
 
+function challengeLabel(challenge: {
+	kind: string;
+	severity: string;
+}): string {
+	if (challenge.kind === "coverage") {
+		return challenge.severity === "info"
+			? "Attempted, data gap"
+			: "Missing deep dive";
+	}
+	return challenge.kind.replaceAll("_", " ");
+}
+
 function FindingsList({
 	assessment,
 	runId,
@@ -134,7 +146,7 @@ function VerificationSummary({
 						>
 							<div className="flex flex-wrap items-center gap-2">
 								<span className="text-body-sm text-foreground">
-									{challenge.kind.replaceAll("_", " ")}
+									{challengeLabel(challenge)}
 								</span>
 								<Badge
 									variant={SEVERITY_VARIANT[challenge.severity] ?? "outline"}
@@ -184,15 +196,30 @@ export function AssessmentPanel({
 }) {
 	if (!verdict) {
 		return (
-			<Alert>
-				<AlertTriangleIcon aria-hidden="true" />
-				<AlertTitle>No assessment released yet</AlertTitle>
-				<AlertDescription>
-					The deterministic rubric has not published a verdict for this run. If
-					it is awaiting review, the pending assessment appears once you open
-					the review dialog.
-				</AlertDescription>
-			</Alert>
+			<div className="flex flex-col gap-4">
+				<Alert>
+					<AlertTriangleIcon aria-hidden="true" />
+					<AlertTitle>No assessment released yet</AlertTitle>
+					<AlertDescription>
+						The deterministic rubric has not published a verdict for this run.
+						If it is awaiting review, the pending assessment appears once you
+						open the review dialog.
+					</AlertDescription>
+				</Alert>
+				{verification && (
+					<Card>
+						<CardHeader>
+							<CardTitle>Verification</CardTitle>
+							<CardDescription>
+								Why the verifier did or did not release this run.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<VerificationSummary verification={verification} />
+						</CardContent>
+					</Card>
+				)}
+			</div>
 		);
 	}
 

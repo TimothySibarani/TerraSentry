@@ -8,6 +8,7 @@ upserts, step appends, result persistence).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from typing import Any, cast
 
@@ -279,6 +280,23 @@ class RunStore:
         await self._session.flush()
         return run
 
+    async def merge_metrics(self, run_id: str, metrics: dict[str, Any]) -> None:
+        run = await self.get_run(run_id)
+        if run is not None:
+            run.metrics = {**(run.metrics or {}), **metrics}
+            await self._session.flush()
+
+    async def batch_usage(self, parent_run_id: str) -> dict[str, int] | None:
+        """Sum graph-level token usage over child runs; None when no child reported any."""
+        rows = await self._session.execute(select(Run.metrics).where(Run.parent_run_id == parent_run_id))
+        total: dict[str, int] = {}
+        for (metrics,) in rows.all():
+            usage = (metrics or {}).get("usage")
+            if isinstance(usage, dict):
+                for key, value in usage.items():
+                    total[key] = total.get(key, 0) + int(value)
+        return total or None
+
     # -- steps ----------------------------------------------------------------
 
     async def append_step(self, run_id: str, step: TraceStep, seq: int) -> bool:
@@ -315,6 +333,22 @@ class RunStore:
         )
         return int(count or 0)
 
+    async def step_counts(self, run_ids: Sequence[str]) -> dict[str, int]:
+        """Step counts for many runs in one grouped query."""
+        if not run_ids:
+            return {}
+        rows = await self._session.execute(
+            select(RunStep.run_id, func.count()).where(RunStep.run_id.in_(run_ids)).group_by(RunStep.run_id)
+        )
+        return {run_id: int(count) for run_id, count in rows.all()}
+
+    async def verdicts_for(self, run_ids: Sequence[str]) -> dict[str, RunVerdict]:
+        """Verdict rows for many runs in one query (one verdict per run)."""
+        if not run_ids:
+            return {}
+        rows = await self._session.scalars(select(RunVerdict).where(RunVerdict.run_id.in_(run_ids)))
+        return {row.run_id: row for row in rows}
+
     # -- verdict / evidence / dds ---------------------------------------------
 
     async def persist_result(self, result: AgentRunResult) -> None:
@@ -330,8 +364,8 @@ class RunStore:
         run.elapsed_seconds = _elapsed_seconds(result.started_at, result.finished_at)
         if result.verification is not None:
             run.verification = result.verification.model_dump(mode="json")
-        if result.state is RunState.FAILED and result.summary:
-            run.error = result.summary
+        if result.state is RunState.FAILED and (result.error or result.summary):
+            run.error = result.error or result.summary
 
         assessment = result.assessment or result.pending_assessment
         if assessment is not None:
@@ -674,6 +708,47 @@ class RunStore:
             select(func.avg(Run.elapsed_seconds)).where(Run.parent_run_id == parent_run_id)
         )
         return round(float(average), 3) if average is not None else 0.0
+
+    async def batch_aggregates(
+        self, parent_run_ids: Sequence[str]
+    ) -> dict[str, tuple[dict[str, int], dict[str, int], float]]:
+        """(state counts, verdict breakdown, average seconds) per batch in three grouped queries."""
+        result = {
+            parent: (
+                {state.value: 0 for state in RunState},
+                {"compliant": 0, "high_risk": 0, "ambiguous": 0},
+                0.0,
+            )
+            for parent in parent_run_ids
+        }
+        if not result:
+            return result
+        parents = list(result)
+        states = await self._session.execute(
+            select(Run.parent_run_id, Run.state, func.count())
+            .where(Run.parent_run_id.in_(parents))
+            .group_by(Run.parent_run_id, Run.state)
+        )
+        for parent, state, count in states.all():
+            result[str(parent)][0][str(state)] = int(count)
+        verdicts = await self._session.execute(
+            select(Run.parent_run_id, RunVerdict.verdict, func.count())
+            .join(Run, Run.id == RunVerdict.run_id)
+            .where(Run.parent_run_id.in_(parents))
+            .group_by(Run.parent_run_id, RunVerdict.verdict)
+        )
+        for parent, verdict, count in verdicts.all():
+            result[str(parent)][1][str(verdict)] = int(count)
+        averages = await self._session.execute(
+            select(Run.parent_run_id, func.avg(Run.elapsed_seconds))
+            .where(Run.parent_run_id.in_(parents))
+            .group_by(Run.parent_run_id)
+        )
+        for parent, average in averages.all():
+            if average is not None:
+                counts, breakdown, _ = result[str(parent)]
+                result[str(parent)] = (counts, breakdown, round(float(average), 3))
+        return result
 
     async def batch_record_durations(self, parent_run_id: str) -> list[float]:
         """Per-record durations, ascending, for percentile/throughput metrics."""

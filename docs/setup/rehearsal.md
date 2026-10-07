@@ -104,3 +104,20 @@ split polygons. Annual loss beyond the verified release is an explicit data gap;
 release ends in 2025. A clean 2027 assessment cannot treat missing 2026 coverage as compliant.
 The measured live-source prefetch and PostgreSQL replay are recorded in `docs/kpi.md`;
 live Bedrock agent-batch throughput remains a separate S3 verification gate.
+
+## S3 agent-mode batches
+
+`run` takes `--mode screening|agent` (default `screening`) and, for agent mode,
+`--model scripted|bedrock` (default `AGENT_MODEL`). Agent mode runs the full graph per record
+under `BATCH_AGENT_CONCURRENCY` (default 4, separate from `BATCH_CONCURRENCY`) and the report
+records mode, model, concurrency actually used, per-record timings and graph-level token usage.
+
+```bash
+uv run python -m terrasentry_api.rehearsal run --size 10 --mode agent --model bedrock \
+  --as-of 2026-09-11 --report data/runs/agent-batch.json
+```
+
+**Cost note:** every agent record is several model calls (three specialists, re-tasks on
+signals, then the verifier). Record a bounded 10-record Bedrock batch first; only run 50
+records on Bedrock after confirming the cost. Scripted agent batches make no model calls and
+measure plumbing only.

@@ -56,6 +56,25 @@ def _verification_accepted(state: GraphState) -> bool:
     return False
 
 
+def _usage_of(result: object) -> dict[str, int] | None:
+    usage = getattr(result, "accumulated_usage", None)
+    if not isinstance(usage, dict):
+        return None
+    return {key: int(usage.get(key, 0)) for key in ("inputTokens", "outputTokens", "totalTokens")}
+
+
+def _rejection_reason(candidate: RecordAssessment | None, verification: VerificationReport | None) -> str:
+    """Explicit failure text so a rejection never surfaces as an evidence summary."""
+    if candidate is None:
+        return "no candidate assessment was produced"
+    if verification is None:
+        return "verification did not complete"
+    errors = verification.errors
+    if not errors:
+        return "verifier rejected the run"
+    return "Verifier rejected the run: " + "; ".join(f"{item.kind}: {item.detail}" for item in errors)
+
+
 class RunOrchestrator:
     """Owns one supervisor -> assessor -> verifier -> writer run and its review gate."""
 
@@ -115,11 +134,14 @@ class RunOrchestrator:
         models = self._models or ModelBundle.from_settings()
         graph = self._build_graph(record, context, models)
 
+        usage: dict[str, int] | None = None
         try:
             async for event in graph.stream_async(
                 self._task(record), invocation_state={"run_id": resolved_run_id}
             ):
                 await self._record_event(event, trace)
+                if event.get("type") == "multiagent_result":
+                    usage = _usage_of(event.get("result"))
         except Exception as exc:
             trace.add("state", "failed", f"{type(exc).__name__}: {exc}")
             return self._result(
@@ -131,7 +153,8 @@ class RunOrchestrator:
                 summary=f"run failed: {exc}",
             )
 
-        return self._finish(resolved_run_id, record, started, trace, context, refresh=refresh)
+        finished = self._finish(resolved_run_id, record, started, trace, context, refresh=refresh)
+        return finished.model_copy(update={"usage": usage})
 
     async def resume(self, result: AgentRunResult, decision: ReviewDecision) -> AgentRunResult:
         """Record the human decision on an awaiting run and release the DDS."""
@@ -164,8 +187,8 @@ class RunOrchestrator:
     def _task(self, record: BatchRecord) -> str:
         return (
             f"Assess EUDR compliance for record {record.record_id}, supplier {record.supplier_id}, "
-            f"polygon {record.polygon.id} in {record.polygon.region}. Delegate to every specialist "
-            "exactly once, then summarise the evidence you received."
+            f"polygon {record.polygon.id} in {record.polygon.region}. Screen first, re-task specialists "
+            "for deep dives when the screening signals call for one, then summarise the evidence."
         )
 
     def _build_graph(self, record: BatchRecord, context: ToolContext, models: ModelBundle) -> Graph:
@@ -285,6 +308,7 @@ class RunOrchestrator:
             trace,
             state=state,
             summary=context.summary,
+            error=_rejection_reason(candidate, verification) if state is RunState.FAILED else None,
             verification=verification,
             assessment=assessment,
             pending=pending,
@@ -299,6 +323,7 @@ class RunOrchestrator:
         *,
         state: RunState,
         summary: str = "",
+        error: str | None = None,
         verification: VerificationReport | None = None,
         assessment: RecordAssessment | None = None,
         pending: RecordAssessment | None = None,
@@ -310,6 +335,7 @@ class RunOrchestrator:
             polygon_id=record.polygon.id,
             state=state,
             summary=summary,
+            error=error,
             verification=verification,
             assessment=assessment,
             pending_assessment=pending,

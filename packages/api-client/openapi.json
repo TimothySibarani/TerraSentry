@@ -93,8 +93,32 @@
         "type": "object"
       },
       "BatchCreate": {
-        "description": "Queue a deterministic batch run over the seed records or explicit record ids.",
+        "description": "Queue a batch over the seed records or explicit record ids.\n\n``screening`` runs the deterministic rubric and verifier with no LLM; ``agent`` runs the\nfull supervisor/specialist/verifier graph per record on ``model``.",
         "properties": {
+          "mode": {
+            "default": "screening",
+            "enum": [
+              "screening",
+              "agent"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "enum": [
+                  "scripted",
+                  "bedrock"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
           "record_ids": {
             "anyOf": [
               {
@@ -210,6 +234,26 @@
             "title": "Metrics",
             "type": "object"
           },
+          "mode": {
+            "default": "screening",
+            "enum": [
+              "screening",
+              "agent"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
           "p95_seconds_per_record": {
             "anyOf": [
               {
@@ -279,6 +323,11 @@
               }
             ],
             "title": "Total Record Seconds"
+          },
+          "unlabelled_count": {
+            "default": 0,
+            "title": "Unlabelled Count",
+            "type": "integer"
           },
           "verdict_breakdown": {
             "additionalProperties": {
@@ -2692,6 +2741,7 @@
             "enum": [
               "run",
               "agent",
+              "retask",
               "tool",
               "verifier",
               "writer",
@@ -2881,6 +2931,7 @@
               "metric_mismatch",
               "citation_failure",
               "design_mismatch",
+              "coverage",
               "llm_review"
             ],
             "title": "Kind",
@@ -3039,7 +3090,7 @@
         ]
       },
       "post": {
-        "description": "Queue a batch; records run concurrently on the deterministic assess path.",
+        "description": "Queue a batch; screening mode runs the deterministic path, agent mode the agent graph.",
         "operationId": "create_batch_batch_runs_post",
         "requestBody": {
           "content": {

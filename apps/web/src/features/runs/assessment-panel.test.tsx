@@ -1,4 +1,8 @@
-import type { EvidenceEntry, VerdictOut } from "@terrasentry/api-client";
+import type {
+	EvidenceEntry,
+	VerdictOut,
+	VerificationReport,
+} from "@terrasentry/api-client";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import { AssessmentPanel } from "./assessment-panel";
@@ -83,4 +87,63 @@ it("keeps full named feature artifacts and legacy provenance readable at evidenc
 	expect(detail).toContain("Tanjung Puting");
 	expect(detail).toContain("wdpa_protected_areas");
 	expect(detail).toContain("Declared holder");
+});
+
+const coverageReport = (
+	severity: "error" | "info",
+	accepted: boolean,
+): VerificationReport => ({
+	accepted,
+	checked_claims: ["coverage.get_context_layers"],
+	notes: [],
+	llm_reviewed: false,
+	model_id: null,
+	challenges: [
+		{
+			kind: "coverage",
+			severity,
+			detail:
+				severity === "error"
+					? "required tool get_context_layers was not called (required by findings: protected_area)"
+					: "get_context_layers was attempted but its sources were unavailable; data gap",
+			source: "trace",
+			evidence_ids: [],
+			expected: "polygon_id=PLY-001",
+			observed:
+				severity === "error"
+					? "no matching tool step recorded"
+					: "attempted; status=error",
+		},
+	],
+});
+
+it("labels a missing deep dive as a coverage error", () => {
+	render(
+		<AssessmentPanel
+			runId="run-1"
+			verdict={null}
+			verification={coverageReport("error", false)}
+			disclosures={[]}
+		/>,
+	);
+	expect(screen.getByText("Missing deep dive")).toBeDefined();
+	expect(screen.getByText("Rejected")).toBeDefined();
+	expect(screen.getByText(/get_context_layers was not called/)).toBeDefined();
+	expect(
+		screen.getByText(/expected=polygon_id=PLY-001 · observed=/),
+	).toBeDefined();
+});
+
+it("shows an attempted-but-failed deep dive as an info data gap", () => {
+	render(
+		<AssessmentPanel
+			runId="run-1"
+			verdict={null}
+			verification={coverageReport("info", true)}
+			disclosures={[]}
+		/>,
+	);
+	expect(screen.getByText("Attempted, data gap")).toBeDefined();
+	expect(screen.getByText("info")).toBeDefined();
+	expect(screen.getByText("Accepted")).toBeDefined();
 });

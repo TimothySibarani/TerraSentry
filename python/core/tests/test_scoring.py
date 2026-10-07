@@ -150,3 +150,14 @@ def test_empty_ledger_does_not_crash_and_marks_gaps() -> None:
     assessment = assess(make_input(), EvidenceLedger())
     assert assessment.verdict in set(Verdict)
     assert assessment.citations["rubric.score"]
+
+
+def test_holder_matching_ignores_case_punctuation_and_reports_unknown_holders() -> None:
+    from terrasentry_core.scoring import concession_commodity, holder_matches
+
+    assert holder_matches("PT. Sawit  Makmur, Tbk", "pt sawit makmur tbk") is True
+    assert holder_matches("Other Estate", "PT Sawit Makmur") is False
+    assert holder_matches("  ", "PT Sawit Makmur") is None
+    assert holder_matches(None, "PT Sawit Makmur") is None
+    assert concession_commodity("oil_palm_concessions") == "oil_palm"
+    assert concession_commodity("wood_fiber_concessions") == "wood"

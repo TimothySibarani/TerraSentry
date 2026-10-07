@@ -1,7 +1,7 @@
-import type { BatchSummary } from "@terrasentry/api-client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createColumnHelper } from "@tanstack/react-table";
+import type { BatchSummary } from "@terrasentry/api-client";
 
 import { DataTable, type TableFeatureSet } from "#/components/data-table";
 import { ErrorState } from "#/components/error-state";
@@ -15,6 +15,7 @@ import {
 	CardTitle,
 } from "#/components/ui/card";
 import { Skeleton } from "#/components/ui/skeleton";
+import { BatchModeBadge } from "#/features/runs/batch-mode";
 import { RunLauncher } from "#/features/runs/launcher";
 import { batchRunsQuery } from "#/features/runs/queries";
 import { formatDateTime, formatDuration, formatNumber } from "#/lib/format";
@@ -39,6 +40,12 @@ const columns = helper.columns([
 	helper.accessor("state", {
 		header: "State",
 		cell: (info) => <RunStateBadge state={info.getValue()} />,
+	}),
+	helper.accessor("mode", {
+		header: "Mode",
+		cell: (info) => (
+			<BatchModeBadge mode={info.getValue()} model={info.row.original.model} />
+		),
 	}),
 	helper.accessor("record_count", {
 		header: "Records",
@@ -90,7 +97,8 @@ function BatchListPage() {
 					<CardTitle>Queue a batch</CardTitle>
 					<CardDescription>
 						Record IDs are deterministic (REC-001…REC-050) and the expected
-						breakdown is 30 compliant / 12 high-risk / 8 ambiguous.
+						breakdown is 30 compliant / 12 high-risk / 8 ambiguous. Pick fast
+						screening or per-record agent investigation.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>

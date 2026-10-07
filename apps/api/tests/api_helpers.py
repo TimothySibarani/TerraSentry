@@ -169,6 +169,7 @@ def test_settings(
     tmp_path: Path,
     *,
     batch_concurrency: int = 2,
+    batch_agent_concurrency: int = 2,
     auto_seed: bool = True,
     api_token: str = "",
 ) -> Settings:
@@ -177,6 +178,7 @@ def test_settings(
         database_url=f"sqlite+aiosqlite:///{tmp_path / 'terrasentry-test.db'}",
         auto_seed=auto_seed,
         batch_concurrency=batch_concurrency,
+        batch_agent_concurrency=batch_agent_concurrency,
         run_timeout_seconds=30,
         sse_ping_seconds=0,
         agent_model="scripted",
@@ -203,6 +205,7 @@ def test_services_factory(
     datasets: SeedDatasets | None = None,
     *,
     batch_concurrency: int = 2,
+    batch_agent_concurrency: int = 2,
     auto_seed: bool = True,
     cache: CacheBackend | None = None,
     offline: bool = False,
@@ -216,7 +219,11 @@ def test_services_factory(
     @asynccontextmanager
     async def factory() -> AsyncIterator[AppServices]:
         settings = test_settings(
-            tmp_path, batch_concurrency=batch_concurrency, auto_seed=auto_seed, api_token=api_token
+            tmp_path,
+            batch_concurrency=batch_concurrency,
+            batch_agent_concurrency=batch_agent_concurrency,
+            auto_seed=auto_seed,
+            api_token=api_token,
         )
         integration = IntegrationSettings(
             gfw_api_key="test-key",

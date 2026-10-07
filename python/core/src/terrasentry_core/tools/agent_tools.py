@@ -20,6 +20,8 @@ from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
 from terrasentry_integrations.sources.gfw_layers import ContextLayer
 
+from terrasentry_core.agents.investigation import screening_signals
+from terrasentry_core.scoring import concession_commodity, holder_matches
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.sources import LossWindow, PolygonSources, fetch_polygon_sources
 from terrasentry_core.tools.trace import TraceCollector
@@ -29,6 +31,7 @@ if TYPE_CHECKING:
     from terrasentry_core.assessment.pipeline import RecordAssessment
 
 _MODEL_LAYER_BYTES = 8 * 1024
+_CONCESSION_FEATURE_LIMIT = 20
 
 
 @dataclass
@@ -91,10 +94,27 @@ def _context_payload(sources: PolygonSources) -> dict[str, Any] | None:
     return {"layers": [_layer_payload(layer) for layer in sources.layers.layers]} if sources.layers else None
 
 
+def _context_summary(sources: PolygonSources) -> list[dict[str, Any]] | None:
+    """Per-layer status and overlap only; feature detail comes from the deep-dive tools."""
+    if sources.layers is None:
+        return None
+    return [
+        {
+            "name": layer.name,
+            "status": layer.status,
+            "overlap_ha": layer.overlap_ha,
+            "feature_count": len(layer.features),
+            "error": layer.error,
+        }
+        for layer in sources.layers.layers
+    ]
+
+
 def _loss_payload(polygon_id: str, sources: PolygonSources) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "polygon_id": polygon_id,
-        "context_layers": _context_payload(sources),
+        "context_summary": _context_summary(sources),
+        "screening_signals": screening_signals(sources),
         "errors": list(sources.errors),
     }
     loss = sources.loss
@@ -114,17 +134,83 @@ def _loss_payload(polygon_id: str, sources: PolygonSources) -> dict[str, Any]:
 
 def _hotspot_payload(polygon_id: str, sources: PolygonSources) -> dict[str, Any]:
     hotspots = sources.hotspots
+    signals = screening_signals(sources)
     if hotspots is None:
         reason = "; ".join(sources.errors)
-        return {"polygon_id": polygon_id, "error": f"fire hotspots unavailable: {reason}"}
+        return {
+            "polygon_id": polygon_id,
+            "screening_signals": signals,
+            "error": f"fire hotspots unavailable: {reason}",
+        }
+    dates = [item.acq_date for item in hotspots.detections]
     return {
         "polygon_id": polygon_id,
         "source": hotspots.source,
         "date_window": hotspots.date_window,
+        "window_start": hotspots.window_start.isoformat(),
+        "window_end": hotspots.window_end.isoformat(),
+        "first_detection": min(dates).isoformat() if dates else None,
+        "last_detection": max(dates).isoformat() if dates else None,
         "detection_count": hotspots.detection_count,
         "total_frp": hotspots.total_frp,
         "cached": hotspots.cached,
+        "screening_signals": signals,
     }
+
+
+def _concession_payload(
+    polygon_id: str, supplier_id: str, sources: PolygonSources, declared_holder: str, commodity: str | None
+) -> dict[str, Any]:
+    """Each intersecting concession feature compared with the declared holder and commodity."""
+    layers = {layer.name: layer for layer in sources.layers.layers} if sources.layers else {}
+    concessions: list[dict[str, Any]] = []
+    unavailable: list[str] = []
+    for name, layer in layers.items():
+        if not name.endswith("_concessions"):
+            continue
+        if layer.status == "unavailable":
+            unavailable.append(name)
+            continue
+        if layer.status != "success" or layer.overlap_ha <= 0:
+            continue
+        features = [
+            {
+                "feature_id": feature.feature_id,
+                "company": feature.properties.get("company"),
+                "overlap_ha": feature.overlap_ha,
+                "holder_matches": holder_matches(feature.properties.get("company"), declared_holder),
+            }
+            for feature in layer.features
+        ]
+        # Surface the conflicts first so truncation can never hide one.
+        features.sort(key=lambda item: item["holder_matches"] is True)
+        concessions.append(
+            {
+                "layer": name,
+                "dataset": layer.dataset,
+                "overlap_ha": layer.overlap_ha,
+                "commodity_authorised": concession_commodity(name),
+                "commodity_matches": commodity == concession_commodity(name),
+                "feature_count": len(features),
+                "mismatched_holders": sum(item["holder_matches"] is False for item in features),
+                "unknown_holders": sum(item["holder_matches"] is None for item in features),
+                "features": features[:_CONCESSION_FEATURE_LIMIT],
+                "features_truncated": len(features) > _CONCESSION_FEATURE_LIMIT,
+            }
+        )
+    return {
+        "polygon_id": polygon_id,
+        "supplier_id": supplier_id,
+        "declared_holder": declared_holder,
+        "declared_commodity": commodity,
+        "concessions": concessions,
+        "unavailable_layers": unavailable,
+        "overlap_found": bool(concessions),
+    }
+
+
+def _status(payload: dict[str, Any]) -> str:
+    return "error" if "error" in payload else "ok"
 
 
 def build_source_tools(context: ToolContext) -> list[AgentTool]:
@@ -143,7 +229,12 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
             f"{polygon_id}: {payload.get('total_loss_ha', 'no')} ha loss "
             f"{payload.get('date_window', '')}".strip()
         )
-        context.trace.add("tool", "get_tree_cover_loss", detail, payload={"polygon_id": polygon_id})
+        context.trace.add(
+            "tool",
+            "get_tree_cover_loss",
+            detail,
+            payload={"polygon_id": polygon_id, "status": _status(payload)},
+        )
         return payload
 
     @tool
@@ -159,7 +250,7 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
             "tool",
             "get_fire_hotspots",
             f"{polygon_id}: {payload.get('detection_count', 'no')} detection(s)",
-            payload={"polygon_id": polygon_id},
+            payload={"polygon_id": polygon_id, "status": _status(payload)},
         )
         return payload
 
@@ -176,7 +267,7 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
             "tool",
             "get_legality_record",
             f"{supplier_id}: permit {legality.permit_status!r}",
-            payload={"supplier_id": supplier_id},
+            payload={"supplier_id": supplier_id, "status": "ok"},
         )
         return {
             "supplier_id": supplier_id,
@@ -206,7 +297,7 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
             "tool",
             "get_consignment",
             f"{record_id}: HS {consignment.hs_heading}",
-            payload={"record_id": record_id},
+            payload={"record_id": record_id, "status": "ok"},
         )
         return {
             "record_id": record_id,
@@ -219,7 +310,78 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
             "disclosure": consignment.disclosure,
         }
 
-    return [get_tree_cover_loss, get_fire_hotspots, get_legality_record, get_consignment]
+    @tool
+    async def get_context_layers(polygon_id: str) -> dict[str, Any]:
+        """Deep dive: read feature-level context layers (protected areas, moratorium, peat, concessions).
+
+        Args:
+            polygon_id: Seed polygon identifier, for example PLY-001.
+        """
+        sources = await context.polygon_sources(polygon_id)
+        payload: dict[str, Any] = {"polygon_id": polygon_id, **(_context_payload(sources) or {})}
+        if sources.layers is None or any(layer.status == "unavailable" for layer in sources.layers.layers):
+            payload["error"] = "context layers unavailable: " + (
+                "; ".join(sources.errors) or "partial result"
+            )
+        layers = sources.layers.layers if sources.layers else []
+        context.trace.add(
+            "tool",
+            "get_context_layers",
+            f"{polygon_id}: {len(layers)} layer(s), "
+            f"{sum(layer.overlap_ha > 0 for layer in layers)} with overlap",
+            payload={"polygon_id": polygon_id, "status": _status(payload)},
+        )
+        return payload
+
+    @tool
+    async def check_concession_overlap(polygon_id: str, supplier_id: str) -> dict[str, Any]:
+        """Deep dive: compare intersecting concessions with the supplier's declared holder and commodity.
+
+        Args:
+            polygon_id: Seed polygon identifier, for example PLY-001.
+            supplier_id: Seed supplier identifier that owns the polygon, for example SUP-001.
+        """
+        record = context.datasets.record_for_polygon(polygon_id)
+        if record.legality.supplier_id != supplier_id:
+            payload: dict[str, Any] = {
+                "polygon_id": polygon_id,
+                "supplier_id": supplier_id,
+                "error": f"polygon {polygon_id} does not belong to supplier {supplier_id}",
+            }
+        else:
+            sources = await context.polygon_sources(polygon_id)
+            payload = _concession_payload(
+                polygon_id,
+                supplier_id,
+                sources,
+                record.legality.declared_holder or record.legality.legal_name,
+                record.consignment.commodity,
+            )
+            if sources.layers is None or payload["unavailable_layers"]:
+                payload["error"] = "concession layers unavailable: " + (
+                    "; ".join(sources.errors) or ", ".join(payload["unavailable_layers"])
+                )
+        context.trace.add(
+            "tool",
+            "check_concession_overlap",
+            f"{polygon_id}/{supplier_id}: "
+            + (
+                payload["error"]
+                if "error" in payload
+                else f"{len(payload['concessions'])} concession layer(s)"
+            ),
+            payload={"polygon_id": polygon_id, "supplier_id": supplier_id, "status": _status(payload)},
+        )
+        return payload
+
+    return [
+        get_tree_cover_loss,
+        get_fire_hotspots,
+        get_legality_record,
+        get_consignment,
+        get_context_layers,
+        check_concession_overlap,
+    ]
 
 
 def build_verifier_tools(context: ToolContext) -> list[AgentTool]:
@@ -240,7 +402,7 @@ def build_verifier_tools(context: ToolContext) -> list[AgentTool]:
             payload={"polygon_id": polygon_id},
         )
         loss = _loss_payload(polygon_id, sources)
-        loss.pop("context_layers", None)
+        loss.pop("context_summary", None)
         return {
             "polygon_id": polygon_id,
             "loss": loss,

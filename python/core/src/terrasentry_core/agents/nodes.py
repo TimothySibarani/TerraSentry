@@ -22,6 +22,8 @@ from terrasentry_core.agents.verification import (
     VerificationChallenge,
     VerificationReport,
     code_checks,
+    coverage_checks,
+    merge_coverage,
     merge_reports,
 )
 from terrasentry_core.scoring import RubricConfig
@@ -128,6 +130,7 @@ class VerifierNode(MultiAgentBase):
             retrieved_at=self._retrieved_at,
             config=self._config,
         )
+        report = merge_coverage(report, coverage_checks(candidate, self._record, self._context.trace.steps))
         if report.accepted:
             report = await self._llm_review(sources, report)
         return self._finish(report)

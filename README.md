@@ -47,7 +47,8 @@ cp .env.example .env
 pnpm db:up      # Postgres + Redis containers (skip if using an external DATABASE_URL)
 pnpm db:upgrade # apply the Alembic audit schema
 
-pnpm dev        # web on :3000 and API on :8000
+pnpm dev        # web on :3000 and API on :8000; also starts Postgres + Redis and migrates when they are local
+                # (set CACHE_BACKEND=memory to skip Redis; a non-local DATABASE_URL skips Docker)
 ```
 
 Data-source keys (GFW, FIRMS) and cloud access are covered in

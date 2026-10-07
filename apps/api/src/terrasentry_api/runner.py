@@ -22,7 +22,7 @@ from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from terrasentry_core.agents.factory import model_bundle_for
+from terrasentry_core.agents.factory import FAULT_SCENARIOS, model_bundle_for
 from terrasentry_core.agents.models import ModelBundle
 from terrasentry_core.agents.orchestrator import RunOrchestrator
 from terrasentry_core.agents.schemas import AgentRunResult, ReviewDecision
@@ -167,11 +167,17 @@ class RunManager:
         model: str,
         refresh: bool = False,
     ) -> str:
+        skip_deep_dives = False
+        if scenario in FAULT_SCENARIOS:
+            scenario, skip_deep_dives = FAULT_SCENARIOS[scenario]
         record = self._resolve_record(record_id=record_id, scenario=scenario)
         self._require_country(record)
         run_id = f"run-{uuid4().hex[:12]}"
         await self._create_run(run_id, "scenario", record=record, model=model)
-        self._spawn(run_id, self._execute_scenario(run_id, record, model, refresh))
+        self._spawn(
+            run_id,
+            self._execute_scenario(run_id, record, model, refresh, skip_deep_dives=skip_deep_dives),
+        )
         return run_id
 
     async def start_batch(
@@ -180,8 +186,12 @@ class RunManager:
         size: int,
         refresh: bool = False,
         record_ids: list[str] | None = None,
+        mode: str = "screening",
+        model: str | None = None,
     ) -> str:
         batch_run_id = f"batch-{uuid4().hex[:12]}"
+        # runs.model holds the mode string: "deterministic" for screening, else scripted/bedrock.
+        run_model = (model or self._settings.agent_model) if mode == "agent" else "deterministic"
         # Explicit ids screen submitted (or chosen) records; otherwise the seed demo batch.
         records = (
             [self._datasets.get_record(record_id) for record_id in dict.fromkeys(record_ids)]
@@ -197,9 +207,15 @@ class RunManager:
             await store.create_run(
                 run_id=batch_run_id,
                 kind="batch",
-                model="deterministic",
+                model=run_model,
                 assessment_date=assessment_date,
                 operator=operator,
+                metrics={
+                    "mode": mode,
+                    "model": run_model if mode == "agent" else None,
+                    "record_count": len(records),
+                    "unlabelled_count": sum(record.expected_archetype is None for record in records),
+                },
             )
             for record in records:
                 await store.create_run(
@@ -207,12 +223,12 @@ class RunManager:
                     kind="record",
                     record=record,
                     parent_run_id=batch_run_id,
-                    model="deterministic",
+                    model=run_model,
                     assessment_date=assessment_date,
                     operator=operator,
                 )
             await session.commit()
-        self._spawn(batch_run_id, self._execute_batch(batch_run_id, records, refresh))
+        self._spawn(batch_run_id, self._execute_batch(batch_run_id, records, refresh, mode, run_model))
         return batch_run_id
 
     async def decide(self, run_id: str, decision: ReviewDecision) -> AgentRunResult:
@@ -270,7 +286,31 @@ class RunManager:
 
     # -- scenario execution ---------------------------------------------------------
 
-    async def _execute_scenario(self, run_id: str, record: BatchRecord, model: str, refresh: bool) -> None:
+    async def _execute_scenario(
+        self,
+        run_id: str,
+        record: BatchRecord,
+        model: str,
+        refresh: bool,
+        *,
+        skip_deep_dives: bool = False,
+    ) -> None:
+        await self._orchestrate(run_id, record, model, refresh, skip_deep_dives=skip_deep_dives)
+
+    async def _orchestrate(
+        self,
+        run_id: str,
+        record: BatchRecord,
+        model: str,
+        refresh: bool,
+        *,
+        skip_deep_dives: bool = False,
+    ) -> tuple[RunState, str | None]:
+        """Run the agent graph for one persisted run; shared by scenarios and agent batches.
+
+        Returns the final state and the released/pending verdict (``None`` when the run failed).
+        A failure of any kind marks only this run FAILED; it never raises.
+        """
         started = self._clock()
         trace_queue: asyncio.Queue[TraceStep | None] = asyncio.Queue()
 
@@ -278,14 +318,14 @@ class RunManager:
             trace_queue.put_nowait(step)
 
         try:
-            models = model_bundle_for(model, record)
+            models = model_bundle_for(model, record, skip_deep_dives=skip_deep_dives)
+            assessment_date, operator = await self._accepted_context(run_id)
         except CoreError as exc:
             await self._fail(run_id, str(exc))
-            return
+            return RunState.FAILED, None
 
         await self._set_state(run_id, RunState.RUNNING, started_at=started)
         writer = asyncio.create_task(self._persist_steps(run_id, trace_queue))
-        assessment_date, operator = await self._accepted_context(run_id)
         orchestrator = self._orchestrator(
             on_step=on_step, models=models, as_of=assessment_date, operator=operator
         )
@@ -306,12 +346,20 @@ class RunManager:
 
         if result is None:
             await self._fail(run_id, failure or "run failed")
-            return
+            return RunState.FAILED, None
         action = await self._sap_verdict_action(result)
         if action is not None:
             result = self._attach_sap(result, action)
         await self._store_result(result, sap_action=action)
+        if result.usage is not None:
+            async with self._session_factory() as session:
+                await RunStore(session).merge_metrics(
+                    run_id, {"usage": result.usage, "usage_scope": "graph-level"}
+                )
+                await session.commit()
         self._publish_done(run_id, result.state)
+        candidate = result.assessment or result.pending_assessment
+        return result.state, candidate.assessment.verdict.value if candidate is not None else None
 
     async def _persist_steps(self, run_id: str, queue: asyncio.Queue[TraceStep | None]) -> None:
         seq = 0
@@ -333,8 +381,13 @@ class RunManager:
         batch_run_id: str,
         records: list[BatchRecord],
         refresh: bool,
+        mode: str = "screening",
+        model: str = "deterministic",
     ) -> None:
         started = self._clock()
+        concurrency = max(
+            1, self._settings.batch_agent_concurrency if mode == "agent" else self._settings.batch_concurrency
+        )
         await self._set_state(batch_run_id, RunState.RUNNING, started_at=started)
         expected = Counter(record.expected_archetype for record in records if record.expected_archetype)
         progress: dict[str, Any] = {
@@ -346,12 +399,17 @@ class RunManager:
             "verdict_breakdown": {"compliant": 0, "high_risk": 0, "ambiguous": 0},
         }
         lock = asyncio.Lock()
-        semaphore = asyncio.Semaphore(max(1, self._settings.batch_concurrency))
+        semaphore = asyncio.Semaphore(concurrency)
         cache_before = self._cache.stats().as_dict() if self._cache is not None else None
 
         async def one(record: BatchRecord) -> None:
             async with semaphore:
-                state, verdict = await self._execute_batch_record(batch_run_id, record, refresh)
+                if mode == "agent":
+                    state, verdict = await self._orchestrate(
+                        self.record_run_id(batch_run_id, record), record, model, refresh
+                    )
+                else:
+                    state, verdict = await self._execute_batch_record(batch_run_id, record, refresh)
             async with lock:
                 if state is RunState.COMPLETE:
                     progress["completed"] += 1
@@ -383,6 +441,10 @@ class RunManager:
             finished=finished,
             expected=dict(expected),
             record_count=len(records),
+            unlabelled_count=sum(record.expected_archetype is None for record in records),
+            mode=mode,
+            model=model,
+            concurrency=concurrency,
             cache_before=cache_before,
         )
         await self._set_state(
@@ -402,7 +464,12 @@ class RunManager:
         trace = TraceCollector(clock=self._clock)
         await self._set_state(run_id, RunState.RUNNING, started_at=started)
         verdict: str | None = None
-        pinned, operator = await self._accepted_context(run_id)
+        try:
+            pinned, operator = await self._accepted_context(run_id)
+        except CoreError as exc:
+            # A child without its accepted snapshot fails alone; it must not fail the batch.
+            await self._fail(run_id, str(exc))
+            return RunState.FAILED, None
         try:
             sources = await fetch_polygon_sources(
                 record.polygon,
@@ -656,6 +723,10 @@ class RunManager:
         finished: datetime,
         expected: dict[str, int],
         record_count: int,
+        unlabelled_count: int = 0,
+        mode: str = "screening",
+        model: str = "deterministic",
+        concurrency: int | None = None,
         cache_before: dict[str, int] | None = None,
     ) -> dict[str, Any]:
         async with self._session_factory() as session:
@@ -666,9 +737,13 @@ class RunManager:
             durations = await store.batch_record_durations(batch_run_id)
             confusion = await store.batch_confusion(batch_run_id)
             sap_actions = await store.batch_sap_action_counts(batch_run_id)
+            usage = await store.batch_usage(batch_run_id)
         wall_clock = round((finished - started).total_seconds(), 3)
         metrics: dict[str, Any] = {
+            "mode": mode,
+            "model": model if mode == "agent" else None,
             "record_count": record_count,
+            "unlabelled_count": unlabelled_count,
             "expected_breakdown": expected,
             "verdict_breakdown": breakdown,
             "state_counts": counts,
@@ -679,9 +754,12 @@ class RunManager:
             "throughput_records_per_second": round(record_count / wall_clock, 3) if wall_clock > 0 else 0.0,
             "total_record_seconds": round(sum(durations), 3),
             "confusion": confusion,
-            "batch_concurrency": max(1, self._settings.batch_concurrency),
+            "batch_concurrency": concurrency or max(1, self._settings.batch_concurrency),
             "sap_actions": sap_actions,
         }
+        if usage is not None:
+            metrics["token_usage"] = usage
+            metrics["token_usage_scope"] = "graph-level"
         if cache_before is not None and self._cache is not None:
             cache_after = self._cache.stats().as_dict()
             metrics["cache_stats"] = {

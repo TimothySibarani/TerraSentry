@@ -7,6 +7,7 @@ from typing import Annotated, cast
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
+from terrasentry_core.agents.factory import FAULT_SCENARIOS
 from terrasentry_core.agents.schemas import ReviewDecision
 from terrasentry_core.domain.enums import Decision
 from terrasentry_core.errors import InvalidReviewDecisionError, SeedLookupError
@@ -31,11 +32,17 @@ async def create_run(
     session: SessionDep,
 ) -> RunSummary:
     """Start the supervisor -> specialists -> verifier graph for one seed record."""
+    model = payload.model or services.settings.agent_model
+    if payload.scenario in FAULT_SCENARIOS and model != "scripted":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"scenario {payload.scenario!r} is scripted fault injection and cannot run on {model!r}",
+        )
     try:
         run_id = await services.run_manager.start_run(
             record_id=payload.record_id,
             scenario=payload.scenario,
-            model=payload.model or services.settings.agent_model,
+            model=model,
             refresh=payload.refresh,
         )
     except SeedLookupError as exc:
@@ -57,11 +64,13 @@ async def list_runs(
 ) -> list[RunSummary]:
     store = RunStore(session)
     runs = await store.list_runs(kind=kind, parent_run_id=parent_run_id, limit=limit, offset=offset)
-    summaries: list[RunSummary] = []
-    for run in runs:
-        verdict = await store.get_verdict(run.id)
-        summaries.append(RunSummary.from_row(run, verdict=verdict, step_count=await store.step_count(run.id)))
-    return summaries
+    ids = [run.id for run in runs]
+    verdicts = await store.verdicts_for(ids)
+    counts = await store.step_counts(ids)
+    return [
+        RunSummary.from_row(run, verdict=verdicts.get(run.id), step_count=counts.get(run.id, 0))
+        for run in runs
+    ]
 
 
 @router.get("/{run_id}", response_model=RunDetail)

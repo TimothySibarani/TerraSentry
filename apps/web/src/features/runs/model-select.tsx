@@ -28,12 +28,17 @@ export function ModelSelect({
 	onChange,
 	className,
 	showHint = false,
+	disabled = false,
+	disabledHint,
 }: {
 	id: string;
 	value: ModelMode;
 	onChange: (value: ModelMode) => void;
 	className?: string;
 	showHint?: boolean;
+	disabled?: boolean;
+	/** Shown instead of the hint when the picker is disabled, to say why. */
+	disabledHint?: string;
 }) {
 	const health = useQuery(healthQuery());
 	const bedrockReady = health.data?.bedrockConfigured ?? false;
@@ -46,10 +51,11 @@ export function ModelSelect({
 	}, [value, bedrockReady, health.isSuccess, onChange]);
 
 	return (
-		<Field className={className}>
+		<Field className={className} data-disabled={disabled || undefined}>
 			<FieldLabel htmlFor={id}>Agent model</FieldLabel>
 			<Select
 				items={MODEL_ITEMS}
+				disabled={disabled}
 				value={value}
 				onValueChange={(next) => onChange(next as ModelMode)}
 			>
@@ -65,7 +71,10 @@ export function ModelSelect({
 					</SelectGroup>
 				</SelectContent>
 			</Select>
-			{showHint && (
+			{disabled && disabledHint ? (
+				<FieldDescription>{disabledHint}</FieldDescription>
+			) : null}
+			{showHint && !disabled && (
 				<FieldDescription>
 					{bedrockReady
 						? "Bedrock runs the supervisor, specialists, and verifier on live models. Scripted replays the same graph with no model calls."

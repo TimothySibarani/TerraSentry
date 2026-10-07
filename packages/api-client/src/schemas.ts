@@ -108,6 +108,7 @@ export type OperatorSettingOut = typeof OperatorSettingOut.Type;
 export const TraceKind = Schema.Literals([
   "run",
   "agent",
+  "retask",
   "tool",
   "verifier",
   "writer",
@@ -275,10 +276,16 @@ export const RunDetail = Schema.Struct({
 });
 export type RunDetail = typeof RunDetail.Type;
 
+export const BatchMode = Schema.Literals(["screening", "agent"]);
+export type BatchMode = typeof BatchMode.Type;
+
 export const BatchSummary = Schema.Struct({
   run_id: Schema.String,
   state: RunState,
+  mode: BatchMode,
+  model: Schema.NullOr(Schema.String),
   record_count: Schema.Int,
+  unlabelled_count: Schema.Int,
   states: Schema.Record(Schema.String, Schema.Int),
   verdict_breakdown: Schema.Record(Schema.String, Schema.Int),
   expected_breakdown: Schema.Record(Schema.String, Schema.Int),
@@ -394,6 +401,8 @@ export const BatchCreateRequest = Schema.Struct({
   size: Schema.optional(Schema.Int),
   refresh: Schema.optional(Schema.Boolean),
   record_ids: Schema.optional(Schema.Array(Schema.String)),
+  mode: Schema.optional(BatchMode),
+  model: Schema.optional(ModelMode),
 });
 export type BatchCreateRequest = typeof BatchCreateRequest.Type;
 

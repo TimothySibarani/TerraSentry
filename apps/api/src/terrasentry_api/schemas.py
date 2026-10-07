@@ -28,6 +28,8 @@ from terrasentry_api.models import Supplier as SupplierRow
 from terrasentry_api.sap_actions import disclosure_for_mode
 
 ModelMode = Literal["scripted", "bedrock"]
+BatchMode = Literal["screening", "agent"]
+AGENT_BATCH_MAX_RECORDS = 50
 
 
 def _opt_float(value: Any) -> float | None:
@@ -73,11 +75,25 @@ class DecisionCreate(BaseModel):
 
 
 class BatchCreate(BaseModel):
-    """Queue a deterministic batch run over the seed records or explicit record ids."""
+    """Queue a batch over the seed records or explicit record ids.
+
+    ``screening`` runs the deterministic rubric and verifier with no LLM; ``agent`` runs the
+    full supervisor/specialist/verifier graph per record on ``model``.
+    """
 
     size: int = Field(default=50, ge=1, le=50)
     refresh: bool = False
     record_ids: list[str] | None = Field(default=None, max_length=500)
+    mode: BatchMode = "screening"
+    model: ModelMode | None = None
+
+    @model_validator(mode="after")
+    def _model_only_for_agent_mode(self) -> BatchCreate:
+        if self.mode == "screening" and self.model is not None:
+            raise ValueError("model applies to agent mode only; screening runs no model")
+        if self.mode == "agent" and self.record_ids and len(self.record_ids) > AGENT_BATCH_MAX_RECORDS:
+            raise ValueError(f"agent batches are limited to {AGENT_BATCH_MAX_RECORDS} records")
+        return self
 
 
 class ReviewOut(BaseModel):
@@ -256,7 +272,10 @@ class BatchSummary(BaseModel):
 
     run_id: str
     state: RunState
+    mode: BatchMode = "screening"
+    model: str | None = None
     record_count: int
+    unlabelled_count: int = 0
     states: dict[str, int] = Field(default_factory=dict)
     verdict_breakdown: dict[str, int] = Field(default_factory=dict)
     expected_breakdown: dict[str, int] = Field(default_factory=dict)
@@ -288,13 +307,24 @@ class BatchSummary(BaseModel):
         cache_stats = metrics.get("cache_stats")
         concurrency = metrics.get("batch_concurrency")
         sap_actions = metrics.get("sap_actions")
+        record_count = int(metrics.get("record_count", 0)) or sum(states.values())
+        expected = metrics.get("expected_breakdown", {})
+        unlabelled = metrics.get("unlabelled_count")
+        if not isinstance(unlabelled, int):
+            # Legacy rows predate the field: their seed records were all labelled.
+            unlabelled = max(record_count - sum(expected.values()), 0) if expected else 0
+        # The parent row's model is the source of truth; legacy rows are all "deterministic".
+        is_agent = run.model != "deterministic"
         return cls(
             run_id=run.id,
             state=run.state,
-            record_count=int(metrics.get("record_count", 0)) or sum(states.values()),
+            mode="agent" if is_agent else "screening",
+            model=run.model if is_agent else None,
+            record_count=record_count,
+            unlabelled_count=unlabelled,
             states=states,
             verdict_breakdown=breakdown,
-            expected_breakdown=metrics.get("expected_breakdown", {}),
+            expected_breakdown=expected,
             wall_clock_seconds=run.elapsed_seconds,
             average_seconds_per_record=average_seconds,
             median_seconds_per_record=_opt_float(metrics.get("median_seconds_per_record")),

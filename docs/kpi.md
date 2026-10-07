@@ -54,6 +54,20 @@ Notes:
   and every action carries `real: false` in `sap_actions` and the DDS `erpAction` extension;
   the count is real, the endpoint is a disclosed schema-accurate stub.
 
+## Batch modes (S3)
+
+Every batch is labelled with the mode it actually ran, and KPI rows must say which:
+
+| Mode | What runs | Concurrency | Report fields |
+| --- | --- | --- | --- |
+| `screening` | Rubric + deterministic verifier, no LLM (all rows above) | `BATCH_CONCURRENCY` | `summary.mode = screening`, `summary.model = null` |
+| `agent` | Full agent graph per record (screening, re-tasked deep dives, coverage-checked verifier) | `BATCH_AGENT_CONCURRENCY` | `summary.mode = agent`, `summary.model`, `summary.metrics.token_usage` (graph-level only) |
+
+`summary.unlabelled_count` counts submitted records without a design label; the confusion
+matrix and design match use labelled records only. No agent-mode live number is recorded yet:
+the bounded 10-record Bedrock rehearsal is an open S3 gate, and scripted agent batches only
+validate plumbing, not model latency or cost.
+
 ## Reproduce
 
 ```bash
@@ -63,6 +77,10 @@ uv run pytest apps/api/tests/test_batch_full.py -q
 # Live rehearsal (needs GFW_API_KEY/FIRMS_MAP_KEY)
 pnpm rehearsal:prefetch --size 50 --as-of 2026-09-11 --concurrency 4
 pnpm rehearsal:run --size 50 --as-of 2026-09-11 --report data/runs/batch-2026-09-11.json
+
+# Agent mode (scripted validates plumbing; bedrock is the live measurement)
+uv run python -m terrasentry_api.rehearsal run --size 10 --mode agent --model bedrock \
+  --as-of 2026-09-11 --report data/runs/agent-batch.json
 ```
 
 Reports are gitignored (`data/runs/**`); the committed evidence is this table, the test suite,

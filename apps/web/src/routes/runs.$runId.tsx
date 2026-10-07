@@ -170,7 +170,21 @@ function RunDetailScreen({ runId }: { runId: string }) {
 			{state === "failed" && record.error && (
 				<Alert variant="destructive">
 					<AlertTitle>Run failed</AlertTitle>
-					<AlertDescription>{record.error}</AlertDescription>
+					<AlertDescription>
+						<p>{record.error}</p>
+						{record.verification &&
+						!record.verification.accepted &&
+						record.verification.challenges.length > 0 ? (
+							<Link
+								to="/runs/$runId"
+								params={{ runId }}
+								search={{ tab: "assessment" }}
+								className="underline underline-offset-4"
+							>
+								View verification
+							</Link>
+						) : null}
+					</AlertDescription>
 				</Alert>
 			)}
 			{state === "needs_more_data" && (

@@ -45,6 +45,9 @@ export const fieldIssues = (
     message: item.msg,
   }));
 
+/** Upper bound for a non-streaming request, including retries. */
+const REQUEST_TIMEOUT = "10 seconds";
+
 export const decodeRunEventStream = <E, R>(
   stream: Stream.Stream<Uint8Array, E, R>,
   operation = "streamRun",
@@ -161,6 +164,19 @@ export class ApiClient extends Context.Service<
               : null,
           });
 
+        // Bound every request so a hung API fails fast instead of spinning.
+        const bounded =
+          (operation: string) =>
+          <A, R>(effect: Effect.Effect<A, ApiClientError, R>) =>
+            effect.pipe(
+              Effect.timeout(REQUEST_TIMEOUT),
+              Effect.catchTag("TimeoutError", (cause) =>
+                Effect.fail(
+                  new ApiClientError({ operation, cause, status: null }),
+                ),
+              ),
+            );
+
         const getJson = <S extends Schema.Constraint>(
           operation: string,
           schema: S,
@@ -171,6 +187,7 @@ export class ApiClient extends Context.Service<
             .pipe(
               Effect.flatMap(HttpClientResponse.schemaBodyJson(schema)),
               Effect.mapError(fail(operation)),
+              bounded(operation),
             );
 
         // A 422 carries field-level issues; decode them so forms can point at
@@ -213,6 +230,7 @@ export class ApiClient extends Context.Service<
                 Effect.mapError(fail(operation)),
               ),
             ),
+            bounded(operation),
           );
 
         const body = (method: "POST" | "PUT", url: string, payload: unknown) =>
