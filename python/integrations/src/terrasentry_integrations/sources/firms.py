@@ -13,6 +13,7 @@ from shapely.geometry.base import BaseGeometry
 
 from terrasentry_integrations.cache import CacheBackend, CacheEntry, geometry_hash
 from terrasentry_integrations.errors import MissingCredentialError, SourceResponseError
+from terrasentry_integrations.geometry import crosses_antimeridian
 from terrasentry_integrations.settings import IntegrationSettings
 from terrasentry_integrations.sources.http import SourceHttpClient, SourceHttpConfig
 
@@ -114,6 +115,8 @@ def parse_detections(text: str) -> list[FireDetection]:
 
 def polygon_from_geometry(geometry: dict[str, Any]) -> BaseGeometry:
     polygon = shape(geometry)
+    if crosses_antimeridian(polygon):
+        raise SourceResponseError("firms", "query crosses the antimeridian; split polygons required")
     if not polygon.is_valid:
         polygon = polygon.buffer(0)
     return polygon
@@ -195,6 +198,7 @@ class FirmsClient:
         refresh: bool = False,
     ) -> FirmsHotspotResult:
         """Active fire detections inside ``geometry`` for the last ``days`` days."""
+        polygon = polygon_from_geometry(geometry)
         window_end = end_date or datetime.now(tz=UTC).date()
         window_start = window_end - timedelta(days=max(days, 1) - 1)
         geometry_hash_value = geometry_hash(geometry)
@@ -206,7 +210,6 @@ class FirmsClient:
                 return FirmsHotspotResult.model_validate(cached.payload).model_copy(update={"cached": True})
 
         self.require_credentials()
-        polygon = polygon_from_geometry(geometry)
         bbox = polygon.bounds
         detections: list[FireDetection] = []
         cursor = window_start

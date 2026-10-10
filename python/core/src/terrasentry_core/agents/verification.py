@@ -8,12 +8,18 @@ challenges the narrative. Both run before the writer node may release the DDS.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from terrasentry_core.assessment.pipeline import RecordAssessment
+from terrasentry_core.agents.investigation import (
+    BASELINE_TOOLS,
+    DeepDive,
+    required_deep_dives,
+    triggering_codes,
+)
+from terrasentry_core.assessment.pipeline import RecordAssessment, assess_record
 from terrasentry_core.dds import validate_citations
 from terrasentry_core.domain.enums import FindingCode, FindingLevel
 from terrasentry_core.domain.models import Finding
@@ -21,14 +27,16 @@ from terrasentry_core.errors import LedgerLookupError, UncitedClaimError
 from terrasentry_core.evidence import EvidenceLedger
 from terrasentry_core.reference.pipeline import PolygonReport
 from terrasentry_core.scoring import RubricConfig
-from terrasentry_core.seed.schemas import BatchRecord, ExpectedSignal
+from terrasentry_core.seed.schemas import BatchRecord, ExpectedSignal, OperatorRecord
 from terrasentry_core.tools.sources import PolygonSources
+from terrasentry_core.tools.trace import TraceStep
 
 ChallengeKind = Literal[
     "missing_source",
     "metric_mismatch",
     "citation_failure",
     "design_mismatch",
+    "coverage",
     "llm_review",
 ]
 ChallengeSeverity = Literal["info", "warning", "error"]
@@ -77,6 +85,7 @@ def _polygon_report(record: BatchRecord, sources: PolygonSources) -> PolygonRepo
         area_ha=polygon.area_ha,
         loss=sources.loss,
         hotspots=sources.hotspots,
+        layers=sources.layers,
         errors=list(sources.errors),
     )
 
@@ -91,11 +100,8 @@ def _derived_metrics(
     supplier = record.legality
     derived: dict[FindingCode, dict[str, float | int | str]] = {}
     if sources.loss is not None:
-        post_cutoff = round(
-            sum(item.loss_ha for item in sources.loss.by_year if item.year >= config.cutoff_year),
-            4,
-        )
-        ratio = round(post_cutoff / parcel.area_ha, 4) if parcel.area_ha > 0 else 0.0
+        post_cutoff = sum(item.loss_ha for item in sources.loss.by_year if item.year >= config.cutoff_year)
+        ratio = post_cutoff / parcel.area_ha if parcel.area_ha > 0 else 0.0
         derived[FindingCode.DEFORESTATION_LOSS] = {
             "post_cutoff_loss_ha": post_cutoff,
             "loss_ratio": ratio,
@@ -195,6 +201,9 @@ def _design_challenges(
     challenges: list[VerificationChallenge] = []
     checked: list[str] = []
     verdict = candidate.assessment.verdict.value
+    if record.expected_archetype is None:
+        # Submitted plots carry no design labels; there is nothing to cross-check.
+        return challenges, checked
     if record.expected_archetype != verdict:
         challenges.append(
             VerificationChallenge(
@@ -240,6 +249,8 @@ def code_checks(
     record: BatchRecord,
     sources: PolygonSources,
     *,
+    operator: OperatorRecord,
+    assessment_date: date | None = None,
     retrieved_at: datetime | None = None,
     config: RubricConfig | None = None,
 ) -> VerificationReport:
@@ -266,6 +277,39 @@ def code_checks(
     challenges.extend(metric_challenges)
     checked.extend(metric_checked)
 
+    expected = assess_record(
+        _polygon_report(record, sources),
+        record,
+        operator,
+        assessment_date=assessment_date,
+        retrieved_at=retrieved_at,
+        config=resolved,
+    )
+    comparisons = {
+        "assessment_date": (candidate.assessment_date, expected.assessment_date),
+        "assessment": (candidate.assessment, expected.assessment),
+        "dds": (candidate.dds, expected.dds),
+        "fingerprint": (candidate.fingerprint, expected.fingerprint),
+        "run_state": (candidate.run_state, expected.run_state),
+        "supplier_id": (candidate.supplier_id, expected.supplier_id),
+        "polygon_id": (candidate.polygon_id, expected.polygon_id),
+        "source_polygon": (sources.polygon_id, record.polygon.id),
+        "evidence": (
+            [entry.model_dump(exclude={"retrieved_at", "cached"}) for entry in candidate.evidence],
+            [entry.model_dump(exclude={"retrieved_at", "cached"}) for entry in expected.evidence],
+        ),
+    }
+    for claim, (observed, correct) in comparisons.items():
+        checked.append(f"outcome.{claim}")
+        if observed != correct:
+            challenges.append(
+                VerificationChallenge(
+                    kind="metric_mismatch",
+                    severity="error",
+                    detail=f"candidate {claim} differs from deterministic re-derivation",
+                )
+            )
+
     findings = {finding.code: finding for finding in candidate.assessment.findings}
     design_challenges, design_checked = _design_challenges(candidate, record, findings)
     challenges.extend(design_challenges)
@@ -280,6 +324,81 @@ def code_checks(
             f"deterministic re-derivation accepted={accepted}",
             f"retrieved_at={retrieved_at.isoformat() if retrieved_at else 'unset'}",
         ],
+    )
+
+
+def coverage_checks(
+    candidate: RecordAssessment, record: BatchRecord, steps: list[TraceStep]
+) -> VerificationReport:
+    """Reject a candidate whose server-recorded tool steps skipped a required investigation.
+
+    Only ``tool`` steps recorded by server code count, matched on name and ids. Model
+    summaries and ``retask`` steps never do. An attempted deep dive whose step reports an
+    error counts as covered and leaves an info data-gap note.
+    """
+    expected_ids = {"polygon_id": record.polygon.id, "supplier_id": record.legality.supplier_id}
+    codes = triggering_codes(candidate.assessment.findings)
+    deep_dives = required_deep_dives(candidate.assessment.findings)
+    tool_steps = [step for step in steps if step.kind == "tool"]
+    challenges: list[VerificationChallenge] = []
+    checked: list[str] = []
+
+    def matching(requirement: DeepDive) -> list[TraceStep]:
+        wanted = {field: expected_ids[field] for field in requirement.id_fields}
+        return [
+            step
+            for step in tool_steps
+            if step.name == requirement.tool and all(step.payload.get(k) == v for k, v in wanted.items())
+        ]
+
+    for requirement in [*BASELINE_TOOLS, *sorted(deep_dives, key=lambda item: item.tool)]:
+        checked.append(f"coverage.{requirement.tool}")
+        expected = ", ".join(f"{field}={expected_ids[field]}" for field in requirement.id_fields)
+        found = matching(requirement)
+        is_deep_dive = requirement in deep_dives
+        if not found:
+            reason = (
+                f" (required by findings: {', '.join(codes)})" if is_deep_dive else " (baseline screening)"
+            )
+            challenges.append(
+                VerificationChallenge(
+                    kind="coverage",
+                    severity="error",
+                    detail=f"required tool {requirement.tool} was not called{reason}",
+                    source="trace",
+                    expected=expected,
+                    observed="no matching tool step recorded",
+                )
+            )
+        elif is_deep_dive and all(step.payload.get("status") == "error" for step in found):
+            challenges.append(
+                VerificationChallenge(
+                    kind="coverage",
+                    severity="info",
+                    detail=f"{requirement.tool} was attempted but its sources were unavailable; data gap",
+                    source="trace",
+                    expected=expected,
+                    observed="attempted; status=error",
+                )
+            )
+    accepted = not any(challenge.severity == "error" for challenge in challenges)
+    return VerificationReport(
+        accepted=accepted,
+        checked_claims=checked,
+        challenges=challenges,
+        notes=[f"coverage accepted={accepted}"],
+    )
+
+
+def merge_coverage(deterministic: VerificationReport, coverage: VerificationReport) -> VerificationReport:
+    """Fold the coverage gate into the deterministic report; errors keep their veto."""
+    return deterministic.model_copy(
+        update={
+            "accepted": deterministic.accepted and coverage.accepted,
+            "checked_claims": [*deterministic.checked_claims, *coverage.checked_claims],
+            "challenges": [*deterministic.challenges, *coverage.challenges],
+            "notes": [*deterministic.notes, *coverage.notes],
+        }
     )
 
 

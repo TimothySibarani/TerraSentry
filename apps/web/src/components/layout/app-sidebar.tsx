@@ -2,9 +2,11 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
 	ActivityIcon,
 	Building2Icon,
-	LayoutDashboardIcon,
 	LayersIcon,
+	LayoutDashboardIcon,
+	RadarIcon,
 	SatelliteIcon,
+	SettingsIcon,
 } from "lucide-react";
 
 import { ApiStatus } from "#/components/api-status";
@@ -23,7 +25,9 @@ import {
 } from "#/components/ui/sidebar";
 
 const NAV_ITEMS = [
+	{ to: "/settings", label: "Settings", icon: SettingsIcon },
 	{ to: "/", label: "Overview", icon: LayoutDashboardIcon },
+	{ to: "/screen", label: "Screen a plot", icon: RadarIcon },
 	{ to: "/runs", label: "Runs", icon: ActivityIcon },
 	{ to: "/batch", label: "Batch", icon: LayersIcon },
 	{ to: "/suppliers", label: "Suppliers", icon: Building2Icon },
@@ -88,7 +92,7 @@ export function AppSidebar() {
 					<ApiStatus />
 				</div>
 				<p className="px-2 pb-1 text-caption-mono-sm text-muted-foreground/70 group-data-[collapsible=icon]:hidden">
-					Legality data is synthetic and labelled
+					Seed legality is synthetic; submitted legality is supplier-declared
 				</p>
 			</SidebarFooter>
 			<SidebarRail />

@@ -64,6 +64,7 @@ def make_parcel(
     centroid_lat: float = 0.01,
 ) -> Parcel:
     return Parcel(
+        country="ID",
         polygon_id=polygon_id,
         label=f"Test parcel {polygon_id}",
         region="Riau peat forests",
@@ -204,6 +205,27 @@ def make_hotspots(
     )
 
 
+def clear_layers():
+    from terrasentry_integrations.sources.gfw_layers import (
+        LAYER_DEFINITIONS,
+        ContextLayer,
+        ContextLayersResult,
+    )
+
+    return ContextLayersResult(
+        layers=[
+            ContextLayer(
+                name=name,
+                dataset=definition[0],
+                version=definition[1],
+                geometry_hash="a" * 64,
+                status="success",
+            )
+            for name, definition in LAYER_DEFINITIONS.items()
+        ]
+    )
+
+
 _UNSET: Any = object()
 
 
@@ -218,6 +240,7 @@ def make_input(
     record_id: str = "REC-TEST",
 ) -> AssessmentInput:
     return AssessmentInput(
+        layers=clear_layers(),
         record_id=record_id,
         parcel=parcel or make_parcel(),
         supplier=supplier or make_supplier(),
@@ -239,6 +262,7 @@ def make_batch_record(
     domain_parcel = parcel or make_parcel(polygon_id=f"PLY-{index:03d}")
     domain_supplier = supplier or make_supplier(supplier_id=f"SUP-{index:03d}")
     polygon = SeedPolygon(
+        country=domain_parcel.country,
         id=domain_parcel.polygon_id,
         label=domain_parcel.label,
         region=domain_parcel.region,
@@ -288,6 +312,7 @@ def source_router():
         router.get(url__regex=re.compile(agent_helpers.FIRMS_REGEX)).mock(
             side_effect=agent_helpers.firms_side_effect
         )
+        agent_helpers.mock_context_layers(router)
         yield router
 
 

@@ -1,0 +1,2 @@
+country,label,wkt,legal_name,commodity,description,net_weight_kg,harvest_year,permit_type,permit_number,permit_expiry,declared_holder
+ID,Example plot,"POLYGON((106.82 -6.17,106.821 -6.17,106.821 -6.169,106.82 -6.169,106.82 -6.17))",Example supplier,oil_palm,Declared crude palm oil,1000,2026,hgu,DECLARED-EXAMPLE,2027-12-31,Example supplier

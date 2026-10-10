@@ -28,10 +28,12 @@ from terrasentry_integrations.errors import IntegrationError, SourceError
 from terrasentry_integrations.settings import IntegrationSettings, get_integration_settings
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
+from terrasentry_integrations.sources.gfw_layers import ContextLayersResult
 
 
 class PreflightPolygon(BaseModel):
     id: str
+    country: str | None = None
     geometry: dict[str, Any]
     label: str = ""
 
@@ -49,6 +51,10 @@ class PreflightReport(BaseModel):
     missing_credentials: list[str] = Field(default_factory=list)
     gfw_samples: list[TimingSample] = Field(default_factory=list)
     firms_samples: list[TimingSample] = Field(default_factory=list)
+    context_results: dict[str, ContextLayersResult] = Field(default_factory=dict)
+    context_cold_seconds: dict[str, float] = Field(default_factory=dict)
+    context_warm_seconds: dict[str, float] = Field(default_factory=dict)
+    loss_coverage: str = ""
     gfw_batch_seconds: float | None = None
     gfw_batch_status: str | None = None
     gfw_batch_rows: int | None = None
@@ -155,8 +161,9 @@ async def _run(args: argparse.Namespace) -> int:
     cache = build_cache(settings)
     gfw = GfwClient(settings, cache=cache)
     firms = FirmsClient(settings, cache=cache)
-    end_year = datetime.now(tz=UTC).year - 1
-    start_year = end_year - 5 + 1
+    end_year = min(started.year - 1, gfw.coverage_end_year)
+    start_year = 2021
+    report.loss_coverage = f"{start_year}-{end_year}"
 
     try:
         report.gfw_samples = await _probe_source(
@@ -171,6 +178,15 @@ async def _run(args: argparse.Namespace) -> int:
             polygons,
             lambda polygon: firms.hotspots_in_polygon(polygon.geometry, days=7, refresh=True),
         )
+        for polygon in polygons:
+            cold_started = time.monotonic()
+            result = await gfw.context_layers(polygon.geometry, country=polygon.country, refresh=True)
+            report.context_cold_seconds[polygon.id] = round(time.monotonic() - cold_started, 3)
+            report.context_results[polygon.id] = result
+            warm_started = time.monotonic()
+            await gfw.context_layers(polygon.geometry, country=polygon.country)
+            report.context_warm_seconds[polygon.id] = round(time.monotonic() - warm_started, 3)
+            print(f"gfw context {polygon.id}: {'ok' if result.complete else 'incomplete'}")
         if args.batch and polygons:
             batch_started = time.monotonic()
             try:
@@ -211,7 +227,14 @@ async def _run(args: argparse.Namespace) -> int:
         "utf-8",
     )
     print(f"report -> {out_path}")
-    return 0
+    return (
+        0
+        if (
+            all(sample.ok for sample in [*report.gfw_samples, *report.firms_samples])
+            and all(result.complete for result in report.context_results.values())
+        )
+        else 1
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:

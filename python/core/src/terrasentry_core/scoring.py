@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import unicodedata
 from typing import Any
 
 from pydantic import BaseModel
@@ -29,7 +31,7 @@ from terrasentry_core.domain.enums import (
 from terrasentry_core.domain.models import Assessment, AssessmentInput, Finding
 from terrasentry_core.evidence import EvidenceLedger
 
-RUBRIC_VERSION = "1.0.0"
+RUBRIC_VERSION = "1.1.0"
 
 #: EUDR reference date: products must come from land not deforested after 2020-12-31.
 EUDR_CUTOFF_YEAR = 2021
@@ -51,6 +53,14 @@ class RubricConfig(BaseModel):
 
     area_mismatch_tolerance: float = 0.05
 
+    protected_flag_points: int = 60
+    moratorium_flag_ha: float = 0.1
+    moratorium_flag_points: int = 60
+    moratorium_borderline_points: int = 20
+    peat_borderline_points: int = 10
+    concession_flag_points: int = 60
+    concession_borderline_points: int = 20
+
     legal_flag_points: int = 60
     legal_borderline_points: int = 20
     loss_flag_points: int = 50
@@ -66,10 +76,6 @@ class RubricConfig(BaseModel):
     @classmethod
     def default(cls) -> RubricConfig:
         return cls()
-
-
-def _round(value: float) -> float:
-    return round(value, 4)
 
 
 def _metric_finding(
@@ -96,7 +102,8 @@ def _metric_finding(
         },
         source=EvidenceSource.RUBRIC,
         artifact={"supplier_id": input.supplier.supplier_id, "polygon_id": input.parcel.polygon_id},
-        synthetic=True,
+        synthetic=False,
+        provenance="derived",
         retrieved_at=_source_timestamp(input),
     )
     return Finding(
@@ -126,8 +133,7 @@ def _evaluate_loss(
     if loss is None:
         return None, ["gfw:no data"]
     post_cutoff = sum(item.loss_ha for item in loss.by_year if item.year >= config.cutoff_year)
-    post_cutoff = _round(post_cutoff)
-    ratio = _round(post_cutoff / input.parcel.area_ha) if input.parcel.area_ha > 0 else 0.0
+    ratio = post_cutoff / input.parcel.area_ha if input.parcel.area_ha > 0 else 0.0
     flagged_by_area = post_cutoff >= config.loss_flag_ha
     flagged_by_ratio = post_cutoff >= config.loss_borderline_ha and ratio >= config.loss_flag_ratio
     if flagged_by_area or flagged_by_ratio:
@@ -203,16 +209,26 @@ def _evaluate_fire(
 def _evaluate_legal(input: AssessmentInput, ledger: EvidenceLedger, config: RubricConfig) -> Finding:
     supplier = input.supplier
     missing_permit = supplier.hgu_number is None and supplier.pbp_number is None
-    permit_bad = supplier.permit_status != "active" or bool(supplier.sanctions)
+    expired = (
+        supplier.permit_expiry is not None
+        and input.assessment_date is not None
+        and supplier.permit_expiry < input.assessment_date
+    )
+    permit_bad = expired or supplier.permit_status in {"expired", "suspended"} or bool(supplier.sanctions)
     if permit_bad:
         level, points = FindingLevel.FLAG, config.legal_flag_points
         detail = (
             f"permit status {supplier.permit_status!r} with {len(supplier.sanctions)} sanction(s) "
-            f"on the synthetic legality record"
+            f"on the {supplier.provenance} legality record; expiry {supplier.permit_expiry}"
+        )
+    elif input.parcel.country != "ID" and missing_permit:
+        level, points = FindingLevel.CLEAR, 0
+        detail = (
+            "Indonesian HGU/PBPH checks do not apply to this production country; local legality is unverified"
         )
     elif missing_permit:
         level, points = FindingLevel.BORDERLINE, config.legal_borderline_points
-        detail = "synthetic legality record lists neither an HGU nor a PBPH permit"
+        detail = "declared legality record lists neither an HGU nor a PBPH permit"
     else:
         level, points = FindingLevel.CLEAR, 0
         detail = f"permit status {supplier.permit_status!r}, HGU/PBPH present, no sanctions"
@@ -230,12 +246,149 @@ def _evaluate_legal(input: AssessmentInput, ledger: EvidenceLedger, config: Rubr
         },
         source_ids=[
             *ledger.ids_for("supplier.permit_status"),
+            *ledger.ids_for("supplier.permit_expiry"),
+            *ledger.ids_for("assessment.date"),
+            *ledger.ids_for("parcel.country"),
             *ledger.ids_for("supplier.sanctions"),
             *ledger.ids_for("supplier.hgu_pbp"),
         ],
         input=input,
         config=config,
     )
+
+
+def _holder(value: str) -> str:
+    return " ".join(re.sub(r"[^\w\s]", " ", unicodedata.normalize("NFKC", value).casefold()).split())
+
+
+def concession_commodity(layer_name: str) -> str:
+    """Commodity a concession dataset authorises; shared by the rubric and the agent deep dive."""
+    return "oil_palm" if layer_name == "oil_palm_concessions" else "wood"
+
+
+def holder_matches(company: object, declared_holder: str) -> bool | None:
+    """Compare a concession company to the declared holder; None when the company is unknown."""
+    if not isinstance(company, str) or not company.strip():
+        return None
+    return _holder(company) == _holder(declared_holder)
+
+
+def _evaluate_context(
+    input: AssessmentInput, ledger: EvidenceLedger, config: RubricConfig
+) -> tuple[list[Finding], list[str]]:
+    from terrasentry_integrations.sources.gfw_layers import LAYER_DEFINITIONS
+
+    findings: list[Finding] = []
+    gaps: list[str] = []
+    by_name = {layer.name: layer for layer in input.layers.layers} if input.layers else {}
+    for name in LAYER_DEFINITIONS:
+        layer = by_name.get(name)
+        if layer is None or layer.status == "unavailable":
+            gaps.append(f"gfw:{name}:unavailable")
+            continue
+        if layer.status == "not_applicable":
+            continue
+        area = layer.overlap_ha
+        level, points = FindingLevel.CLEAR, 0
+        if name == "protected_areas":
+            code = FindingCode.PROTECTED_AREA
+            if area > 0:
+                level, points = FindingLevel.FLAG, config.protected_flag_points
+        elif name == "moratorium":
+            code = FindingCode.MORATORIUM
+            if area > config.moratorium_flag_ha:
+                level, points = FindingLevel.FLAG, config.moratorium_flag_points
+            elif area > 0:
+                level, points = FindingLevel.BORDERLINE, config.moratorium_borderline_points
+        elif name == "peatlands":
+            code = FindingCode.PEATLAND
+            if area > 0:
+                level, points = FindingLevel.BORDERLINE, config.peat_borderline_points
+        elif name == "forest_baseline":
+            code = FindingCode.FOREST_BASELINE
+        else:
+            # One strongest concession finding across all three datasets; no double counting.
+            continue
+        feature_names = [
+            str(
+                feature.properties.get("name")
+                or feature.properties.get("name_eng")
+                or feature.properties.get("pippib_en")
+                or feature.feature_id
+            )
+            for feature in layer.features[:3]
+        ]
+        feature_detail = f"features: {', '.join(feature_names)}; " if feature_names else ""
+        findings.append(
+            _metric_finding(
+                ledger,
+                code=code,
+                level=level,
+                points=points,
+                detail=f"{name}: {area:.4f} ha overlap ({layer.dataset}/{layer.version}); "
+                + feature_detail
+                + (
+                    "baseline context only; tree cover loss is assessed separately"
+                    if name == "forest_baseline"
+                    else "context signal; legality is not registry-verified"
+                ),
+                metrics={"overlap_ha": area, "dataset": layer.dataset, "version": layer.version},
+                source_ids=ledger.ids_for(f"context.{name}"),
+                input=input,
+                config=config,
+            )
+        )
+    relevant = [
+        layer
+        for name, layer in by_name.items()
+        if name.endswith("_concessions") and layer.status == "success" and layer.overlap_ha > 0
+    ]
+    if relevant:
+        level, points = FindingLevel.CLEAR, 0
+        reasons: list[str] = []
+        declared = input.supplier.declared_holder or input.supplier.legal_name
+        for layer in relevant:
+            compatible = input.consignment is not None and input.consignment.commodity == (
+                concession_commodity(layer.name)
+            )
+            if not compatible:
+                if level is not FindingLevel.FLAG:
+                    level, points = FindingLevel.BORDERLINE, config.concession_borderline_points
+                reasons.append(f"commodity conflicts with {layer.name}")
+            for feature in layer.features:
+                company = feature.properties.get("company")
+                matches = holder_matches(company, declared)
+                if matches is None:
+                    gaps.append(f"gfw:{layer.name}:holder unknown for {feature.feature_id}")
+                elif not matches:
+                    level, points = FindingLevel.FLAG, config.concession_flag_points
+                    reasons.append(
+                        f"{layer.dataset}/{feature.feature_id}: holder {company!r} "
+                        "differs from declared holder"
+                    )
+        findings.append(
+            _metric_finding(
+                ledger,
+                code=FindingCode.CONCESSION_CONFLICT,
+                level=level,
+                points=points,
+                detail="; ".join(reasons)
+                or "concession holder and commodity match declarations; not registry-verified",
+                metrics={f"{layer.name}_overlap_ha": layer.overlap_ha for layer in relevant},
+                source_ids=[
+                    *ledger.ids_for("supplier.declared_holder"),
+                    *ledger.ids_for("consignment.description"),
+                    *(
+                        evidence_id
+                        for layer in relevant
+                        for evidence_id in ledger.ids_for(f"context.{layer.name}")
+                    ),
+                ],
+                input=input,
+                config=config,
+            )
+        )
+    return findings, gaps
 
 
 def _evaluate_area_mismatch(input: AssessmentInput, ledger: EvidenceLedger, config: RubricConfig) -> Finding:
@@ -276,7 +429,7 @@ def _evaluate_certification(input: AssessmentInput, ledger: EvidenceLedger, conf
         detail = f"certifications on file: {', '.join(certifications)}"
     else:
         level, points = FindingLevel.CLEAR, 0
-        detail = "no sustainability certification on the synthetic legality record"
+        detail = "no sustainability certification on the legality record"
     return _metric_finding(
         ledger,
         code=FindingCode.CERTIFICATION,
@@ -297,11 +450,16 @@ def _decide(
     config: RubricConfig,
     data_gaps: list[str],
 ) -> Verdict:
-    legal_flag = any(
-        finding.code is FindingCode.LEGAL_PERMIT and finding.level is FindingLevel.FLAG
+    critical_flag = any(
+        finding.level is FindingLevel.FLAG
+        and (
+            finding.code
+            in {FindingCode.PROTECTED_AREA, FindingCode.MORATORIUM, FindingCode.CONCESSION_CONFLICT}
+            or (finding.code is FindingCode.LEGAL_PERMIT and config.legal_flag_is_critical)
+        )
         for finding in findings
     )
-    if legal_flag and config.legal_flag_is_critical:
+    if critical_flag:
         return Verdict.HIGH_RISK
     flagged = [finding for finding in findings if finding.level is FindingLevel.FLAG]
     borderline = [finding for finding in findings if finding.level is FindingLevel.BORDERLINE]
@@ -346,6 +504,11 @@ def assess(
     if fire_finding is not None:
         findings.append(fire_finding)
     data_gaps.extend(fire_gaps)
+    context_findings, context_gaps = _evaluate_context(input, ledger, config)
+    findings.extend(context_findings)
+    data_gaps.extend(context_gaps)
+    if input.supplier.permit_expiry is not None and input.assessment_date is None:
+        data_gaps.append("legality:assessment date missing for permit expiry")
     findings.append(_evaluate_area_mismatch(input, ledger, config))
     findings.append(_evaluate_certification(input, ledger, config))
 
@@ -363,7 +526,8 @@ def assess(
         },
         source=EvidenceSource.RUBRIC,
         artifact={"supplier_id": input.supplier.supplier_id, "polygon_id": input.parcel.polygon_id},
-        synthetic=True,
+        synthetic=False,
+        provenance="derived",
         retrieved_at=_source_timestamp(input),
     )
     verdict_entry = ledger.record(
@@ -375,7 +539,8 @@ def assess(
             "polygon_id": input.parcel.polygon_id,
             "rubric_version": config.version,
         },
-        synthetic=True,
+        synthetic=False,
+        provenance="derived",
         retrieved_at=_source_timestamp(input),
     )
 
@@ -387,8 +552,18 @@ def assess(
         citations[f"rubric.finding.{finding.code.value}"] = list(finding.evidence_ids)
 
     disclosures = [input.supplier.disclosure] if input.supplier.disclosure else []
+    disclosures.append(
+        "Declared permits and holders are not independently verified against a live permit registry."
+    )
+    if input.supplier.permit_expiry is None:
+        disclosures.append("Permit expiry is unknown; an active status does not establish current validity.")
+    if input.parcel.country != "ID":
+        disclosures.append(
+            "Indonesian permit and context layers are not applicable; local legality remains unverified."
+        )
     return Assessment(
         record_id=input.record_id,
+        assessment_date=input.assessment_date,
         supplier_id=input.supplier.supplier_id,
         polygon_id=input.parcel.polygon_id,
         rubric_version=config.version,

@@ -84,21 +84,26 @@ class SourceHttpClient:
         return await self.request("POST", url, **kwargs)
 
     async def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
-        async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(self._config.max_attempts),
-            wait=self._wait_for,
-            retry=retry_if_exception_type(
-                (
-                    httpx.TimeoutException,
-                    httpx.TransportError,
-                    SourceRateLimited,
-                    SourceUnavailable,
-                )
-            ),
-            reraise=True,
-        ):
-            with attempt:
-                return await self._attempt(method, url, **kwargs)
+        try:
+            async for attempt in AsyncRetrying(
+                stop=stop_after_attempt(self._config.max_attempts),
+                wait=self._wait_for,
+                retry=retry_if_exception_type(
+                    (
+                        httpx.TimeoutException,
+                        httpx.TransportError,
+                        SourceRateLimited,
+                        SourceUnavailable,
+                    )
+                ),
+                reraise=True,
+            ):
+                with attempt:
+                    return await self._attempt(method, url, **kwargs)
+        except httpx.TransportError as exc:
+            raise SourceUnavailable(
+                self.source, f"transport failed after retries: {type(exc).__name__}"
+            ) from exc
         raise SourceUnavailable(self.source, "retry loop produced no result")  # pragma: no cover
 
     async def close(self) -> None:

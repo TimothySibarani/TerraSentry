@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from datetime import datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -47,9 +47,10 @@ class RecordAssessment(BaseModel):
     """Everything produced for one batch record: verdict, DDS, and the ledger."""
 
     record_id: str
+    assessment_date: date | None = None
     supplier_id: str
     polygon_id: str
-    expected_archetype: Archetype
+    expected_archetype: Archetype | None = None
     expected_signal: ExpectedSignal | None = None
     expected_ambiguity: AmbiguityReason | None = None
     run_state: RunState
@@ -121,6 +122,8 @@ def load_operator(path: Path) -> OperatorRecord:
 
 def _parcel(polygon: SeedPolygon) -> Parcel:
     return Parcel(
+        country=polygon.country,
+        provenance=polygon.provenance,
         polygon_id=polygon.id,
         label=polygon.label,
         region=polygon.region,
@@ -129,6 +132,7 @@ def _parcel(polygon: SeedPolygon) -> Parcel:
         centroid_lat=polygon.centroid_lat,
         centroid_lon=polygon.centroid_lon,
         geometry=polygon.geometry,
+        input_geometry=polygon.input_geometry,
     )
 
 
@@ -144,14 +148,22 @@ def _operator(operator: OperatorRecord) -> OperatorProfile:
     return OperatorProfile(**operator.model_dump())
 
 
-def to_input(report: PolygonReport, record: BatchRecord, operator: OperatorRecord) -> AssessmentInput:
+def to_input(
+    report: PolygonReport,
+    record: BatchRecord,
+    operator: OperatorRecord,
+    *,
+    assessment_date: date | None = None,
+) -> AssessmentInput:
     """Map an M1 report + seed record onto the domain input the rubric consumes."""
     return AssessmentInput(
+        assessment_date=assessment_date,
         record_id=record.record_id,
         parcel=_parcel(record.polygon),
         supplier=_supplier(record.legality),
         loss=report.loss,
         hotspots=report.hotspots,
+        layers=report.layers,
         consignment=_consignment(record),
         operator=_operator(operator),
         source_errors=list(report.errors),
@@ -163,16 +175,18 @@ def assess_record(
     record: BatchRecord,
     operator: OperatorRecord,
     *,
+    assessment_date: date | None = None,
     retrieved_at: datetime | None = None,
     config: RubricConfig | None = None,
 ) -> RecordAssessment:
     """Score one record and build its DDS, validating every citation."""
-    input = to_input(report, record, operator)
+    input = to_input(report, record, operator, assessment_date=assessment_date)
     ledger = build_source_ledger(input, retrieved_at=retrieved_at)
     assessment = assess(input, ledger, config=config)
     document = build_dds(input, assessment, ledger)
     validate_citations(document, ledger)
     return RecordAssessment(
+        assessment_date=assessment_date,
         record_id=record.record_id,
         supplier_id=record.supplier_id,
         polygon_id=record.polygon.id,
@@ -201,7 +215,15 @@ def assess_reference_run(
         if record is None:
             missing.append(report.polygon_id)
             continue
-        records.append(assess_record(report, record, operator, retrieved_at=run.started_at))
+        records.append(
+            assess_record(
+                report,
+                record,
+                operator,
+                retrieved_at=run.started_at,
+                assessment_date=run.assessment_date or run.started_at.astimezone(UTC).date(),
+            )
+        )
     if missing:
         raise CoreError(
             "no seed record for polygon(s) "
@@ -210,13 +232,16 @@ def assess_reference_run(
         )
 
     verdicts = Counter(str(item.assessment.verdict) for item in records)
-    expected = Counter(str(item.expected_archetype) for item in records)
+    expected = Counter(
+        str(item.expected_archetype) for item in records if item.expected_archetype is not None
+    )
     confusion: dict[str, dict[str, int]] = {
         archetype: {verdict: 0 for verdict in ("compliant", "high_risk", "ambiguous")}
         for archetype in ("compliant", "high_risk", "ambiguous")
     }
     for item in records:
-        confusion[str(item.expected_archetype)][str(item.assessment.verdict)] += 1
+        if item.expected_archetype is not None:
+            confusion[str(item.expected_archetype)][str(item.assessment.verdict)] += 1
     signal_coverage = {code.value: 0 for code in FindingCode}
     for item in records:
         for finding in item.assessment.findings:

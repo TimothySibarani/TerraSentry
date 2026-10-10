@@ -7,7 +7,8 @@ dependencies = [
   "terrasentry-integrations",
   "strands-agents>=1.0",
   "boto3>=1.35",
-  "botocore>=1.35",
+  # [crt] enables the `aws login` credential provider in botocore.
+  "botocore[crt]>=1.35",
   "pydantic>=2.10",
   "shapely>=2.1",
   "pyproj>=3.7",

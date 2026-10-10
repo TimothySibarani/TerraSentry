@@ -41,7 +41,9 @@ async def test_agent_assessment_matches_reference(source_router, source_clients)
     reports = {report.polygon_id: report for report in reference_run.reports}
 
     for record in records:
-        expected = assess_record(reports[record.polygon.id], record, data.operator)
+        expected = assess_record(
+            reports[record.polygon.id], record, data.operator, assessment_date=reference_run.assessment_date
+        )
         orchestrator = RunOrchestrator(
             gfw=source_clients.gfw,
             firms=source_clients.firms,

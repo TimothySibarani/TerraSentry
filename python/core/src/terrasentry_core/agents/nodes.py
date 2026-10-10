@@ -22,10 +22,12 @@ from terrasentry_core.agents.verification import (
     VerificationChallenge,
     VerificationReport,
     code_checks,
+    coverage_checks,
+    merge_coverage,
     merge_reports,
 )
 from terrasentry_core.scoring import RubricConfig
-from terrasentry_core.seed.schemas import BatchRecord
+from terrasentry_core.seed.schemas import BatchRecord, OperatorRecord
 from terrasentry_core.tools.agent_tools import ToolContext
 from terrasentry_core.tools.sources import PolygonSources
 
@@ -76,6 +78,7 @@ class VerifierNode(MultiAgentBase):
         agent: Agent,
         context: ToolContext,
         record: BatchRecord,
+        operator: OperatorRecord,
         retrieved_at: datetime | None = None,
         config: RubricConfig | None = None,
     ) -> None:
@@ -84,6 +87,7 @@ class VerifierNode(MultiAgentBase):
         self._agent = agent
         self._context = context
         self._record = record
+        self._operator = operator
         self._retrieved_at = retrieved_at
         self._config = config
 
@@ -121,9 +125,12 @@ class VerifierNode(MultiAgentBase):
             candidate,
             self._record,
             sources,
+            operator=self._operator,
+            assessment_date=self._context.as_of,
             retrieved_at=self._retrieved_at,
             config=self._config,
         )
+        report = merge_coverage(report, coverage_checks(candidate, self._record, self._context.trace.steps))
         if report.accepted:
             report = await self._llm_review(sources, report)
         return self._finish(report)

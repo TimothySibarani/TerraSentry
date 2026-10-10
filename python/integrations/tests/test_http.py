@@ -70,6 +70,18 @@ async def test_server_error_exhausts_attempts() -> None:
     assert route.call_count == 3
 
 
+async def test_transport_failure_is_typed_after_retries() -> None:
+    with respx.mock(assert_all_called=False) as mock:
+        route = mock.get("https://example.test/data").mock(side_effect=httpx.ConnectError("offline"))
+        client = _client()
+        try:
+            with pytest.raises(SourceUnavailable, match="ConnectError"):
+                await client.get("/data")
+        finally:
+            await client.close()
+    assert route.call_count == 3
+
+
 async def test_client_error_is_not_retried() -> None:
     with respx.mock(assert_all_called=False) as mock:
         route = mock.get("https://example.test/data").mock(return_value=httpx.Response(400))

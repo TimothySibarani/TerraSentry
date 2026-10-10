@@ -5,7 +5,7 @@ import httpx
 import pytest
 import respx
 from terrasentry_integrations.cache import MemoryCache
-from terrasentry_integrations.errors import MissingCredentialError
+from terrasentry_integrations.errors import MissingCredentialError, SourceResponseError
 from terrasentry_integrations.settings import IntegrationSettings
 from terrasentry_integrations.sources.gfw import GfwClient
 
@@ -32,6 +32,32 @@ QUERY_ROWS = {
 
 def _settings() -> IntegrationSettings:
     return IntegrationSettings(gfw_api_key="test-key", gfw_rate_limit_per_min=1000)
+
+
+def test_context_releases_require_an_explicit_safe_version() -> None:
+    for release in ("wdpa_protected_areas/latest", "wdpa_protected_areas/v202512/extra", "../v202512"):
+        with pytest.raises(ValueError, match="context release"):
+            GfwClient(
+                IntegrationSettings(gfw_context_releases={"protected_areas": release}), cache=MemoryCache()
+            )
+
+
+async def test_dateline_loss_queries_fail_before_http_or_cache() -> None:
+    geometry = {
+        "type": "Polygon",
+        "coordinates": [[[179.999, 0], [-179.999, 0], [-179.999, 0.01], [179.999, 0.01], [179.999, 0]]],
+    }
+    cache = MemoryCache()
+    client = GfwClient(_settings(), cache=cache)
+    with respx.mock(assert_all_called=False) as router:
+        try:
+            with pytest.raises(SourceResponseError, match="antimeridian"):
+                await client.tree_cover_loss(geometry, start_year=2021, end_year=2025)
+            with pytest.raises(SourceResponseError, match="antimeridian"):
+                await client.tree_cover_loss_batch([("review", geometry)], start_year=2021, end_year=2025)
+            assert len(router.calls) == 0 and cache.stats().writes == 0
+        finally:
+            await client.close()
 
 
 async def test_tree_cover_loss_parses_and_caches() -> None:
@@ -104,3 +130,19 @@ async def test_constructs_without_a_key_and_fails_on_cache_miss() -> None:
             await client.tree_cover_loss(POLYGON, start_year=2021, end_year=2022)
     finally:
         await client.close()
+
+
+@pytest.mark.parametrize(
+    "rows", [[None], [{}], [{"year": 2021, "loss_ha": -1}], [{"year": 2021.5, "loss_ha": 0}]]
+)
+async def test_malformed_loss_is_not_cached_as_zero(rows: list[Any]) -> None:
+    cache = MemoryCache()
+    with respx.mock(assert_all_called=False) as mock:
+        mock.post(QUERY_URL).mock(return_value=httpx.Response(200, json={"data": rows}))
+        client = GfwClient(_settings(), cache=cache)
+        try:
+            with pytest.raises(SourceResponseError):
+                await client.tree_cover_loss(POLYGON, start_year=2021, end_year=2025)
+        finally:
+            await client.close()
+    assert cache.stats().writes == 0

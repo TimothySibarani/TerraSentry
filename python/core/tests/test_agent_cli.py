@@ -30,9 +30,7 @@ def _run_file(directory: Path) -> Path:
     return files[0]
 
 
-def test_cli_scripted_run_completes_and_writes_artifacts(
-    source_router, tmp_path: Path, monkeypatch
-) -> None:
+def test_cli_scripted_run_completes_and_writes_artifacts(source_router, tmp_path: Path, monkeypatch) -> None:
     _use_offline_env(monkeypatch)
     exit_code = main(
         [
@@ -91,6 +89,7 @@ def test_cli_hitl_pauses_then_resumes_with_a_decision(
     )
 
     with respx.mock(assert_all_called=False) as router:
+        agent_helpers.mock_context_layers(router)
         router.post(agent_helpers.GFW_URL).mock(
             return_value=httpx.Response(200, json={"status": "success", "data": []})
         )

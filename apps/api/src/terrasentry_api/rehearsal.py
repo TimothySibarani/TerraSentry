@@ -167,8 +167,11 @@ async def build_batch_report(
         "as_of": services.settings.rehearsal_as_of or None,
         "offline": services.offline,
         "fixtures_loaded": services.fixtures_loaded,
+        "mode": summary.mode,
+        "model": summary.model,
         "settings": {
             "batch_concurrency": services.settings.batch_concurrency,
+            "batch_agent_concurrency": services.settings.batch_agent_concurrency,
             "firms_window_days": services.settings.firms_window_days,
             "loss_window_years": services.settings.loss_window_years,
             "run_timeout_seconds": timeout_seconds,
@@ -186,12 +189,14 @@ async def run_recorded_batch(
     *,
     services: AppServices,
     size: int = 50,
+    mode: str = "screening",
+    model: str | None = None,
     report_path: Path | None = None,
     timeout_seconds: float = 1800.0,
     poll_seconds: float = 0.25,
 ) -> dict[str, Any]:
     """Run a batch through the production services and return the M6 report."""
-    batch_run_id = await services.run_manager.start_batch(size=size)
+    batch_run_id = await services.run_manager.start_batch(size=size, mode=mode, model=model)
     deadline = time.monotonic() + timeout_seconds
     while True:
         async with services.session_factory() as session:
@@ -219,6 +224,7 @@ def print_report(report: dict[str, Any]) -> None:
     summary = report["summary"]
     metrics = summary.get("metrics", {})
     print(f"batch        {report['batch_run_id']}  state={summary['state']}")
+    print(f"mode         {summary.get('mode')}  model={summary.get('model')}")
     print(
         f"records      {summary.get('record_count')}  offline={report['offline']}  "
         f"fixtures={report['fixtures_loaded']}"
@@ -230,7 +236,10 @@ def print_report(report: dict[str, Any]) -> None:
         f"{summary.get('median_seconds_per_record')} / "
         f"{summary.get('p95_seconds_per_record')} s"
     )
+    print(f"concurrency  {summary.get('batch_concurrency')}  unlabelled={summary.get('unlabelled_count')}")
     print(f"throughput   {summary.get('throughput_records_per_second')} records/s")
+    if metrics.get("token_usage") is not None:
+        print(f"tokens       {metrics['token_usage']} ({metrics.get('token_usage_scope')})")
     print(f"breakdown    {summary.get('verdict_breakdown')}  expected {summary.get('expected_breakdown')}")
     print(f"confusion    {metrics.get('confusion')}")
     print(f"erp          {metrics.get('sap_actions')}")
@@ -259,6 +268,18 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--offline", action="store_true", help="fail fast on cache misses")
     run.add_argument("--report", default="data/runs/batch-report.json")
     run.add_argument("--timeout", type=float, default=1800.0)
+    run.add_argument(
+        "--mode",
+        choices=("screening", "agent"),
+        default="screening",
+        help="screening = rubric + deterministic verifier, no LLM; agent = full agent graph per record",
+    )
+    run.add_argument(
+        "--model",
+        choices=("scripted", "bedrock"),
+        default=None,
+        help="agent mode only; defaults to AGENT_MODEL",
+    )
     return parser
 
 
@@ -272,7 +293,8 @@ def _prefetch_command(args: argparse.Namespace, datasets: SeedDatasets) -> int:
         print(f"as_of        {as_of.isoformat() if as_of else 'today'}")
         print(
             f"plan         {len(records)} records, "
-            f"{len(records)} GFW + {len(records) * firms_requests} FIRMS requests"
+            f"at least {len(records) * 8} GFW (loss + 7 context layers) + "
+            f"{len(records) * firms_requests} FIRMS requests"
         )
         for record in records:
             polygon = record.polygon
@@ -302,6 +324,9 @@ def _prefetch_command(args: argparse.Namespace, datasets: SeedDatasets) -> int:
 
 
 def _run_command(args: argparse.Namespace) -> int:
+    if args.mode == "screening" and args.model is not None:
+        print("--model applies to --mode agent only; screening runs no model", file=sys.stderr)
+        return 2
     base = get_integration_settings()
     api_settings: Settings = Settings().model_copy(
         update={
@@ -321,6 +346,8 @@ def _run_command(args: argparse.Namespace) -> int:
             return await run_recorded_batch(
                 services=services,
                 size=args.size,
+                mode=args.mode,
+                model=args.model if args.mode == "agent" else None,
                 report_path=Path(args.report),
                 timeout_seconds=args.timeout,
             )

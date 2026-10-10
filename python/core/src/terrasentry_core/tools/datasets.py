@@ -1,9 +1,11 @@
-"""Deterministic lookups over the committed seed datasets.
+"""Deterministic lookups over the committed seed datasets plus submitted records.
 
 The agent tools and the assessment harness both address records by id
 (``record_id``, ``polygon_id``, ``supplier_id``); the model never supplies data
 values. This module is the only place that maps ids to seed data, so the
-synthetic-legality disclosure travels with every lookup.
+synthetic-legality disclosure travels with every lookup. Records submitted
+through intake are registered here too (``register``); ``records`` stays the
+seed batch so the demo batch and its design labels are unaffected.
 """
 
 from __future__ import annotations
@@ -33,10 +35,24 @@ class SeedDatasets:
         self._by_polygon = {record.polygon.id: record for record in batch.records}
         self._by_supplier = {record.legality.supplier_id: record for record in batch.records}
         self._by_scenario = {
-            record.polygon.scenario: record
-            for record in batch.records
-            if record.polygon.scenario is not None
+            record.polygon.scenario: record for record in batch.records if record.polygon.scenario is not None
         }
+        self._submitted: dict[str, BatchRecord] = {}
+
+    def register(self, record: BatchRecord) -> None:
+        """Make a submitted record resolvable by record, polygon, and supplier id."""
+        if record.record_id in self._by_record and record.record_id not in self._submitted:
+            raise ValueError(f"record id {record.record_id!r} collides with a seed record")
+        self._submitted[record.record_id] = record
+        self._by_record[record.record_id] = record
+        self._by_polygon[record.polygon.id] = record
+        self._by_supplier[record.legality.supplier_id] = record
+
+    def submitted_records(self) -> list[BatchRecord]:
+        return list(self._submitted.values())
+
+    def is_submitted(self, record_id: str) -> bool:
+        return record_id in self._submitted
 
     @classmethod
     def load(
@@ -46,9 +62,7 @@ class SeedDatasets:
         operator_path: Path = DEFAULT_OPERATOR_PATH,
     ) -> SeedDatasets:
         batch = BatchDataset.model_validate_json(batch_path.read_text(encoding="utf-8"))
-        operator = OperatorDataset.model_validate_json(
-            operator_path.read_text(encoding="utf-8")
-        ).operator
+        operator = OperatorDataset.model_validate_json(operator_path.read_text(encoding="utf-8")).operator
         return cls(batch, operator)
 
     @property
@@ -72,6 +86,18 @@ class SeedDatasets:
                 *(record.legality.disclosure for record in self._batch.records),
                 *(record.consignment.disclosure for record in self._batch.records),
             }
+        )
+
+    def disclosures_for(self, record: BatchRecord, *, operator: OperatorRecord | None = None) -> list[str]:
+        """Disclosures that apply to one record's run (not the whole seed)."""
+        return sorted(
+            {
+                (operator or self._operator).disclosure,
+                record.legality.disclosure,
+                record.consignment.disclosure,
+                *([self._batch.disclosure] if record.record_id not in self._submitted else []),
+            }
+            - {""}
         )
 
     def get_record(self, record_id: str) -> BatchRecord:

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from terrasentry_integrations.errors import MissingCredentialError, SourceError
 from terrasentry_integrations.sources.firms import FirmsClient, FirmsHotspotResult
 from terrasentry_integrations.sources.gfw import GfwClient, TreeCoverLossResult
+from terrasentry_integrations.sources.gfw_layers import ContextLayersResult
 
 from terrasentry_core.seed.schemas import SeedPolygon
 
@@ -52,12 +53,19 @@ class PolygonSources(BaseModel):
     polygon_id: str
     loss: TreeCoverLossResult | None = None
     hotspots: FirmsHotspotResult | None = None
+    layers: ContextLayersResult | None = None
     errors: list[str] = Field(default_factory=list)
 
     @property
     def complete(self) -> bool:
-        """True when both real sources answered for this polygon."""
-        return self.loss is not None and self.hotspots is not None
+        """True when all required sources and annual coverage are available."""
+        return (
+            not self.errors
+            and self.loss is not None
+            and self.hotspots is not None
+            and self.layers is not None
+            and self.layers.complete
+        )
 
 
 async def fetch_polygon_sources(
@@ -71,32 +79,46 @@ async def fetch_polygon_sources(
     refresh: bool = False,
     as_of: date | None = None,
 ) -> PolygonSources:
-    """Fetch real GFW/FIRMS data for one polygon, tolerating per-source failures.
+    """Fetch sources with the full post-2020 cutoff through verified annual coverage.
 
-    ``as_of`` pins the FIRMS end date and (when no explicit ``loss_window`` is
-    given) the GFW year window, so a live prefetch and a later offline rehearsal
-    resolve the same cache keys even on different days.
+    Legacy rolling-window arguments remain accepted for callers; compliance
+    always uses 2021 onward. ``as_of`` also pins the FIRMS end date.
     """
-    resolved = loss_window if loss_window is not None else resolve_loss_window(loss_years, as_of=as_of)
+    assessment_date = as_of or datetime.now(tz=UTC).date()
     sources = PolygonSources(polygon_id=polygon.id)
     try:
-        sources.loss = await gfw.tree_cover_loss(
-            polygon.geometry,
-            start_year=resolved.start_year,
-            end_year=resolved.end_year,
-            refresh=refresh,
-        )
+        required_end = assessment_date.year - 1
+        verified_end = gfw.coverage_end_year
+        covered_end = min(required_end, verified_end)
+        if required_end < 2021:
+            sources.errors.append("gfw:loss: assessment date precedes the supported post-2020 annual window")
+        else:
+            if required_end > verified_end:
+                sources.errors.append(
+                    f"gfw:loss: annual coverage unavailable for {max(2021, verified_end + 1)}-{required_end}"
+                )
+            if covered_end >= 2021:
+                sources.loss = await gfw.tree_cover_loss(
+                    polygon.geometry,
+                    start_year=2021,
+                    end_year=covered_end,
+                    refresh=refresh,
+                )
     except (SourceError, MissingCredentialError) as exc:
         sources.errors.append(str(exc))
     try:
         sources.hotspots = await firms.hotspots_in_polygon(
             polygon.geometry,
             days=window_days,
-            end_date=as_of,
+            end_date=assessment_date,
             refresh=refresh,
         )
     except (SourceError, MissingCredentialError) as exc:
         sources.errors.append(str(exc))
+    sources.layers = await gfw.context_layers(polygon.geometry, country=polygon.country, refresh=refresh)
+    sources.errors.extend(
+        f"gfw:{layer.name}: {layer.error}" for layer in sources.layers.layers if layer.status == "unavailable"
+    )
     return sources
 
 

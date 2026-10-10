@@ -55,3 +55,12 @@ export function decodeLossYears(value: unknown): ReadonlyArray<LossYear> {
 export function numberValue(value: unknown): number | null {
 	return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
+
+export function metricValue(value: unknown, field: string): number | null {
+	const decoded = Option.getOrNull(
+		Schema.decodeUnknownOption(Schema.Struct({ [field]: Schema.Number }))(
+			value,
+		),
+	);
+	return numberValue(decoded?.[field]);
+}

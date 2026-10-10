@@ -13,6 +13,7 @@ from terrasentry_core.errors import (
     InvalidTransitionError,
     SeedLookupError,
 )
+from terrasentry_core.intake import IntakeError
 
 from terrasentry_api.config import settings
 from terrasentry_api.routers import api_router
@@ -37,6 +38,15 @@ def create_app(services_factory: ServicesFactory = build_services) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.exception_handler(IntakeError)
+    async def _intake(_: Request, exc: IntakeError) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": [{"loc": ["body", *exc.field.split(".")], "msg": exc.message, "type": "intake"}]
+            },
+        )
 
     @app.exception_handler(SeedLookupError)
     async def _not_found(_: Request, exc: SeedLookupError) -> JSONResponse:

@@ -57,7 +57,8 @@ The app only needs to invoke the two configured models, so do **not** attach
       "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
       "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:<account-id>:inference-profile/*"
+        "arn:aws:bedrock:*:<account-id>:inference-profile/*",
+        "arn:aws:bedrock:*:<account-id>:project/default"
       ]
     },
     {
@@ -100,6 +101,18 @@ Enable **CloudTrail** (management events are free) so every Bedrock call is audi
 Use `AWS_PROFILE=terrasentry` if you keep multiple profiles; `.env` has an
 `AWS_PROFILE=` slot for this.
 
+If you sign in with the newer `aws login` flow instead of a static key, the CLI works out of the
+box but **botocore (and therefore the app) needs `botocore[crt]`** to read the login credential
+provider — it is a declared dependency of `terrasentry-core`, installed by `uv sync`. Without it,
+boto3 fails with `MissingDependencyException: Using the login credential provider requires an
+additional dependency`.
+
+Least-privilege swap (done for this repo's dev account): create a customer-managed policy from
+the template above, attach it to the user, and remove the user from any admin group. Verify with
+`aws sts get-caller-identity`, `aws bedrock list-foundation-models`, and the preflight below; an
+`iam:ListUsers` denial is expected once the swap is effective. To revert, re-add the user to the
+admin group.
+
 ## 4. Bedrock model access (the M3 blocker)
 
 Pick the model you want for each agent role, request access to both, and set the ids in
@@ -121,8 +134,32 @@ A `global.` (or other cross-region) inference profile keeps the demo working if 
 is throttled; use the console's "Inference profile" ids when available. The app fails with a
 clear `MissingModelError` if either variable is unset.
 
+Model choice notes (verified against this account, 2026-09-27):
+
+- The newer third-party models (`openai.gpt-6-*`, and other agreement-gated models) require
+  the **Paid plan**. On the Free plan, Converse answers `AccessDeniedException: … is not
+  available for this account`. Enabling them needs a use-case form plus a model agreement —
+  both have CLI paths: `aws bedrock put-use-case-for-model-access` (`formData` JSON with
+  `companyName`, `companyWebsite`, `intendedUsers` as a **numeric code** `0` internal / `1`
+  external / `2` both, `industryOption`, `otherIndustryOption`, `useCases`; via boto3 pass the
+  raw JSON bytes — remember the CLI double-encodes blobs) and
+  `aws bedrock list-foundation-model-agreement-offers` →
+  `aws bedrock create-foundation-model-agreement`; poll
+  `aws bedrock get-foundation-model-availability`. `authorizationStatus: AUTHORIZED` +
+  `agreementAvailability: AVAILABLE` is the green state; `PENDING` means wait.
+- `openai.gpt-oss-120b-1:0` works on the Free plan, needs no agreement, and supports Converse
+  with tool use — the cheapest way to run the live path today. GPT-6 also needs the `us.` or
+  `global.` inference profile id (no in-region id on `bedrock-runtime`).
+- Reasoning models accept a thinking-effort hint via `BEDROCK_REASONING_EFFORT`
+  (`low|medium|high` for gpt-oss; `none|low|medium|high|xhigh|max` for GPT-6, default
+  `medium`). Empty means "model default". Low effort keeps agent runs fast and cheap.
+- On `bedrock-runtime`, GPT-6's own model card warns that server-side tool use is not
+  supported; Strands implements tool use client-side, which gpt-oss supports and the
+  live trace confirms.
+
 4. Verify with the repo preflight: it builds both roles exactly like the agent runtime
-   (adaptive retries, timeouts) and pings each model with a 16-token output cap:
+   (adaptive retries, timeouts) and pings each model with a 256-token output cap (reasoning
+   models spend tokens thinking before they answer):
 
 ```bash
 uv run python -m terrasentry_core.agents.preflight

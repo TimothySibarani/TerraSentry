@@ -13,8 +13,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
+from pydantic import BaseModel
 from terrasentry_core.agents.models import ModelBundle
-from terrasentry_core.agents.scripted import AutopilotResponder, ScriptedModel
+from terrasentry_core.agents.scripted import AdaptiveAutopilotResponder, AutopilotResponder, ScriptedModel
 from terrasentry_core.agents.verification import VerificationReport
 from terrasentry_core.seed import DEFAULT_RNG_SEED, generate_batch, operator_dataset
 from terrasentry_core.tools.datasets import SeedDatasets
@@ -98,13 +99,68 @@ def accepted_verification() -> VerificationReport:
     )
 
 
-def scripted_models(record: Any, *, review: VerificationReport | None = None) -> ModelBundle:
-    """Models for one record: the autopilot route plus a scripted verifier review."""
-    responder = AutopilotResponder.for_record(
-        record,
-        structured_outputs={VerificationReport: review or accepted_verification()},
+def scripted_models(
+    record: Any,
+    *,
+    review: VerificationReport | None = None,
+    adaptive: bool = True,
+    skip_deep_dives: bool = False,
+) -> ModelBundle:
+    """Models for one record: the adaptive (default) or fixed autopilot route plus a verifier review."""
+    structured: dict[type[BaseModel], BaseModel] = {VerificationReport: review or accepted_verification()}
+    responder = (
+        AdaptiveAutopilotResponder.for_record(
+            record, structured_outputs=structured, skip_deep_dives=skip_deep_dives
+        )
+        if adaptive
+        else AutopilotResponder.for_record(record, structured_outputs=structured)
     )
     return ModelBundle(
         orchestrator=ScriptedModel(responder=responder),
         extraction=ScriptedModel(responder=responder),
     )
+
+
+def _feature_row_for(request: httpx.Request, **properties: Any) -> httpx.Response:
+    """One vector-layer row that covers the whole request geometry (a full overlap)."""
+    geometry = json.loads(request.content)["geometry"]
+    return httpx.Response(
+        200,
+        json={
+            "status": "success",
+            "data": [{"gfw_fid": 1, "gfw_geojson": json.dumps(geometry), **properties}],
+        },
+    )
+
+
+def mock_context_layers(
+    router,
+    *,
+    overlaps: dict[str, dict[str, Any]] | None = None,
+    unavailable: frozenset[str] = frozenset(),
+):
+    """Mock every GFW context layer: clear by default.
+
+    ``overlaps`` maps a layer name to feature properties for a full-geometry overlap on that
+    vector layer; ``unavailable`` layers answer with an HTTP error so the layer is unavailable.
+    """
+    from terrasentry_integrations.sources.gfw_layers import LAYER_DEFINITIONS
+
+    for name, (dataset, version, _, _) in LAYER_DEFINITIONS.items():
+        url = f"https://data-api.globalforestwatch.org/dataset/{dataset}/{version}/query/json"
+        if name in unavailable:
+            router.post(url).mock(return_value=httpx.Response(422, json={"status": "failed"}))
+        elif overlaps and name in overlaps:
+            router.post(url).mock(
+                side_effect=lambda request, props=overlaps[name]: _feature_row_for(request, **props)
+            )
+        else:
+            router.post(url).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "status": "success",
+                        "data": [{"overlap_ha": 0}] if name in {"peatlands", "forest_baseline"} else [],
+                    },
+                )
+            )

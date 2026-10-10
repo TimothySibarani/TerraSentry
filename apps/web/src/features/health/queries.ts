@@ -16,6 +16,11 @@ export function healthQuery() {
 						fixturesLoaded: health.fixtures_loaded,
 						sapMode: health.sap_mode,
 						sapReal: health.sap_real,
+						bedrockConfigured: health.bedrock_configured,
+						defaultModel: health.default_model,
+						gfwConfigured: health.gfw_configured,
+						firmsConfigured: health.firms_configured,
+						authEnabled: health.auth_enabled,
 					})),
 					Effect.catch(() =>
 						Effect.succeed({
@@ -25,6 +30,11 @@ export function healthQuery() {
 							fixturesLoaded: 0,
 							sapMode: "unknown",
 							sapReal: false,
+							bedrockConfigured: false,
+							defaultModel: "scripted",
+							gfwConfigured: false,
+							firmsConfigured: false,
+							authEnabled: false,
 						}),
 					),
 				),

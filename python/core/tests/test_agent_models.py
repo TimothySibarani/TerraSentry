@@ -83,9 +83,7 @@ def test_build_model_applies_adaptive_retries_and_timeouts(monkeypatch: pytest.M
     ("mode", "strategy"),
     [("off", None), ("auto", "auto"), ("anthropic", "anthropic")],
 )
-def test_prompt_cache_is_opt_in(
-    monkeypatch: pytest.MonkeyPatch, mode: str, strategy: str | None
-) -> None:
+def test_prompt_cache_is_opt_in(monkeypatch: pytest.MonkeyPatch, mode: str, strategy: str | None) -> None:
     captured = _fake_bedrock(monkeypatch)
 
     build_model("orchestrator", settings=_settings(bedrock_prompt_cache=mode))
@@ -96,6 +94,17 @@ def test_prompt_cache_is_opt_in(
     else:
         assert isinstance(cached, CacheConfig)
         assert cached.strategy == strategy
+
+
+def test_reasoning_effort_is_sent_only_when_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured = _fake_bedrock(monkeypatch)
+
+    build_model("orchestrator", settings=_settings(bedrock_reasoning_effort="low"))
+    assert captured["additional_request_fields"] == {"reasoning_effort": "low"}
+
+    captured = _fake_bedrock(monkeypatch)
+    build_model("orchestrator", settings=_settings(bedrock_reasoning_effort=""))
+    assert "additional_request_fields" not in captured
 
 
 def test_profile_settings_use_a_boto_session(monkeypatch: pytest.MonkeyPatch) -> None:

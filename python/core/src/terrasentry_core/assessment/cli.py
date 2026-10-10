@@ -32,7 +32,7 @@ def _print_report(batch: AssessmentBatch) -> None:
         ]
         flags = ",".join(codes) if codes else "-"
         print(
-            f"{item.record_id:<9} {item.supplier_id:<9} {item.expected_archetype:<11} "
+            f"{item.record_id:<9} {item.supplier_id:<9} {(item.expected_archetype or 'unlabelled'):<11} "
             f"{item.assessment.verdict:<11} {item.assessment.score:>5} "
             f"{item.run_state:<16} {flags}"
         )

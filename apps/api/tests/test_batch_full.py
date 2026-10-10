@@ -60,7 +60,25 @@ def design_sources(record: BatchRecord) -> PolygonSources:
         )
         for _ in range(hotspot_count)
     ]
+    from terrasentry_integrations.sources.gfw_layers import (
+        LAYER_DEFINITIONS,
+        ContextLayer,
+        ContextLayersResult,
+    )
+
     return PolygonSources(
+        layers=ContextLayersResult(
+            layers=[
+                ContextLayer(
+                    name=name,
+                    dataset=definition[0],
+                    version=definition[1],
+                    geometry_hash="b" * 64,
+                    status="success",
+                )
+                for name, definition in LAYER_DEFINITIONS.items()
+            ]
+        ),
         polygon_id=polygon.id,
         loss=TreeCoverLossResult(
             dataset="umd_tree_cover_loss",
@@ -137,6 +155,7 @@ def test_full_batch_matches_the_design_breakdown(
     assert summary["p95_seconds_per_record"] >= summary["median_seconds_per_record"]
     assert summary["throughput_records_per_second"] is not None
     assert summary["batch_concurrency"] == 8
+    assert (summary["mode"], summary["model"], summary["unlabelled_count"]) == ("screening", None, 0)
     # M7: every released verdict reaches the ERP; ambiguous records wait for HITL.
     assert summary["sap_actions"] == {"approved": 30, "blocked": 12, "failed": 0}
 
@@ -226,3 +245,23 @@ def test_prefetch_dry_run_prints_the_plan(capsys: Any) -> None:
     assert "3 records" in output
     assert "REC-001" in output
     assert "FIRMS requests" in output
+
+
+async def test_rehearsal_report_carries_mode_model_and_timings_for_an_agent_batch(
+    tmp_path: Path,
+    full_datasets: SeedDatasets,
+    source_router: Any,
+) -> None:
+    factory = api_helpers.test_services_factory(tmp_path, full_datasets, batch_agent_concurrency=2)
+    async with factory() as services:
+        report = await rehearsal.run_recorded_batch(
+            services=services, size=4, mode="agent", model="scripted", poll_seconds=0.01
+        )
+
+    assert (report["mode"], report["model"]) == ("agent", "scripted")
+    assert report["settings"]["batch_agent_concurrency"] == 2
+    assert report["summary"]["state"] == "complete"
+    assert report["summary"]["batch_concurrency"] == 2
+    assert len(report["records"]) == 4
+    assert all(row["elapsed_seconds"] is not None for row in report["records"])
+    assert all(row["model"] == "scripted" for row in report["records"])

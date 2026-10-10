@@ -29,6 +29,9 @@ class AgentRunResult(BaseModel):
     polygon_id: str
     state: RunState
     summary: str = ""
+    error: str | None = None
+    #: Graph-level token usage from Strands; may exclude nested agents-as-tools usage.
+    usage: dict[str, int] | None = None
     verification: VerificationReport | None = None
     assessment: RecordAssessment | None = None
     pending_assessment: RecordAssessment | None = None

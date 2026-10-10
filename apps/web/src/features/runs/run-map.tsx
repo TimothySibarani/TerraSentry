@@ -2,12 +2,13 @@ import type { EvidenceEntry } from "@terrasentry/api-client";
 import { FlameIcon, LeafIcon, ZapIcon } from "lucide-react";
 import { useMemo } from "react";
 
-import { MapView, type MapTone } from "#/components/map/map-view";
+import { type MapTone, MapView } from "#/components/map/map-view";
 import { MetricCard } from "#/components/metric-card";
 import {
 	decodeDetections,
 	decodeGeometry,
 	findEvidence,
+	metricValue,
 	numberValue,
 } from "#/features/runs/evidence";
 import { formatNumber } from "#/lib/format";
@@ -22,16 +23,22 @@ export function RunMapPanel({
 	label: string;
 }) {
 	const lens = useMemo(() => {
-		const geometryEntry = findEvidence(entries, "parcel.geometry");
+		const geometryEntry =
+			findEvidence(entries, "parcel.query_geometry") ??
+			findEvidence(entries, "parcel.geometry");
 		const geometry = geometryEntry ? decodeGeometry(geometryEntry.value) : null;
 		const detectionsEntry = findEvidence(entries, "hotspots.detections");
 		const detections = detectionsEntry
 			? decodeDetections(detectionsEntry.value)
 			: [];
 		return {
-			loss: numberValue(findEvidence(entries, "loss.total_loss_ha")?.value),
-			detectionCount: numberValue(
+			loss: metricValue(
+				findEvidence(entries, "loss.total_loss_ha")?.value,
+				"total_loss_ha",
+			),
+			detectionCount: metricValue(
 				findEvidence(entries, "hotspots.detection_count")?.value,
+				"detection_count",
 			),
 			totalFrp: numberValue(findEvidence(entries, "hotspots.total_frp")?.value),
 			polygons: geometry
@@ -40,7 +47,10 @@ export function RunMapPanel({
 							id: label,
 							geometry,
 							label,
-							detail: "Parcel geometry from the synthetic concession dataset",
+							detail:
+								geometryEntry?.claim === "parcel.query_geometry"
+									? "Query buffer of declared point area"
+									: "Recorded parcel geometry",
 							tone,
 						},
 					]
@@ -71,7 +81,7 @@ export function RunMapPanel({
 					hint={
 						<span className="flex items-center gap-1">
 							<LeafIcon aria-hidden="true" className="size-3" />
-							GFW/Hansen, 5-year window
+							GFW/Hansen, 2021 onward through available annual coverage
 						</span>
 					}
 				/>

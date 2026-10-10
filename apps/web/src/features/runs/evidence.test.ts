@@ -5,10 +5,19 @@ import {
 	decodeGeometry,
 	decodeLossYears,
 	findEvidence,
+	metricValue,
 	numberValue,
 } from "./evidence";
 
 describe("evidence decoders", () => {
+	it("reads backend metric objects without accepting malformed totals", () => {
+		expect(
+			metricValue({ total_loss_ha: 12.5, source: "gfw" }, "total_loss_ha"),
+		).toBe(12.5);
+		expect(metricValue({ detection_count: 3 }, "detection_count")).toBe(3);
+		expect(metricValue({ detection_count: "3" }, "detection_count")).toBeNull();
+		expect(metricValue(null, "detection_count")).toBeNull();
+	});
 	it("decodes a GeoJSON polygon", () => {
 		const geometry = decodeGeometry({
 			type: "Polygon",

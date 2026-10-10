@@ -13,7 +13,7 @@ machine, the verify-before-write edge, and the human-review hold. Callers
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from uuid import uuid4
 
 from strands.multiagent import GraphBuilder
@@ -34,7 +34,7 @@ from terrasentry_core.domain.run_state import advance, decision_event
 from terrasentry_core.errors import AgentRunError, InvalidReviewDecisionError
 from terrasentry_core.reference.pipeline import PolygonReport
 from terrasentry_core.scoring import RubricConfig
-from terrasentry_core.seed.schemas import BatchRecord
+from terrasentry_core.seed.schemas import BatchRecord, OperatorRecord
 from terrasentry_core.tools.agent_tools import ToolContext
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.sources import resolve_loss_window
@@ -56,6 +56,25 @@ def _verification_accepted(state: GraphState) -> bool:
     return False
 
 
+def _usage_of(result: object) -> dict[str, int] | None:
+    usage = getattr(result, "accumulated_usage", None)
+    if not isinstance(usage, dict):
+        return None
+    return {key: int(usage.get(key, 0)) for key in ("inputTokens", "outputTokens", "totalTokens")}
+
+
+def _rejection_reason(candidate: RecordAssessment | None, verification: VerificationReport | None) -> str:
+    """Explicit failure text so a rejection never surfaces as an evidence summary."""
+    if candidate is None:
+        return "no candidate assessment was produced"
+    if verification is None:
+        return "verification did not complete"
+    errors = verification.errors
+    if not errors:
+        return "verifier rejected the run"
+    return "Verifier rejected the run: " + "; ".join(f"{item.kind}: {item.detail}" for item in errors)
+
+
 class RunOrchestrator:
     """Owns one supervisor -> assessor -> verifier -> writer run and its review gate."""
 
@@ -69,6 +88,7 @@ class RunOrchestrator:
         window_days: int = 30,
         years: int = 5,
         as_of: date | None = None,
+        operator: OperatorRecord | None = None,
         rubric: RubricConfig | None = None,
         clock: Callable[[], datetime] = utc_now,
         on_step: StepHook | None = None,
@@ -80,6 +100,7 @@ class RunOrchestrator:
         self._window_days = window_days
         self._years = years
         self._as_of = as_of
+        self._operator = (operator or datasets.operator).model_copy(deep=True)
         self._rubric = rubric
         self._clock = clock
         self._on_step = on_step
@@ -93,6 +114,7 @@ class RunOrchestrator:
     ) -> AgentRunResult:
         """Run the graph for one seed record and return its state and artifacts."""
         started = self._clock()
+        assessment_date = self._as_of or started.astimezone(UTC).date()
         record = self._datasets.get_record(record_id)
         resolved_run_id = run_id or f"agent-{started:%Y%m%dT%H%M%S}-{uuid4().hex[:6]}"
         trace = TraceCollector(clock=self._clock, on_step=self._on_step)
@@ -104,19 +126,22 @@ class RunOrchestrator:
             datasets=self._datasets,
             trace=trace,
             window_days=self._window_days,
-            loss_window=resolve_loss_window(self._years, as_of=self._as_of, now=started),
-            as_of=self._as_of,
+            loss_window=resolve_loss_window(self._years, as_of=assessment_date, now=started),
+            as_of=assessment_date,
             retrieved_at=started,
             refresh=refresh,
         )
         models = self._models or ModelBundle.from_settings()
         graph = self._build_graph(record, context, models)
 
+        usage: dict[str, int] | None = None
         try:
             async for event in graph.stream_async(
                 self._task(record), invocation_state={"run_id": resolved_run_id}
             ):
                 await self._record_event(event, trace)
+                if event.get("type") == "multiagent_result":
+                    usage = _usage_of(event.get("result"))
         except Exception as exc:
             trace.add("state", "failed", f"{type(exc).__name__}: {exc}")
             return self._result(
@@ -128,7 +153,8 @@ class RunOrchestrator:
                 summary=f"run failed: {exc}",
             )
 
-        return self._finish(resolved_run_id, record, started, trace, context, refresh=refresh)
+        finished = self._finish(resolved_run_id, record, started, trace, context, refresh=refresh)
+        return finished.model_copy(update={"usage": usage})
 
     async def resume(self, result: AgentRunResult, decision: ReviewDecision) -> AgentRunResult:
         """Record the human decision on an awaiting run and release the DDS."""
@@ -161,8 +187,8 @@ class RunOrchestrator:
     def _task(self, record: BatchRecord) -> str:
         return (
             f"Assess EUDR compliance for record {record.record_id}, supplier {record.supplier_id}, "
-            f"polygon {record.polygon.id} in {record.polygon.region}. Delegate to every specialist "
-            "exactly once, then summarise the evidence you received."
+            f"polygon {record.polygon.id} in {record.polygon.region}. Screen first, re-task specialists "
+            "for deep dives when the screening signals call for one, then summarise the evidence."
         )
 
     def _build_graph(self, record: BatchRecord, context: ToolContext, models: ModelBundle) -> Graph:
@@ -180,6 +206,7 @@ class RunOrchestrator:
                 agent=verifier_agent,
                 context=context,
                 record=record,
+                operator=self._operator,
                 retrieved_at=context.retrieved_at,
                 config=self._rubric,
             ),
@@ -203,12 +230,14 @@ class RunOrchestrator:
                 area_ha=polygon.area_ha,
                 loss=sources.loss,
                 hotspots=sources.hotspots,
+                layers=sources.layers,
                 errors=list(sources.errors),
             )
             candidate = assess_record(
                 report,
                 record,
-                self._datasets.operator,
+                self._operator,
+                assessment_date=context.as_of,
                 retrieved_at=context.retrieved_at,
                 config=self._rubric,
             )
@@ -279,6 +308,7 @@ class RunOrchestrator:
             trace,
             state=state,
             summary=context.summary,
+            error=_rejection_reason(candidate, verification) if state is RunState.FAILED else None,
             verification=verification,
             assessment=assessment,
             pending=pending,
@@ -293,6 +323,7 @@ class RunOrchestrator:
         *,
         state: RunState,
         summary: str = "",
+        error: str | None = None,
         verification: VerificationReport | None = None,
         assessment: RecordAssessment | None = None,
         pending: RecordAssessment | None = None,
@@ -304,11 +335,12 @@ class RunOrchestrator:
             polygon_id=record.polygon.id,
             state=state,
             summary=summary,
+            error=error,
             verification=verification,
             assessment=assessment,
             pending_assessment=pending,
             trace=trace.steps,
-            disclosures=self._datasets.disclosures,
+            disclosures=self._datasets.disclosures_for(record, operator=self._operator),
             started_at=started,
             finished_at=self._clock(),
         )

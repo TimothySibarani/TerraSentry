@@ -5,6 +5,7 @@ import type {
 } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 
+import { satelliteStyle } from "#/components/map/basemap";
 import { Skeleton } from "#/components/ui/skeleton";
 import type { GeoJsonGeometry } from "#/features/runs/evidence";
 
@@ -166,10 +167,13 @@ export function MapView({
 	polygons,
 	points = [],
 	className,
+	basemap = "default",
 }: {
 	polygons: ReadonlyArray<MapPolygon>;
 	points?: ReadonlyArray<MapPoint>;
 	className?: string;
+	/** `satellite` shows imagery and the tree-cover-loss overlay. */
+	basemap?: "default" | "satellite";
 }) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<MapLibreMap | null>(null);
@@ -183,18 +187,30 @@ export function MapView({
 		let map: MapLibreMap | null = null;
 		void (async () => {
 			try {
-				const maplibregl = await import("maplibre-gl");
+				const [maplibregl, worker] = await Promise.all([
+					import("maplibre-gl"),
+					import("maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url"),
+				]);
 				if (cancelled || !containerRef.current) {
 					return;
 				}
+				// MapLibre v6 cannot derive its worker URL inside Vite's module
+				// graph; without this, GeoJSON sources (parcels, hotspots) never tile.
+				maplibregl.setWorkerUrl(worker.default);
 				maplibreRef.current = maplibregl;
 				const styleUrl = import.meta.env.VITE_MAP_STYLE_URL;
 				map = new maplibregl.Map({
 					container: containerRef.current,
-					style: styleUrl && styleUrl.length > 0 ? styleUrl : FALLBACK_STYLE,
+					style:
+						basemap === "satellite"
+							? satelliteStyle({ showLoss: true })
+							: styleUrl && styleUrl.length > 0
+								? styleUrl
+								: FALLBACK_STYLE,
 					center: [101.5, -1.5],
 					zoom: 4,
-					attributionControl: styleUrl ? { compact: true } : false,
+					attributionControl:
+						styleUrl || basemap === "satellite" ? { compact: true } : false,
 				});
 				map.addControl(
 					new maplibregl.NavigationControl({ showCompass: false }),
@@ -226,7 +242,7 @@ export function MapView({
 			maplibreRef.current = null;
 			map?.remove();
 		};
-	}, []);
+	}, [basemap]);
 
 	useEffect(() => {
 		const map = mapRef.current;
@@ -239,7 +255,7 @@ export function MapView({
 			| GeoJSONSource
 			| undefined;
 		if (existingPolygons) {
-			void existingPolygons.setData(polygonData);
+			void existingPolygons.setData(polygonData as GeoJSON.FeatureCollection);
 		} else {
 			map.addSource(POLYGON_SOURCE, {
 				type: "geojson",
@@ -390,7 +406,9 @@ export function MapView({
 				(className ?? "")
 			}
 		>
-			<div ref={containerRef} className="absolute inset-0" />
+			<div className="absolute inset-0">
+				<div ref={containerRef} className="h-full w-full" />
+			</div>
 			{!ready && !failed && (
 				<Skeleton className="absolute inset-0 rounded-none" />
 			)}

@@ -21,7 +21,7 @@ from terrasentry_api.db import create_engine_and_session
 from terrasentry_api.models import Base
 from terrasentry_api.runner import RunManager
 from terrasentry_api.sap_actions import SapActionService
-from terrasentry_api.seed_loader import seed_if_empty
+from terrasentry_api.seed_loader import restore_submitted_records, seed_if_empty
 from terrasentry_api.services import AppServices, ServicesFactory
 from terrasentry_api.store import RunStore
 from terrasentry_core.domain.models import PermitStatus
@@ -169,12 +169,16 @@ def test_settings(
     tmp_path: Path,
     *,
     batch_concurrency: int = 2,
+    batch_agent_concurrency: int = 2,
     auto_seed: bool = True,
+    api_token: str = "",
 ) -> Settings:
     return Settings(
+        api_token=api_token,
         database_url=f"sqlite+aiosqlite:///{tmp_path / 'terrasentry-test.db'}",
         auto_seed=auto_seed,
         batch_concurrency=batch_concurrency,
+        batch_agent_concurrency=batch_agent_concurrency,
         run_timeout_seconds=30,
         sse_ping_seconds=0,
         agent_model="scripted",
@@ -183,6 +187,8 @@ def test_settings(
 
 async def _create_all(engine: AsyncEngine) -> None:
     async with engine.begin() as connection:
+        # SQLite test readers must not block the concurrent batch writer; production uses Postgres.
+        await connection.exec_driver_sql("PRAGMA journal_mode=WAL")
         await connection.run_sync(Base.metadata.create_all)
 
 
@@ -199,17 +205,26 @@ def test_services_factory(
     datasets: SeedDatasets | None = None,
     *,
     batch_concurrency: int = 2,
+    batch_agent_concurrency: int = 2,
     auto_seed: bool = True,
     cache: CacheBackend | None = None,
     offline: bool = False,
     sap_gateway: SapGateway | None = None,
+    api_token: str = "",
+    bedrock_configured: bool = False,
 ) -> ServicesFactory:
     """A lifespan-compatible factory that never touches Postgres or Redis."""
     resolved = datasets or build_datasets()
 
     @asynccontextmanager
     async def factory() -> AsyncIterator[AppServices]:
-        settings = test_settings(tmp_path, batch_concurrency=batch_concurrency, auto_seed=auto_seed)
+        settings = test_settings(
+            tmp_path,
+            batch_concurrency=batch_concurrency,
+            batch_agent_concurrency=batch_agent_concurrency,
+            auto_seed=auto_seed,
+            api_token=api_token,
+        )
         integration = IntegrationSettings(
             gfw_api_key="test-key",
             gfw_rate_limit_per_min=100_000,
@@ -226,6 +241,8 @@ def test_services_factory(
         if settings.auto_seed:
             async with session_factory() as session:
                 await seed_if_empty(RunStore(session), resolved)
+        async with session_factory() as session:
+            await restore_submitted_records(RunStore(session), resolved)
         sap_stub = StubSapService(record.supplier_id for record in resolved.records)
         async with session_factory() as session:
             sap_stub.restore(await RunStore(session).latest_vendor_states())
@@ -256,6 +273,7 @@ def test_services_factory(
             sap_mode="stub",
             sap_real=False,
             offline=offline,
+            bedrock_configured=bedrock_configured,
         )
         try:
             yield services

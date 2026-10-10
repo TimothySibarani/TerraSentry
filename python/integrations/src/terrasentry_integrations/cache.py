@@ -19,21 +19,14 @@ from redis.asyncio import Redis
 from terrasentry_integrations.errors import CacheMissError, IntegrationError
 from terrasentry_integrations.settings import IntegrationSettings
 
-
-def _canonicalize(value: Any, decimals: int = 6) -> Any:
-    if isinstance(value, dict):
-        return {str(key): _canonicalize(value[key], decimals) for key in sorted(value)}
-    if isinstance(value, (list, tuple)):
-        return [_canonicalize(item, decimals) for item in value]
-    if isinstance(value, float):
-        return round(value, decimals)
-    return value
+#: Fail fast when Redis is down instead of hanging a source fetch.
+REDIS_TIMEOUT_SECONDS = 2.0
 
 
 def geometry_hash(geometry: dict[str, Any]) -> str:
-    """Stable SHA-256 over a canonicalized GeoJSON geometry or feature collection."""
-    canonical = json.dumps(_canonicalize(geometry), separators=(",", ":"), sort_keys=True)
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    """Versioned identity of the exact query geometry; never round derived buffers."""
+    canonical = json.dumps(geometry, separators=(",", ":"), sort_keys=True, allow_nan=False)
+    return hashlib.sha256(f"geometry-v2:{canonical}".encode()).hexdigest()
 
 
 class CacheEntry(BaseModel):
@@ -82,6 +75,8 @@ class CacheBackend(Protocol):
     async def iter_entries(self) -> list[CacheEntry]: ...
 
     def stats(self) -> CacheStats: ...
+
+    async def ping(self) -> None: ...
 
     async def close(self) -> None: ...
 
@@ -142,6 +137,9 @@ class MemoryCache(BaseCache):
     async def iter_entries(self) -> list[CacheEntry]:
         return list(self._entries.values())
 
+    async def ping(self) -> None:
+        return None
+
     async def close(self) -> None:
         self._entries.clear()
 
@@ -171,7 +169,12 @@ class RedisCache(BaseCache):
         offline: bool = False,
     ) -> RedisCache:
         return cls(
-            Redis.from_url(url, decode_responses=True),
+            Redis.from_url(
+                url,
+                decode_responses=True,
+                socket_connect_timeout=REDIS_TIMEOUT_SECONDS,
+                socket_timeout=REDIS_TIMEOUT_SECONDS,
+            ),
             prefix=prefix,
             ttl_seconds=ttl_seconds,
             offline=offline,
@@ -223,6 +226,9 @@ class RedisCache(BaseCache):
                 raise IntegrationError(f"corrupt cache entry at {key!r}: {exc}") from exc
         entries.sort(key=lambda entry: (entry.source, entry.geometry_hash, entry.date_window))
         return entries
+
+    async def ping(self) -> None:
+        await self._redis.ping()
 
     async def close(self) -> None:
         await self._redis.aclose()

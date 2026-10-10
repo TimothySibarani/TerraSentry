@@ -37,10 +37,13 @@ async def create_batch(
     services: ServicesDep,
     session: SessionDep,
 ) -> BatchSummary:
-    """Queue a batch; records run concurrently on the deterministic assess path."""
+    """Queue a batch; screening mode runs the deterministic path, agent mode the agent graph."""
     batch_run_id = await services.run_manager.start_batch(
         size=payload.size,
         refresh=payload.refresh,
+        record_ids=payload.record_ids,
+        mode=payload.mode,
+        model=(payload.model or services.settings.agent_model) if payload.mode == "agent" else None,
     )
     return await _summary(RunStore(session), batch_run_id)
 
@@ -53,12 +56,13 @@ async def list_batch_runs(
 ) -> list[BatchSummary]:
     store = RunStore(session)
     runs = await store.list_runs(kind="batch", limit=limit, offset=offset)
+    aggregates = await store.batch_aggregates([run.id for run in runs])
     return [
         BatchSummary.from_run(
             run,
-            states=await store.batch_state_counts(run.id),
-            breakdown=await store.batch_verdict_breakdown(run.id),
-            average_seconds=await store.batch_average_seconds(run.id),
+            states=aggregates[run.id][0],
+            breakdown=aggregates[run.id][1],
+            average_seconds=aggregates[run.id][2],
         )
         for run in runs
     ]
@@ -75,16 +79,13 @@ async def list_batch_records(batch_run_id: str, session: SessionDep) -> list[Run
     if await store.get_run(batch_run_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"no batch run {batch_run_id!r}")
     runs = await store.list_runs(parent_run_id=batch_run_id, limit=200)
-    summaries: list[RunSummary] = []
-    for run in runs:
-        summaries.append(
-            RunSummary.from_row(
-                run,
-                verdict=await store.get_verdict(run.id),
-                step_count=await store.step_count(run.id),
-            )
-        )
-    return summaries
+    ids = [run.id for run in runs]
+    verdicts = await store.verdicts_for(ids)
+    counts = await store.step_counts(ids)
+    return [
+        RunSummary.from_row(run, verdict=verdicts.get(run.id), step_count=counts.get(run.id, 0))
+        for run in runs
+    ]
 
 
 @router.get("/{batch_run_id}/stream")

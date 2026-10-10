@@ -22,6 +22,11 @@ import { Progress } from "#/components/ui/progress";
 import { Skeleton } from "#/components/ui/skeleton";
 import { Spinner } from "#/components/ui/spinner";
 import { VerdictBreakdown } from "#/components/verdict-breakdown";
+import {
+	BatchModeBadge,
+	batchModeLabel,
+	labelledNote,
+} from "#/features/runs/batch-mode";
 import { batchRecordsQuery, batchRunQuery } from "#/features/runs/queries";
 import { useBatchStream } from "#/features/runs/use-batch-stream";
 import {
@@ -171,9 +176,10 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 			<PageHeader
 				eyebrow="Batch run"
 				title={summary.run_id}
-				description={`${summary.record_count} records · queued ${formatDateTime(summary.started_at ?? summary.finished_at)}`}
+				description={`${summary.record_count} records · ${batchModeLabel(summary.mode, summary.model)}${summary.batch_concurrency ? ` · up to ${summary.batch_concurrency} at once` : ""} · queued ${formatDateTime(summary.started_at ?? summary.finished_at)}`}
 				actions={
 					<>
+						<BatchModeBadge mode={summary.mode} model={summary.model} />
 						<RunStateBadge state={state} />
 						{stream.status === "live" && (
 							<Button variant="outline" size="sm" disabled>
@@ -201,7 +207,7 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 						value={percent}
 						aria-label={`${percent}% of records settled`}
 					/>
-					<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+					<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
 						<MetricCard
 							label="Wall clock"
 							value={formatDuration(wallClock)}
@@ -229,6 +235,11 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 								progress?.failed ?? summary.states.failed ?? 0,
 							)}
 							hint="Records that did not settle"
+						/>
+						<MetricCard
+							label="Unlabelled"
+							value={formatNumber(summary.unlabelled_count)}
+							hint="Submitted records with no design label"
 						/>
 					</div>
 				</CardContent>
@@ -264,7 +275,7 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 							value={
 								designMatch === null ? "—" : `${Math.round(designMatch * 100)}%`
 							}
-							hint="Expected archetype mapped to its verdict"
+							hint={labelledNote(summary.unlabelled_count)}
 						/>
 					</div>
 					<p className="text-caption-mono-sm text-muted-foreground">

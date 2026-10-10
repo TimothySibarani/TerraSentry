@@ -8,6 +8,7 @@ import {
   RunDetail,
   RunEvent,
   RunSummary,
+  TraceStep,
 } from "./schemas";
 
 describe("HealthResponse", () => {
@@ -19,6 +20,11 @@ describe("HealthResponse", () => {
         fixtures_loaded: 0,
         sap_mode: "stub",
         sap_real: false,
+        bedrock_configured: false,
+        default_model: "scripted",
+        gfw_configured: true,
+        firms_configured: true,
+        auth_enabled: false,
       });
       assert.strictEqual(health.status, "ok");
       assert.strictEqual(health.offline, false);
@@ -134,6 +140,9 @@ describe("RunSummary", () => {
 });
 
 const batchSummary = {
+  mode: "agent",
+  model: "bedrock",
+  unlabelled_count: 3,
   run_id: "batch-1",
   state: "complete",
   record_count: 50,
@@ -171,6 +180,22 @@ describe("BatchSummary", () => {
       assert.strictEqual(summary.cache_stats?.offline_misses, 0);
       assert.strictEqual(summary.batch_concurrency, 4);
       assert.strictEqual(summary.sap_actions.blocked, 12);
+      assert.strictEqual(summary.mode, "agent");
+      assert.strictEqual(summary.model, "bedrock");
+      assert.strictEqual(summary.unlabelled_count, 3);
+    }),
+  );
+
+  it.effect("requires mode, model and unlabelled_count", () =>
+    Effect.gen(function* () {
+      const { mode: _mode, ...withoutMode } = batchSummary;
+      const { unlabelled_count: _unlabelled, ...withoutCount } = batchSummary;
+      for (const body of [withoutMode, withoutCount]) {
+        const failure = yield* Effect.flip(
+          Schema.decodeUnknownEffect(BatchSummary)(body),
+        );
+        assert.isDefined(failure);
+      }
     }),
   );
 });
@@ -210,6 +235,34 @@ describe("RunDetail", () => {
       assert.strictEqual(detail.sap_action?.status, "approved");
       assert.strictEqual(detail.sap_action?.real, false);
       assert.isTrue(detail.dds?.released);
+    }),
+  );
+});
+
+describe("TraceStep", () => {
+  const retaskStep = {
+    step_id: "STEP-009",
+    kind: "retask",
+    name: "legality_analyst",
+    detail: "check concession overlap and permit coverage for polygon PLY-001",
+    at: "2026-09-11T10:00:00Z",
+    payload: { reason: "signals: peat_overlap", ordinal: 2 },
+  };
+
+  it.effect("decodes a re-task step", () =>
+    Effect.gen(function* () {
+      const decoded = yield* Schema.decodeUnknownEffect(TraceStep)(retaskStep);
+      assert.strictEqual(decoded.kind, "retask");
+      assert.strictEqual(decoded.payload.ordinal, 2);
+    }),
+  );
+
+  it.effect("still rejects an unknown trace kind", () =>
+    Effect.gen(function* () {
+      const failure = yield* Effect.flip(
+        Schema.decodeUnknownEffect(TraceStep)({ ...retaskStep, kind: "bogus" }),
+      );
+      assert.isDefined(failure);
     }),
   );
 });

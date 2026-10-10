@@ -8,13 +8,14 @@ so the API cannot drift from the engine.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Literal
+from datetime import date, datetime
+from typing import Any, Literal, cast
 
 from pydantic import BaseModel, Field, model_validator
 from terrasentry_core.agents.verification import VerificationReport
 from terrasentry_core.domain.enums import RunState, Verdict
 from terrasentry_core.domain.models import Assessment, Finding
+from terrasentry_core.seed.schemas import BatchRecord, OperatorRecord, Provenance
 from terrasentry_core.tools.trace import TraceStep
 from terrasentry_integrations.sap import VendorStatus
 
@@ -22,10 +23,13 @@ from terrasentry_api.models import DdsDocument as DdsRow
 from terrasentry_api.models import Parcel as ParcelRow
 from terrasentry_api.models import Run, RunVerdict
 from terrasentry_api.models import SapAction as SapActionRow
+from terrasentry_api.models import SubmittedRecord as SubmittedRecordRow
 from terrasentry_api.models import Supplier as SupplierRow
 from terrasentry_api.sap_actions import disclosure_for_mode
 
 ModelMode = Literal["scripted", "bedrock"]
+BatchMode = Literal["screening", "agent"]
+AGENT_BATCH_MAX_RECORDS = 50
 
 
 def _opt_float(value: Any) -> float | None:
@@ -40,6 +44,11 @@ class HealthResponse(BaseModel):
     fixtures_loaded: int = 0
     sap_mode: str = "stub"
     sap_real: bool = False
+    bedrock_configured: bool = False
+    default_model: str = "scripted"
+    gfw_configured: bool = False
+    firms_configured: bool = False
+    auth_enabled: bool = False
 
 
 class RunCreate(BaseModel):
@@ -66,10 +75,25 @@ class DecisionCreate(BaseModel):
 
 
 class BatchCreate(BaseModel):
-    """Queue a deterministic batch run over the seed records."""
+    """Queue a batch over the seed records or explicit record ids.
+
+    ``screening`` runs the deterministic rubric and verifier with no LLM; ``agent`` runs the
+    full supervisor/specialist/verifier graph per record on ``model``.
+    """
 
     size: int = Field(default=50, ge=1, le=50)
     refresh: bool = False
+    record_ids: list[str] | None = Field(default=None, max_length=500)
+    mode: BatchMode = "screening"
+    model: ModelMode | None = None
+
+    @model_validator(mode="after")
+    def _model_only_for_agent_mode(self) -> BatchCreate:
+        if self.mode == "screening" and self.model is not None:
+            raise ValueError("model applies to agent mode only; screening runs no model")
+        if self.mode == "agent" and self.record_ids and len(self.record_ids) > AGENT_BATCH_MAX_RECORDS:
+            raise ValueError(f"agent batches are limited to {AGENT_BATCH_MAX_RECORDS} records")
+        return self
 
 
 class ReviewOut(BaseModel):
@@ -86,7 +110,7 @@ class VerdictOut(BaseModel):
     supplier_id: str
     polygon_id: str
     run_state: RunState
-    expected_archetype: str
+    expected_archetype: str | None = None
     expected_signal: str | None = None
     expected_ambiguity: str | None = None
     fingerprint: str
@@ -106,6 +130,7 @@ class VerdictOut(BaseModel):
             fingerprint=row.fingerprint,
             pending=row.pending,
             assessment=Assessment(
+                assessment_date=row.assessment_date,
                 record_id=row.record_id,
                 supplier_id=row.supplier_id,
                 polygon_id=row.polygon_id,
@@ -148,6 +173,8 @@ class RunSummary(BaseModel):
     polygon_id: str | None = None
     parent_run_id: str | None = None
     model: str
+    assessment_date: date | None = None
+    operator_profile: OperatorRecord | None = None
     summary: str = ""
     error: str | None = None
     verdict: Verdict | None = None
@@ -177,6 +204,10 @@ class RunSummary(BaseModel):
             polygon_id=run.polygon_id,
             parent_run_id=run.parent_run_id,
             model=run.model,
+            assessment_date=run.assessment_date,
+            operator_profile=OperatorRecord.model_validate(run.operator_profile)
+            if run.operator_profile
+            else None,
             summary=run.summary,
             error=run.error,
             verdict=verdict.verdict if verdict is not None else None,
@@ -241,7 +272,10 @@ class BatchSummary(BaseModel):
 
     run_id: str
     state: RunState
+    mode: BatchMode = "screening"
+    model: str | None = None
     record_count: int
+    unlabelled_count: int = 0
     states: dict[str, int] = Field(default_factory=dict)
     verdict_breakdown: dict[str, int] = Field(default_factory=dict)
     expected_breakdown: dict[str, int] = Field(default_factory=dict)
@@ -273,13 +307,24 @@ class BatchSummary(BaseModel):
         cache_stats = metrics.get("cache_stats")
         concurrency = metrics.get("batch_concurrency")
         sap_actions = metrics.get("sap_actions")
+        record_count = int(metrics.get("record_count", 0)) or sum(states.values())
+        expected = metrics.get("expected_breakdown", {})
+        unlabelled = metrics.get("unlabelled_count")
+        if not isinstance(unlabelled, int):
+            # Legacy rows predate the field: their seed records were all labelled.
+            unlabelled = max(record_count - sum(expected.values()), 0) if expected else 0
+        # The parent row's model is the source of truth; legacy rows are all "deterministic".
+        is_agent = run.model != "deterministic"
         return cls(
             run_id=run.id,
             state=run.state,
-            record_count=int(metrics.get("record_count", 0)) or sum(states.values()),
+            mode="agent" if is_agent else "screening",
+            model=run.model if is_agent else None,
+            record_count=record_count,
+            unlabelled_count=unlabelled,
             states=states,
             verdict_breakdown=breakdown,
-            expected_breakdown=metrics.get("expected_breakdown", {}),
+            expected_breakdown=expected,
             wall_clock_seconds=run.elapsed_seconds,
             average_seconds_per_record=average_seconds,
             median_seconds_per_record=_opt_float(metrics.get("median_seconds_per_record")),
@@ -297,6 +342,8 @@ class BatchSummary(BaseModel):
 
 
 class ParcelOut(BaseModel):
+    country: str | None = None
+    provenance: Provenance = "legacy_unknown"
     polygon_id: str
     supplier_id: str
     label: str
@@ -306,13 +353,15 @@ class ParcelOut(BaseModel):
     centroid_lat: float
     centroid_lon: float
     geometry: dict[str, Any]
-    archetype: str
+    archetype: str | None = None
     scenario: str | None = None
     is_demo: bool
 
     @classmethod
     def from_row(cls, row: ParcelRow) -> ParcelOut:
         return cls(
+            country=row.country,
+            provenance=cast(Provenance, row.provenance),
             polygon_id=row.polygon_id,
             supplier_id=row.supplier_id,
             label=row.label,
@@ -338,6 +387,8 @@ class SupplierOut(BaseModel):
     hgu_number: str | None = None
     pbp_number: str | None = None
     permit_status: str
+    permit_expiry: date | None = None
+    declared_holder: str | None = None
     concession_area_ha: float
     province: str
     kabupaten: str
@@ -345,6 +396,7 @@ class SupplierOut(BaseModel):
     certifications: list[str] = Field(default_factory=list)
     sanctions: list[str] = Field(default_factory=list)
     synthetic: bool
+    provenance: str = "synthetic"
     disclosure: str = ""
 
     @classmethod
@@ -359,6 +411,8 @@ class SupplierOut(BaseModel):
             hgu_number=row.hgu_number,
             pbp_number=row.pbp_number,
             permit_status=row.permit_status,
+            permit_expiry=row.permit_expiry,
+            declared_holder=row.declared_holder,
             concession_area_ha=row.concession_area_ha,
             province=row.province,
             kabupaten=row.kabupaten,
@@ -366,8 +420,119 @@ class SupplierOut(BaseModel):
             certifications=row.certifications,
             sanctions=row.sanctions,
             synthetic=row.synthetic,
+            provenance=row.provenance,
             disclosure=row.disclosure,
         )
+
+
+class LatestRunOut(BaseModel):
+    run_id: str
+    state: RunState
+    verdict: Verdict | None = None
+    score: int | None = None
+    model: str
+    created_at: datetime
+
+
+class RecordOut(BaseModel):
+    country: str | None = None
+    geometry_provenance: Provenance = "legacy_unknown"
+    """A submitted plot record, as stored, with the latest screening run."""
+
+    record_id: str
+    supplier_id: str
+    polygon_id: str
+    source: str
+    created_at: datetime
+    label: str
+    region: str
+    area_ha: float
+    centroid_lat: float
+    centroid_lon: float
+    geometry_type: str
+    geometry: dict[str, Any]
+    legal_name: str
+    commodity: str
+    description: str
+    hs_heading: str
+    net_weight_kg: float
+    permit_status: str
+    permit_expiry: date | None = None
+    declared_holder: str | None = None
+    hgu_number: str | None = None
+    pbp_number: str | None = None
+    provenance: str
+    disclosure: str
+    latest_run: LatestRunOut | None = None
+
+    @classmethod
+    def from_parts(
+        cls,
+        row: SubmittedRecordRow,
+        *,
+        latest: Run | None = None,
+        verdict: RunVerdict | None = None,
+    ) -> RecordOut:
+        record = BatchRecord.model_validate(row.payload)
+        return cls(
+            record_id=record.record_id,
+            supplier_id=record.supplier_id,
+            polygon_id=record.polygon.id,
+            source=row.source,
+            created_at=row.created_at,
+            country=record.polygon.country,
+            geometry_provenance=record.polygon.provenance,
+            label=record.polygon.label,
+            region=record.polygon.region,
+            area_ha=record.polygon.area_ha,
+            centroid_lat=record.polygon.centroid_lat,
+            centroid_lon=record.polygon.centroid_lon,
+            geometry_type=str(row.geometry.get("type", "")),
+            geometry=row.geometry,
+            legal_name=record.legality.legal_name,
+            commodity=record.consignment.commodity,
+            description=record.consignment.description,
+            hs_heading=record.consignment.hs_heading,
+            net_weight_kg=record.consignment.net_weight_kg,
+            permit_status=record.legality.permit_status,
+            permit_expiry=record.legality.permit_expiry,
+            declared_holder=record.legality.declared_holder,
+            hgu_number=record.legality.hgu_number,
+            pbp_number=record.legality.pbp_number,
+            provenance=record.legality.provenance,
+            disclosure=record.legality.disclosure,
+            latest_run=(
+                LatestRunOut(
+                    run_id=latest.id,
+                    state=latest.state,
+                    verdict=verdict.verdict if verdict is not None else None,
+                    score=verdict.score if verdict is not None else None,
+                    model=latest.model,
+                    created_at=latest.created_at,
+                )
+                if latest is not None
+                else None
+            ),
+        )
+
+
+class GeometryCheck(BaseModel):
+    """Validate a plot geometry without creating a record (live form feedback)."""
+
+    geometry: dict[str, Any]
+    declared_area_ha: float | None = Field(default=None, gt=0)
+
+
+class ImportRowError(BaseModel):
+    row: int
+    field: str
+    message: str
+
+
+class ImportResult(BaseModel):
+    created: list[RecordOut] = Field(default_factory=list)
+    errors: list[ImportRowError] = Field(default_factory=list)
+    total_rows: int
 
 
 class SapActionOut(BaseModel):
@@ -465,7 +630,12 @@ __all__ = [
     "BatchSummary",
     "DdsMeta",
     "DecisionCreate",
+    "GeometryCheck",
+    "ImportResult",
+    "ImportRowError",
+    "LatestRunOut",
     "ParcelOut",
+    "RecordOut",
     "ReviewOut",
     "RunCreate",
     "RunDetail",

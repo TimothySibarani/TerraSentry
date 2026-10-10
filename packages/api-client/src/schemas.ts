@@ -11,6 +11,11 @@ export const HealthResponse = Schema.Struct({
   fixtures_loaded: Schema.Int,
   sap_mode: Schema.String,
   sap_real: Schema.Boolean,
+  bedrock_configured: Schema.Boolean,
+  default_model: Schema.String,
+  gfw_configured: Schema.Boolean,
+  firms_configured: Schema.Boolean,
+  auth_enabled: Schema.Boolean,
 });
 export type HealthResponse = typeof HealthResponse.Type;
 
@@ -36,6 +41,11 @@ export const FindingCode = Schema.Literals([
   "legal_permit",
   "area_mismatch",
   "certification",
+  "protected_area",
+  "moratorium",
+  "peatland",
+  "concession_conflict",
+  "forest_baseline",
 ]);
 export type FindingCode = typeof FindingCode.Type;
 
@@ -53,9 +63,52 @@ export const EvidenceSource = Schema.Literals([
 ]);
 export type EvidenceSource = typeof EvidenceSource.Type;
 
+export const Provenance = Schema.Literals([
+  "synthetic",
+  "supplier_declared",
+  "document_extracted",
+  "sap_import",
+  "real_source",
+  "operator_configured",
+  "derived",
+  "legacy_unknown",
+]);
+export type Provenance = typeof Provenance.Type;
+
+export const OperatorUpdate = Schema.Struct({
+  legal_name: Schema.String,
+  identifier_type: Schema.Literals(["eori"]),
+  identifier_value: Schema.String,
+  address_line: Schema.String,
+  postal_code: Schema.String,
+  city: Schema.String,
+  country: Schema.String,
+  email: Schema.String,
+  phone: Schema.String,
+  activity_type: Schema.Literals(["IMPORT", "EXPORT", "DOMESTIC"]),
+  country_of_activity: Schema.String,
+  border_cross_country: Schema.String,
+});
+export type OperatorUpdate = typeof OperatorUpdate.Type;
+export const OperatorRecord = Schema.Struct({
+  ...OperatorUpdate.fields,
+  operator_id: Schema.String,
+  synthetic: Schema.Boolean,
+  provenance: Provenance,
+  disclosure: Schema.String,
+});
+export type OperatorRecord = typeof OperatorRecord.Type;
+export const OperatorSettingOut = Schema.Struct({
+  profile: OperatorRecord,
+  configured: Schema.Boolean,
+  updated_at: Schema.NullOr(Schema.DateTimeUtcFromString),
+});
+export type OperatorSettingOut = typeof OperatorSettingOut.Type;
+
 export const TraceKind = Schema.Literals([
   "run",
   "agent",
+  "retask",
   "tool",
   "verifier",
   "writer",
@@ -83,6 +136,7 @@ export const Finding = Schema.Struct({
 export type Finding = typeof Finding.Type;
 
 export const Assessment = Schema.Struct({
+  assessment_date: Schema.optional(Schema.NullOr(Schema.String)),
   record_id: Schema.NullOr(Schema.String),
   supplier_id: Schema.String,
   polygon_id: Schema.String,
@@ -177,6 +231,8 @@ const runSummaryFields = {
   polygon_id: Schema.NullOr(Schema.String),
   parent_run_id: Schema.NullOr(Schema.String),
   model: Schema.String,
+  assessment_date: Schema.optional(Schema.NullOr(Schema.String)),
+  operator_profile: Schema.optional(Schema.NullOr(OperatorRecord)),
   summary: Schema.String,
   error: Schema.NullOr(Schema.String),
   verdict: Schema.NullOr(Verdict),
@@ -198,7 +254,7 @@ export const VerdictOut = Schema.Struct({
   supplier_id: Schema.String,
   polygon_id: Schema.String,
   run_state: RunState,
-  expected_archetype: Schema.String,
+  expected_archetype: Schema.NullOr(Schema.String),
   expected_signal: Schema.NullOr(Schema.String),
   expected_ambiguity: Schema.NullOr(Schema.String),
   fingerprint: Schema.String,
@@ -220,10 +276,16 @@ export const RunDetail = Schema.Struct({
 });
 export type RunDetail = typeof RunDetail.Type;
 
+export const BatchMode = Schema.Literals(["screening", "agent"]);
+export type BatchMode = typeof BatchMode.Type;
+
 export const BatchSummary = Schema.Struct({
   run_id: Schema.String,
   state: RunState,
+  mode: BatchMode,
+  model: Schema.NullOr(Schema.String),
   record_count: Schema.Int,
+  unlabelled_count: Schema.Int,
   states: Schema.Record(Schema.String, Schema.Int),
   verdict_breakdown: Schema.Record(Schema.String, Schema.Int),
   expected_breakdown: Schema.Record(Schema.String, Schema.Int),
@@ -247,6 +309,8 @@ export const BatchSummary = Schema.Struct({
 export type BatchSummary = typeof BatchSummary.Type;
 
 export const ParcelOut = Schema.Struct({
+  country: Schema.optional(Schema.NullOr(Schema.String)),
+  provenance: Schema.optional(Provenance),
   polygon_id: Schema.String,
   supplier_id: Schema.String,
   label: Schema.String,
@@ -256,7 +320,7 @@ export const ParcelOut = Schema.Struct({
   centroid_lat: Schema.Number,
   centroid_lon: Schema.Number,
   geometry: Schema.Record(Schema.String, Schema.Unknown),
-  archetype: Schema.String,
+  archetype: Schema.NullOr(Schema.String),
   scenario: Schema.NullOr(Schema.String),
   is_demo: Schema.Boolean,
 });
@@ -272,6 +336,8 @@ const supplierFields = {
   hgu_number: Schema.NullOr(Schema.String),
   pbp_number: Schema.NullOr(Schema.String),
   permit_status: Schema.String,
+  permit_expiry: Schema.optional(Schema.NullOr(Schema.String)),
+  declared_holder: Schema.optional(Schema.NullOr(Schema.String)),
   concession_area_ha: Schema.Number,
   province: Schema.String,
   kabupaten: Schema.String,
@@ -279,6 +345,7 @@ const supplierFields = {
   certifications: Schema.Array(Schema.String),
   sanctions: Schema.Array(Schema.String),
   synthetic: Schema.Boolean,
+  provenance: Schema.String,
   disclosure: Schema.String,
 } as const;
 
@@ -293,6 +360,7 @@ export const SupplierDetail = Schema.Struct({
 export type SupplierDetail = typeof SupplierDetail.Type;
 
 export const EvidenceEntry = Schema.Struct({
+  provenance: Schema.optional(Provenance),
   schema_version: Schema.Int,
   evidence_id: Schema.String,
   claim: Schema.String,
@@ -332,6 +400,9 @@ export type DecisionRequest = typeof DecisionRequest.Type;
 export const BatchCreateRequest = Schema.Struct({
   size: Schema.optional(Schema.Int),
   refresh: Schema.optional(Schema.Boolean),
+  record_ids: Schema.optional(Schema.Array(Schema.String)),
+  mode: Schema.optional(BatchMode),
+  model: Schema.optional(ModelMode),
 });
 export type BatchCreateRequest = typeof BatchCreateRequest.Type;
 
@@ -376,3 +447,150 @@ export const RunEvent = Schema.Union([
   Schema.Struct({ event: Schema.Literal("progress"), data: ProgressData }),
 ]);
 export type RunEvent = typeof RunEvent.Type;
+
+// -- intake (submitted plots) --------------------------------------------------
+
+export const Commodity = Schema.Literals([
+  "oil_palm",
+  "wood",
+  "rubber",
+  "cocoa",
+  "coffee",
+]);
+export type Commodity = typeof Commodity.Type;
+
+export const PermitType = Schema.Literals(["hgu", "pbph", "none"]);
+export type PermitType = typeof PermitType.Type;
+
+export const PermitStatus = Schema.Literals([
+  "active",
+  "expired",
+  "suspended",
+  "none",
+]);
+export type PermitStatus = typeof PermitStatus.Type;
+
+const GeoJsonObject = Schema.Record(Schema.String, Schema.Unknown);
+
+export const RecordSubmission = Schema.Struct({
+  plot: Schema.Struct({
+    geometry: GeoJsonObject,
+    country: Schema.String,
+    label: Schema.String,
+    province: Schema.optional(Schema.String),
+    kabupaten: Schema.optional(Schema.String),
+    declared_area_ha: Schema.optional(Schema.NullOr(Schema.Number)),
+  }),
+  supplier: Schema.Struct({
+    legal_name: Schema.String,
+    trading_name: Schema.optional(Schema.String),
+    group: Schema.optional(Schema.String),
+    nib: Schema.optional(Schema.String),
+    npwp: Schema.optional(Schema.String),
+    beneficial_owners: Schema.optional(Schema.Array(Schema.String)),
+    certifications: Schema.optional(Schema.Array(Schema.String)),
+  }),
+  legality: Schema.optional(
+    Schema.Struct({
+      permit_expiry: Schema.optional(Schema.NullOr(Schema.String)),
+      declared_holder: Schema.optional(Schema.String),
+      permit_type: Schema.optional(PermitType),
+      permit_number: Schema.optional(Schema.String),
+      permit_status: Schema.optional(PermitStatus),
+      concession_area_ha: Schema.optional(Schema.NullOr(Schema.Number)),
+      sanctions: Schema.optional(Schema.Array(Schema.String)),
+    }),
+  ),
+  consignment: Schema.Struct({
+    commodity: Commodity,
+    description: Schema.String,
+    hs_heading: Schema.optional(Schema.String),
+    species_scientific: Schema.optional(Schema.String),
+    species_common: Schema.optional(Schema.String),
+    net_weight_kg: Schema.Number,
+    harvest_year: Schema.Int,
+  }),
+});
+export type RecordSubmission = typeof RecordSubmission.Type;
+
+export const GeometryCheckRequest = Schema.Struct({
+  geometry: GeoJsonObject,
+  declared_area_ha: Schema.optional(Schema.NullOr(Schema.Number)),
+});
+export type GeometryCheckRequest = typeof GeometryCheckRequest.Type;
+
+export const GeometryReport = Schema.Struct({
+  geometry: GeoJsonObject,
+  query_geometry: GeoJsonObject,
+  geometry_type: Schema.String,
+  area_ha: Schema.Number,
+  centroid_lat: Schema.Number,
+  centroid_lon: Schema.Number,
+  vertex_count: Schema.Int,
+});
+export type GeometryReport = typeof GeometryReport.Type;
+
+export const LatestRunOut = Schema.Struct({
+  run_id: Schema.String,
+  state: RunState,
+  verdict: Schema.NullOr(Verdict),
+  score: Schema.NullOr(Schema.Int),
+  model: Schema.String,
+  created_at: Schema.DateTimeUtcFromString,
+});
+export type LatestRunOut = typeof LatestRunOut.Type;
+
+export const RecordOut = Schema.Struct({
+  country: Schema.optional(Schema.NullOr(Schema.String)),
+  geometry_provenance: Schema.optional(Provenance),
+  record_id: Schema.String,
+  supplier_id: Schema.String,
+  polygon_id: Schema.String,
+  source: Schema.String,
+  created_at: Schema.DateTimeUtcFromString,
+  label: Schema.String,
+  region: Schema.String,
+  area_ha: Schema.Number,
+  centroid_lat: Schema.Number,
+  centroid_lon: Schema.Number,
+  geometry_type: Schema.String,
+  geometry: GeoJsonObject,
+  legal_name: Schema.String,
+  commodity: Schema.String,
+  description: Schema.String,
+  hs_heading: Schema.String,
+  net_weight_kg: Schema.Number,
+  permit_status: Schema.String,
+  permit_expiry: Schema.optional(Schema.NullOr(Schema.String)),
+  declared_holder: Schema.optional(Schema.NullOr(Schema.String)),
+  hgu_number: Schema.NullOr(Schema.String),
+  pbp_number: Schema.NullOr(Schema.String),
+  provenance: Schema.String,
+  disclosure: Schema.String,
+  latest_run: Schema.NullOr(LatestRunOut),
+});
+export type RecordOut = typeof RecordOut.Type;
+
+export const ImportResult = Schema.Struct({
+  created: Schema.Array(RecordOut),
+  errors: Schema.Array(
+    Schema.Struct({
+      row: Schema.Int,
+      field: Schema.String,
+      message: Schema.String,
+    }),
+  ),
+  total_rows: Schema.Int,
+});
+export type ImportResult = typeof ImportResult.Type;
+
+/** FastAPI's 422 body; intake errors reuse the same shape. */
+export const ValidationErrorBody = Schema.Struct({
+  detail: Schema.Array(
+    Schema.Struct({
+      loc: Schema.Array(Schema.Union([Schema.String, Schema.Number])),
+      msg: Schema.String,
+    }),
+  ),
+});
+export type ValidationErrorBody = typeof ValidationErrorBody.Type;

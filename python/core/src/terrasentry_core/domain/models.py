@@ -8,13 +8,16 @@ same structured outputs in both paths (architecture cross-cutting rule 5).
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 from terrasentry_integrations.sources.firms import FirmsHotspotResult
 from terrasentry_integrations.sources.gfw import TreeCoverLossResult
+from terrasentry_integrations.sources.gfw_layers import ContextLayersResult
 
 from terrasentry_core.domain.enums import FindingCode, FindingLevel, RiskLevel, Verdict
+from terrasentry_core.seed.schemas import Provenance
 
 PermitStatus = Literal["active", "expired", "suspended", "none"]
 
@@ -23,6 +26,8 @@ class Parcel(BaseModel):
     """A plot of land under assessment."""
 
     polygon_id: str
+    country: str | None = None
+    provenance: Provenance = "synthetic"
     label: str
     region: str
     province: str
@@ -30,12 +35,15 @@ class Parcel(BaseModel):
     centroid_lat: float
     centroid_lon: float
     geometry: dict[str, Any]
+    input_geometry: dict[str, Any] | None = None
 
 
 class SupplierProfile(BaseModel):
     """Synthetic legality/entity profile of the supplier operating the parcel."""
 
     supplier_id: str
+    permit_expiry: date | None = None
+    declared_holder: str | None = None
     legal_name: str
     trading_name: str
     group: str
@@ -51,6 +59,7 @@ class SupplierProfile(BaseModel):
     certifications: list[str] = Field(default_factory=list)
     sanctions: list[str] = Field(default_factory=list)
     synthetic: bool = True
+    provenance: Provenance = "synthetic"
     disclosure: str = ""
 
 
@@ -69,6 +78,7 @@ class Consignment(BaseModel):
     production_place: str
     harvest_year: int
     synthetic: bool = True
+    provenance: Provenance = "synthetic"
     disclosure: str = ""
 
 
@@ -76,6 +86,7 @@ class OperatorProfile(BaseModel):
     """The EU operator on whose behalf the DDS is prepared (synthetic)."""
 
     operator_id: str
+    provenance: Provenance = "synthetic"
     legal_name: str
     identifier_type: str = "eori"
     identifier_value: str
@@ -96,10 +107,12 @@ class AssessmentInput(BaseModel):
     """Everything the rubric needs for one record, with no clock or network access."""
 
     record_id: str | None = None
+    assessment_date: date | None = None
     parcel: Parcel
     supplier: SupplierProfile
     loss: TreeCoverLossResult | None = None
     hotspots: FirmsHotspotResult | None = None
+    layers: ContextLayersResult | None = None
     consignment: Consignment | None = None
     operator: OperatorProfile | None = None
     source_errors: list[str] = Field(default_factory=list)
@@ -121,6 +134,7 @@ class Assessment(BaseModel):
     """Reproducible outcome of the rubric for one supplier/parcel."""
 
     record_id: str | None = None
+    assessment_date: date | None = None
     supplier_id: str
     polygon_id: str
     rubric_version: str

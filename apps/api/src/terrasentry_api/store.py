@@ -8,7 +8,8 @@ upserts, step appends, result persistence).
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from collections.abc import Sequence
+from datetime import UTC, date, datetime
 from typing import Any, cast
 
 from sqlalchemy import Nullable, func, select
@@ -26,6 +27,7 @@ from terrasentry_core.seed.schemas import (
     Archetype,
     BatchRecord,
     ExpectedSignal,
+    OperatorRecord,
 )
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.trace import TraceKind, TraceStep, utc_now
@@ -38,11 +40,13 @@ from terrasentry_api.models import (
     Evidence as EvidenceRow,
 )
 from terrasentry_api.models import (
+    OperatorSetting,
     Parcel,
     Run,
     RunStep,
     RunVerdict,
     SapAction,
+    SubmittedRecord,
     Supplier,
 )
 
@@ -81,31 +85,103 @@ class RunStore:
         supplier_ids = set((await self._session.scalars(select(Supplier.supplier_id))).all())
         parcel_ids = set((await self._session.scalars(select(Parcel.polygon_id))).all())
         for record in datasets.records:
-            legality = record.legality
-            if legality.supplier_id not in supplier_ids:
-                self._session.add(Supplier(**legality.model_dump()))
-                supplier_ids.add(legality.supplier_id)
-            polygon = record.polygon
-            if polygon.id not in parcel_ids:
-                self._session.add(
-                    Parcel(
-                        polygon_id=polygon.id,
-                        supplier_id=record.supplier_id,
-                        label=polygon.label,
-                        region=polygon.region,
-                        province=polygon.province,
-                        area_ha=polygon.area_ha,
-                        centroid_lat=polygon.centroid_lat,
-                        centroid_lon=polygon.centroid_lon,
-                        geometry=polygon.geometry,
-                        archetype=polygon.archetype,
-                        scenario=polygon.scenario,
-                        is_demo=polygon.is_demo,
-                    )
-                )
-                parcel_ids.add(polygon.id)
+            self._add_record_rows(record, supplier_ids=supplier_ids, parcel_ids=parcel_ids)
         await self._session.flush()
         return len(parcel_ids)
+
+    def _add_record_rows(self, record: BatchRecord, *, supplier_ids: set[str], parcel_ids: set[str]) -> None:
+        legality = record.legality
+        if legality.supplier_id not in supplier_ids:
+            self._session.add(Supplier(**legality.model_dump()))
+            supplier_ids.add(legality.supplier_id)
+        polygon = record.polygon
+        if polygon.id not in parcel_ids:
+            self._session.add(
+                Parcel(
+                    country=polygon.country,
+                    provenance=polygon.provenance,
+                    polygon_id=polygon.id,
+                    supplier_id=record.supplier_id,
+                    label=polygon.label,
+                    region=polygon.region,
+                    province=polygon.province,
+                    area_ha=polygon.area_ha,
+                    centroid_lat=polygon.centroid_lat,
+                    centroid_lon=polygon.centroid_lon,
+                    geometry=polygon.geometry,
+                    archetype=polygon.archetype,
+                    scenario=polygon.scenario,
+                    is_demo=polygon.is_demo,
+                )
+            )
+            parcel_ids.add(polygon.id)
+
+    # -- submitted records ------------------------------------------------------
+
+    async def create_submitted_record(
+        self, record: BatchRecord, *, geometry: dict[str, Any], source: str = "submitted"
+    ) -> SubmittedRecord:
+        """Persist a submitted record plus its supplier and parcel rows."""
+        self._add_record_rows(record, supplier_ids=set(), parcel_ids=set())
+        # Suppliers/parcels must exist before the FK'd record row.
+        await self._session.flush()
+        row = SubmittedRecord(
+            record_id=record.record_id,
+            supplier_id=record.supplier_id,
+            polygon_id=record.polygon.id,
+            source=source,
+            payload=record.model_dump(mode="json"),
+            geometry=geometry,
+        )
+        self._session.add(row)
+        await self._session.flush()
+        return row
+
+    async def list_submitted_records(
+        self, *, limit: int | None = None, offset: int = 0, source: str | None = None
+    ) -> list[SubmittedRecord]:
+        statement = select(SubmittedRecord)
+        if source is not None:
+            statement = statement.where(SubmittedRecord.source == source)
+        statement = statement.order_by(SubmittedRecord.created_at.desc(), SubmittedRecord.record_id.desc())
+        if limit is not None:
+            statement = statement.limit(limit).offset(offset)
+        return list(await self._session.scalars(statement))
+
+    async def get_submitted_record(self, record_id: str) -> SubmittedRecord | None:
+        return await self._session.get(SubmittedRecord, record_id)
+
+    async def latest_run_for_record(self, record_id: str) -> Run | None:
+        return await self._session.scalar(
+            select(Run)
+            .where(Run.record_id == record_id, Run.kind == "scenario")
+            .order_by(Run.created_at.desc())
+            .limit(1)
+        )
+
+    async def operator_setting(self) -> OperatorSetting | None:
+        return await self._session.get(OperatorSetting, 1)
+
+    async def operator_profile(self, fallback: OperatorRecord) -> OperatorRecord:
+        row = await self.operator_setting()
+        return OperatorRecord.model_validate(row.profile) if row else fallback.model_copy(deep=True)
+
+    async def save_operator(self, profile: OperatorRecord) -> datetime:
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+        insert = pg_insert if self._session.get_bind().dialect.name == "postgresql" else sqlite_insert
+        timestamp = utc_now()
+        statement = insert(OperatorSetting).values(
+            id=1, profile=profile.model_dump(mode="json"), updated_at=timestamp
+        )
+        await self._session.execute(
+            statement.on_conflict_do_update(
+                index_elements=["id"],
+                set_={"profile": statement.excluded.profile, "updated_at": statement.excluded.updated_at},
+            )
+        )
+        return timestamp
 
     # -- suppliers ------------------------------------------------------------
 
@@ -133,11 +209,15 @@ class RunStore:
         record: BatchRecord | None = None,
         parent_run_id: str | None = None,
         state: RunState = RunState.QUEUED,
+        assessment_date: date | None = None,
+        operator: OperatorRecord | None = None,
         metrics: dict[str, Any] | None = None,
     ) -> Run:
         row = Run(
             id=run_id,
             kind=kind,
+            assessment_date=assessment_date,
+            operator_profile=operator.model_dump(mode="json") if operator else None,
             parent_run_id=parent_run_id,
             record_id=record.record_id if record is not None else None,
             supplier_id=record.supplier_id if record is not None else None,
@@ -200,6 +280,23 @@ class RunStore:
         await self._session.flush()
         return run
 
+    async def merge_metrics(self, run_id: str, metrics: dict[str, Any]) -> None:
+        run = await self.get_run(run_id)
+        if run is not None:
+            run.metrics = {**(run.metrics or {}), **metrics}
+            await self._session.flush()
+
+    async def batch_usage(self, parent_run_id: str) -> dict[str, int] | None:
+        """Sum graph-level token usage over child runs; None when no child reported any."""
+        rows = await self._session.execute(select(Run.metrics).where(Run.parent_run_id == parent_run_id))
+        total: dict[str, int] = {}
+        for (metrics,) in rows.all():
+            usage = (metrics or {}).get("usage")
+            if isinstance(usage, dict):
+                for key, value in usage.items():
+                    total[key] = total.get(key, 0) + int(value)
+        return total or None
+
     # -- steps ----------------------------------------------------------------
 
     async def append_step(self, run_id: str, step: TraceStep, seq: int) -> bool:
@@ -236,6 +333,22 @@ class RunStore:
         )
         return int(count or 0)
 
+    async def step_counts(self, run_ids: Sequence[str]) -> dict[str, int]:
+        """Step counts for many runs in one grouped query."""
+        if not run_ids:
+            return {}
+        rows = await self._session.execute(
+            select(RunStep.run_id, func.count()).where(RunStep.run_id.in_(run_ids)).group_by(RunStep.run_id)
+        )
+        return {run_id: int(count) for run_id, count in rows.all()}
+
+    async def verdicts_for(self, run_ids: Sequence[str]) -> dict[str, RunVerdict]:
+        """Verdict rows for many runs in one query (one verdict per run)."""
+        if not run_ids:
+            return {}
+        rows = await self._session.scalars(select(RunVerdict).where(RunVerdict.run_id.in_(run_ids)))
+        return {row.run_id: row for row in rows}
+
     # -- verdict / evidence / dds ---------------------------------------------
 
     async def persist_result(self, result: AgentRunResult) -> None:
@@ -251,8 +364,8 @@ class RunStore:
         run.elapsed_seconds = _elapsed_seconds(result.started_at, result.finished_at)
         if result.verification is not None:
             run.verification = result.verification.model_dump(mode="json")
-        if result.state is RunState.FAILED and result.summary:
-            run.error = result.summary
+        if result.state is RunState.FAILED and (result.error or result.summary):
+            run.error = result.error or result.summary
 
         assessment = result.assessment or result.pending_assessment
         if assessment is not None:
@@ -272,6 +385,7 @@ class RunStore:
     ) -> RunVerdict:
         row = await self._session.scalar(select(RunVerdict).where(RunVerdict.run_id == run_id))
         values: dict[str, Any] = {
+            "assessment_date": assessment.assessment_date,
             "record_id": assessment.record_id,
             "supplier_id": assessment.supplier_id,
             "polygon_id": assessment.polygon_id,
@@ -334,6 +448,7 @@ class RunStore:
                     retrieved_at=entry.retrieved_at,
                     cached=entry.cached,
                     synthetic=entry.synthetic,
+                    provenance=entry.provenance,
                     disclosure=entry.disclosure,
                 )
             )
@@ -515,6 +630,7 @@ class RunStore:
 
     async def _record_assessment(self, verdict: RunVerdict, dds: DdsRow | None) -> RecordAssessment:
         assessment = Assessment(
+            assessment_date=verdict.assessment_date,
             record_id=verdict.record_id,
             supplier_id=verdict.supplier_id,
             polygon_id=verdict.polygon_id,
@@ -540,6 +656,7 @@ class RunStore:
                     "retrieved_at": _as_utc(row.retrieved_at),
                     "cached": row.cached,
                     "synthetic": row.synthetic,
+                    "provenance": row.provenance,
                     "disclosure": row.disclosure,
                 }
             )
@@ -549,6 +666,7 @@ class RunStore:
         if payload is None:
             raise ValueError(f"run {verdict.run_id!r} has a verdict but no persisted DDS")
         return RecordAssessment(
+            assessment_date=verdict.assessment_date,
             record_id=verdict.record_id,
             supplier_id=verdict.supplier_id,
             polygon_id=verdict.polygon_id,
@@ -590,6 +708,47 @@ class RunStore:
             select(func.avg(Run.elapsed_seconds)).where(Run.parent_run_id == parent_run_id)
         )
         return round(float(average), 3) if average is not None else 0.0
+
+    async def batch_aggregates(
+        self, parent_run_ids: Sequence[str]
+    ) -> dict[str, tuple[dict[str, int], dict[str, int], float]]:
+        """(state counts, verdict breakdown, average seconds) per batch in three grouped queries."""
+        result = {
+            parent: (
+                {state.value: 0 for state in RunState},
+                {"compliant": 0, "high_risk": 0, "ambiguous": 0},
+                0.0,
+            )
+            for parent in parent_run_ids
+        }
+        if not result:
+            return result
+        parents = list(result)
+        states = await self._session.execute(
+            select(Run.parent_run_id, Run.state, func.count())
+            .where(Run.parent_run_id.in_(parents))
+            .group_by(Run.parent_run_id, Run.state)
+        )
+        for parent, state, count in states.all():
+            result[str(parent)][0][str(state)] = int(count)
+        verdicts = await self._session.execute(
+            select(Run.parent_run_id, RunVerdict.verdict, func.count())
+            .join(Run, Run.id == RunVerdict.run_id)
+            .where(Run.parent_run_id.in_(parents))
+            .group_by(Run.parent_run_id, RunVerdict.verdict)
+        )
+        for parent, verdict, count in verdicts.all():
+            result[str(parent)][1][str(verdict)] = int(count)
+        averages = await self._session.execute(
+            select(Run.parent_run_id, func.avg(Run.elapsed_seconds))
+            .where(Run.parent_run_id.in_(parents))
+            .group_by(Run.parent_run_id)
+        )
+        for parent, average in averages.all():
+            if average is not None:
+                counts, breakdown, _ = result[str(parent)]
+                result[str(parent)] = (counts, breakdown, round(float(average), 3))
+        return result
 
     async def batch_record_durations(self, parent_run_id: str) -> list[float]:
         """Per-record durations, ascending, for percentile/throughput metrics."""

@@ -56,8 +56,9 @@ uv run python -m terrasentry_api.rehearsal run --offline --fixtures-dir data/fix
 
 Check the printed report for:
 
-- `state=complete` and `breakdown {compliant: 30, high_risk: 12, ambiguous: 8}`;
-- `confusion` diagonal = 30/12/8 (no expected archetype maps to a different verdict);
+- `state=complete`; record the measured verdict breakdown (30/12/8 is the injected design,
+  not a promised distribution for live context layers);
+- `confusion` records live drift from seed expectations; submitted records are unlabelled;
 - `cache offline_misses=0` and `hits` equal to the number of prefetched source calls;
 - wall clock within the demo window. If it is not, the batch is still demo-safe: trigger the
   offline run before the slot and show the persisted results (PRD section 9 fallback).
@@ -83,5 +84,40 @@ source, which surfaces a stale fixture set immediately.
 
 The full-50 path is test-verified offline: `apps/api/tests/test_batch_full.py` injects the design
 signals and asserts the 30/12/8 breakdown, per-record persistence, and an offline fixture replay
-with zero external calls. Live numbers in `docs/kpi.md` stay marked as pending the §3 Day-1 keys
-until this runbook has been executed once with real credentials.
+with zero external calls. The real-source prefetch and offline replay now have measured
+numbers in `docs/kpi.md`; live Bedrock agent-batch timing remains a separate S3 gate.
+
+## S2 fixture refresh
+
+S2 fetches seven context layers in addition to loss/FIRMS for ID plots. Refresh all fixtures
+with the current code and the same `--as-of` date before replaying; S1 fixtures are insufficient.
+The repair version uses `geometry-v2` exact query identity and `clip-2` strict raster values.
+Re-prefetch rather than reusing fixtures created under the old rounded identity/revision.
+A configured operator is read at run acceptance and snapshotted on each child. Changes in
+`/settings` affect subsequent runs, including offline runs, without changing pending reviews.
+Production country is required for submitted records/import rows; use
+[`data/templates/portfolio.csv`](../../data/templates/portfolio.csv) as the CSV header example.
+Legacy submissions without country require resubmission. Run `pnpm db:upgrade` first.
+
+Unsupported unsplit dateline polygons and dateline/polar point buffers require supported
+split polygons. Annual loss beyond the verified release is an explicit data gap; the current
+release ends in 2025. A clean 2027 assessment cannot treat missing 2026 coverage as compliant.
+The measured live-source prefetch and PostgreSQL replay are recorded in `docs/kpi.md`;
+live Bedrock agent-batch throughput remains a separate S3 verification gate.
+
+## S3 agent-mode batches
+
+`run` takes `--mode screening|agent` (default `screening`) and, for agent mode,
+`--model scripted|bedrock` (default `AGENT_MODEL`). Agent mode runs the full graph per record
+under `BATCH_AGENT_CONCURRENCY` (default 4, separate from `BATCH_CONCURRENCY`) and the report
+records mode, model, concurrency actually used, per-record timings and graph-level token usage.
+
+```bash
+uv run python -m terrasentry_api.rehearsal run --size 10 --mode agent --model bedrock \
+  --as-of 2026-09-11 --report data/runs/agent-batch.json
+```
+
+**Cost note:** every agent record is several model calls (three specialists, re-tasks on
+signals, then the verifier). Record a bounded 10-record Bedrock batch first; only run 50
+records on Bedrock after confirming the cost. Scripted agent batches make no model calls and
+measure plumbing only.

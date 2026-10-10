@@ -1,6 +1,7 @@
 import re
 from typing import Any
 
+import agent_helpers
 import httpx
 import pytest
 import respx
@@ -24,6 +25,7 @@ POLYGON: dict[str, Any] = {
 }
 
 SEED_POLYGON = SeedPolygon(
+    country="ID",
     id="PLY-TEST",
     label="Test polygon",
     region="Test region",
@@ -55,12 +57,13 @@ def _settings() -> IntegrationSettings:
 async def test_reference_pipeline_live_then_offline_cache() -> None:
     cache = MemoryCache()
     with respx.mock(assert_all_called=False) as mock:
+        agent_helpers.mock_context_layers(mock)
         gfw_route = mock.post(GFW_URL).mock(
             return_value=httpx.Response(
                 200,
                 json={
                     "status": "success",
-                    "data": [{"umd_tree_cover_loss__year": 2020, "loss_ha": 3.0}],
+                    "data": [{"umd_tree_cover_loss__year": 2021, "loss_ha": 3.0}],
                 },
             )
         )

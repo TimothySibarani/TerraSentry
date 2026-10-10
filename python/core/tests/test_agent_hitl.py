@@ -43,6 +43,7 @@ def _ambiguous_datasets(factories: dict[str, Any]) -> tuple[SeedDatasets, Any]:
 async def _run_ambiguous(factories: dict[str, Any], source_clients: Any):
     data, record = _ambiguous_datasets(factories)
     with respx.mock(assert_all_called=False) as router:
+        agent_helpers.mock_context_layers(router)
         router.post(agent_helpers.GFW_URL).mock(
             return_value=httpx.Response(200, json={"status": "success", "data": []})
         )

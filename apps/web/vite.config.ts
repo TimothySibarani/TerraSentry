@@ -13,7 +13,7 @@ const config = defineConfig({
     devtools(),
     nitro({ rollupConfig: { external: [/^@sentry\//] } }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({ router: { routeTreeFileFooter: [] } }),
     viteReact(),
   ],
 })

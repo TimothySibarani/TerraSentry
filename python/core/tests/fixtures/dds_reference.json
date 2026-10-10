@@ -54,9 +54,10 @@
   },
   "assessment": {
     "recordId": "REC-GOLDEN",
+    "assessmentDate": null,
     "supplierId": "SUP-TEST",
     "polygonId": "PLY-GOLDEN",
-    "rubricVersion": "1.0.0",
+    "rubricVersion": "1.1.0",
     "score": 70,
     "verdict": "ambiguous",
     "riskLevel": "non_negligible",
@@ -67,10 +68,13 @@
         "points": 0,
         "detail": "permit status 'active', HGU/PBPH present, no sanctions",
         "evidenceIds": [
-          "EV-legality_dataset-5c44b246ebba",
-          "EV-legality_dataset-b1eef7c62862",
-          "EV-legality_dataset-e50b4ce7f970",
-          "EV-deterministic_rubric-445303d70b2b"
+          "EV-legality_dataset-150e57bb6ecd",
+          "EV-legality_dataset-e3ce2bc848a1",
+          "EV-deterministic_rubric-d3c9530f9eec",
+          "EV-concession_dataset-3865f86814a5",
+          "EV-legality_dataset-a0703af56b73",
+          "EV-legality_dataset-c25ddb18a7a0",
+          "EV-deterministic_rubric-23d680ccd9a5"
         ]
       },
       {
@@ -79,9 +83,9 @@
         "points": 50,
         "detail": "post-2021 tree cover loss 12.00 ha (2.40% of plot) in 2021-2025",
         "evidenceIds": [
-          "EV-global_forest_watch-41cfe8ef234d",
-          "EV-global_forest_watch-d83e2a23701f",
-          "EV-deterministic_rubric-4349f4915c80"
+          "EV-global_forest_watch-d5169e15dbea",
+          "EV-global_forest_watch-e8d292130e43",
+          "EV-deterministic_rubric-5e53c9a5195a"
         ]
       },
       {
@@ -90,10 +94,50 @@
         "points": 30,
         "detail": "2 fire detection(s), 30.0 MW FRP, window 2026-09-01..2026-09-01; last detection 0d before window end",
         "evidenceIds": [
-          "EV-nasa_firms-c16d5220cdff",
-          "EV-nasa_firms-c56af4db5fcc",
-          "EV-nasa_firms-8cc81ded1901",
-          "EV-deterministic_rubric-0dfd2ba1b78c"
+          "EV-nasa_firms-6023941c8826",
+          "EV-nasa_firms-134efe66ab80",
+          "EV-nasa_firms-bfc7edc2e85a",
+          "EV-deterministic_rubric-fe26e68e8fa4"
+        ]
+      },
+      {
+        "code": "protected_area",
+        "level": "clear",
+        "points": 0,
+        "detail": "protected_areas: 0.0000 ha overlap (wdpa_protected_areas/v202512); context signal; legality is not registry-verified",
+        "evidenceIds": [
+          "EV-global_forest_watch-5d357064cc47",
+          "EV-deterministic_rubric-1f05536a29fb"
+        ]
+      },
+      {
+        "code": "moratorium",
+        "level": "clear",
+        "points": 0,
+        "detail": "moratorium: 0.0000 ha overlap (idn_forest_moratorium/v20200923); context signal; legality is not registry-verified",
+        "evidenceIds": [
+          "EV-global_forest_watch-0a01b5d54d67",
+          "EV-deterministic_rubric-830c88890c04"
+        ]
+      },
+      {
+        "code": "peatland",
+        "level": "clear",
+        "points": 0,
+        "detail": "peatlands: 0.0000 ha overlap (gfw_peatlands/v20230315); context signal; legality is not registry-verified",
+        "evidenceIds": [
+          "EV-global_forest_watch-2c43ee9d29e6",
+          "EV-deterministic_rubric-8a4a105954b6"
+        ]
+      },
+      {
+        "code": "forest_baseline",
+        "level": "clear",
+        "points": 0,
+        "detail": "forest_baseline: 0.0000 ha overlap (jrc_global_forest_cover/v2020.3); baseline context only; tree cover loss is assessed separately",
+        "evidenceIds": [
+          "EV-global_forest_watch-78ea1c274593",
+          "EV-deterministic_rubric-e1eae26abe23"
         ]
       },
       {
@@ -102,9 +146,9 @@
         "points": 0,
         "detail": "concession 9000.0 ha covers plot 500.00 ha",
         "evidenceIds": [
-          "EV-legality_dataset-1a9ece9a9d27",
-          "EV-concession_dataset-abeff1c8f795",
-          "EV-deterministic_rubric-0fbd5ce6152d"
+          "EV-legality_dataset-23fc71cc6499",
+          "EV-concession_dataset-8a570cddd865",
+          "EV-deterministic_rubric-7273f20496a0"
         ]
       },
       {
@@ -113,8 +157,8 @@
         "points": -10,
         "detail": "certifications on file: ISPO",
         "evidenceIds": [
-          "EV-legality_dataset-ac26c793730f",
-          "EV-deterministic_rubric-e7afcd9daa08"
+          "EV-legality_dataset-3c7ce79470b9",
+          "EV-deterministic_rubric-3b71baafe2a5"
         ]
       }
     ],
@@ -122,67 +166,69 @@
   },
   "citations": {
     "statement.internalReferenceNumber": [
-      "EV-legality_dataset-517f5a1aa059"
+      "EV-legality_dataset-0d600bef0b79"
     ],
     "statement.activityType": [
-      "EV-operator_dataset-87a3ed1f165b"
+      "EV-operator_dataset-13bdd17a177a"
     ],
     "statement.countryOfActivity": [
-      "EV-operator_dataset-87a3ed1f165b"
+      "EV-operator_dataset-13bdd17a177a"
     ],
     "statement.borderCrossCountry": [
-      "EV-operator_dataset-87a3ed1f165b"
+      "EV-operator_dataset-13bdd17a177a"
     ],
     "statement.representedOperator.operatorName": [
-      "EV-operator_dataset-10b227d7cb95"
+      "EV-operator_dataset-c9c9a630a65c"
     ],
     "statement.representedOperator.operatorReferenceNumber": [
-      "EV-operator_dataset-60b2e69816c1"
+      "EV-operator_dataset-f429efdbab24"
     ],
     "statement.representedOperator.operatorAddress": [
-      "EV-operator_dataset-580b060cc5c7"
+      "EV-operator_dataset-b2058e45d182"
     ],
     "statement.representedOperator.operatorContact": [
-      "EV-operator_dataset-75c45e5bb1c6"
+      "EV-operator_dataset-ebe7230ea3ff"
     ],
     "statement.commodities[0].descriptors.descriptionOfGoods": [
-      "EV-consignment_dataset-6618f2f62250"
+      "EV-consignment_dataset-4329af61e1ac"
     ],
     "statement.commodities[0].descriptors.goodsMeasure.netWeight": [
-      "EV-consignment_dataset-c19d6804ea51"
+      "EV-consignment_dataset-cddd5bb3fc1d"
     ],
     "statement.commodities[0].descriptors.goodsMeasure.supplementaryUnit": [
-      "EV-consignment_dataset-c19d6804ea51"
+      "EV-consignment_dataset-cddd5bb3fc1d"
     ],
     "statement.commodities[0].hsHeading": [
-      "EV-consignment_dataset-a767389ac13f"
+      "EV-consignment_dataset-d13bda2fcefd"
     ],
     "statement.commodities[0].speciesInfo": [
-      "EV-consignment_dataset-afa77ed2bdc6"
+      "EV-consignment_dataset-57c6af89e3b5"
     ],
     "statement.commodities[0].producers[0].name": [
-      "EV-legality_dataset-53ac8c257f36"
+      "EV-legality_dataset-5ee96b6a9f75"
     ],
     "statement.commodities[0].producers[0].country": [
-      "EV-concession_dataset-ebe7bd87f5c4"
+      "EV-concession_dataset-3865f86814a5"
     ],
     "statement.commodities[0].producers[0].productionPlace": [
-      "EV-consignment_dataset-db4511844c0b"
+      "EV-consignment_dataset-3a9a3810924c"
     ],
     "statement.commodities[0].producers[0].geometryGeojson": [
-      "EV-concession_dataset-ef1423825a65"
+      "EV-concession_dataset-0717a9e87538"
     ],
     "statement.geoLocationConfidential": [
-      "EV-deterministic_rubric-27a0e748629c"
+      "EV-deterministic_rubric-a740331e6c05"
     ],
     "assessment.score": [
-      "EV-deterministic_rubric-baa99dc360ab"
+      "EV-deterministic_rubric-5271a0e0cfb0"
     ],
     "assessment.verdict": [
-      "EV-deterministic_rubric-27a0e748629c"
+      "EV-deterministic_rubric-a740331e6c05"
     ]
   },
   "disclosures": [
+    "Declared permits and holders are not independently verified against a live permit registry.",
+    "Permit expiry is unknown; an active status does not establish current validity.",
     "SYNTHETIC TEST DATA — fixture"
   ],
   "synthetic": true
