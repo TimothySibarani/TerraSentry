@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi.testclient import TestClient
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine
 from terrasentry_api.config import Settings
 from terrasentry_api.db import create_engine_and_session
@@ -200,6 +201,21 @@ def load_seed_datasets() -> SeedDatasets:
     )
 
 
+def _tolerate_concurrent_writers(engine: AsyncEngine) -> None:
+    """Batches write from many tasks at once; plain SQLite answers 'database is locked'.
+
+    WAL lets readers proceed beside a writer and the busy timeout makes writers queue instead
+    of failing, which is what Postgres does natively.
+    """
+
+    @event.listens_for(engine.sync_engine, "connect")
+    def _configure(dbapi_connection: Any, _record: object) -> None:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=30000")
+        cursor.close()
+
+
 def test_services_factory(
     tmp_path: Path,
     datasets: SeedDatasets | None = None,
@@ -234,6 +250,7 @@ def test_services_factory(
             sap_mode="stub",
         )
         engine, session_factory = create_engine_and_session(settings.database_url)
+        _tolerate_concurrent_writers(engine)
         await _create_all(engine)
         cache_backend = cache or MemoryCache()
         gfw = GfwClient(integration, cache=cache_backend)
@@ -300,6 +317,10 @@ def wait_for_state(
         payload = response.json()
         if payload["state"] in states:
             return payload
+        if payload["state"] == "failed":
+            # Batch summaries omit the failure text; the run row carries it.
+            error = payload.get("error") or client.get(f"/runs/{run_id}").json().get("error")
+            raise AssertionError(f"run {run_id} failed; error={error!r}; payload {payload}")
         time.sleep(0.02)
     raise AssertionError(f"run {run_id} did not reach {states}; last payload {payload}")
 
