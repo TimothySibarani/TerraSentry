@@ -3,7 +3,7 @@
 **Target:** Using the official hackathon SAP BTP and SAP AI Core infrastructure  
 **Upstream repo:** [SAP-AWS-ID-Hackathon-2026/SAP_AWS_Hackathon_ID_2026](https://github.com/SAP-AWS-ID-Hackathon-2026/SAP_AWS_Hackathon_ID_2026) (the `BTP_Instructions/README.md` file is the source for everything below)  
 **Our team slug:** `startorch`  
-**Status:** Phase 2 (`--model sap`) and Phase 3 (adverse media) are implemented; Phase 4 (Joule) is a proposal.
+**Status:** Phase 2 (`--model sap`) and Phase 3 (adverse media) are implemented; Phase 4 (Joule A2A proxy) is implemented and tested locally; deploying it needs your CF and BTP logins.
 
 ---
 
@@ -145,17 +145,67 @@ Code map: `python/integrations/.../sources/media.py` (client, stub, parser), `ag
 (`build_media_client`), `tools/agent_tools.py` (`search_adverse_media`, `ToolContext.media`),
 `agents/specialists.py`, `apps/web/src/features/runs/adverse-media-card.tsx`.
 
-### Phase 4: Joule via A2A (proposal)
+### Phase 4: Joule via A2A (implemented, deploy it yourself)
 
-Expose TerraSentry as a Joule capability using `a2a-sdk[http-server]`, modelled on
-`joule_a2a/project/Python-LangGraph/solution/` upstream (`server.py`, `manifest.yml`, `joule/`).
+`apps/a2a` is a small A2A server (`a2a-sdk[http-server]==0.3.25`, no dependency on `terrasentry_core`)
+that lets Joule talk to the TerraSentry API over HTTP. It is a **thin proxy**: the API, database and
+cockpit stay where they are, and replies link back to the cockpit.
 
-- Joule's `agent-request` is **synchronous with a 60 second limit**. A live run takes longer, so
-  answer deterministic screening within the limit and start live runs with a status link.
-- Joule reaches the CF app through a **BTP Destination** (cockpit, Connectivity, Destinations; type
-  HTTP, NoAuthentication) referenced by `system_aliases` in `capability.sapdas.yaml`.
-- On Cloud Foundry, keep non-secret values in `manifest.yml` and set secrets with
-  `cf set-env <app> NAME '<value>'` (single quotes). Add `.env` to `.cfignore`.
+| Joule says | Skill | What happens |
+| :--- | :--- | :--- |
+| `screen PT Sumber Sejahtera Sriwijaya` (or `SUP-001`, `REC-001`) | screen | `POST /batch-runs {mode:"screening"}` (deterministic, no model), waits up to `A2A_REPLY_BUDGET_SECONDS`, replies with verdict, score, top findings and a cockpit link. If it is not done in time it says so and links the run. |
+| `investigate SUP-001` | investigate | `POST /runs` on `A2A_AGENT_MODEL` (default `sap`) and replies at once with the cockpit trace link. Capped at `A2A_MAX_AGENT_RUNS_PER_HOUR` because the Cloud Foundry route is public. |
+| `status run-1a2b3c4d5e6f` / `status batch-…` | status | Summarises the run or batch. |
+
+Names are matched deterministically (legal and trading names, legal forms ignored); ambiguous names
+get a "which supplier did you mean?" list. Supplier ids map to record ids by their shared suffix
+(`SUP-001` → `REC-001`, `SUP-U-ab12` → `REC-U-ab12`). Joule's `agent-request` is synchronous with a
+60 s limit, which is why nothing in the proxy waits longer than the reply budget.
+
+Code map: `apps/a2a/src/terrasentry_a2a/` (`server.py` executor and agent card, `skills.py`,
+`intent.py`, `client.py`, `settings.py`), Joule files in `apps/a2a/joule/`, Cloud Foundry files
+`manifest.yml`, `.cfignore`, `runtime.txt`, `requirements.txt` (regenerate with
+`pnpm --filter @terrasentry/a2a export-reqs` after changing dependencies).
+
+Check it locally first (the API must be running):
+
+```bash
+# the dev script runs from the repo root, so put the apps/a2a/.env.example values in the root .env
+pnpm --filter @terrasentry/a2a dev          # serves on :8080
+curl -s localhost:8080/.well-known/agent-card.json | jq '.skills[].id'
+curl -s -X POST localhost:8080/ -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":"1",
+  "method":"message/send","params":{"message":{"kind":"message","role":"user","messageId":"m1",
+  "parts":[{"kind":"text","text":"screen SUP-001"}]}}}' | jq -r '.result.artifacts[0].parts[0].text'
+```
+
+Deploy runbook (you run these; they need your logins and never print a secret):
+
+1. **Reach the API from Cloud Foundry.** The API runs on your machine, so expose it with a tunnel such
+   as `cloudflared tunnel --url http://localhost:8000`. Set `API_TOKEN` on the API first, because the
+   tunnel is public and the proxy sends it as a bearer token for the write endpoints.
+2. **Push the app.** `cf login --sso` (origin `auisywroy-platform`), then
+   `cf target -o SEAIO_aws-sap-hackathon-si4ykj9d -s hackathon-startorch`, then from `apps/a2a`:
+   `cf push`. Then set the deployment values (single quotes, nothing is stored in `manifest.yml`):
+
+   ```bash
+   cf set-env terrasentry-a2a-startorch TERRASENTRY_API_URL 'https://<tunnel host>'
+   cf set-env terrasentry-a2a-startorch TERRASENTRY_API_TOKEN '<API_TOKEN>'
+   cf set-env terrasentry-a2a-startorch COCKPIT_BASE_URL 'https://<cockpit host>'
+   cf restage terrasentry-a2a-startorch
+   ```
+
+   `curl https://<app route>/health` should answer `{"status":"ok"}`.
+3. **Create the BTP Destination** `TERRASENTRY_AGENT_STARTORCH` (BTP cockpit, Connectivity,
+   Destinations): type HTTP, URL = the app route, authentication NoAuthentication.
+4. **Deploy the Joule capability.** `joule login --no-app-tid` (never `--sso`) with the values from
+   `…/joule/startorch-key`, then from `apps/a2a/joule`: `joule deploy --compile .`, `joule list`,
+   `joule launch terrasentry_assistant`, and ask it to `screen SUP-001`.
+
+> [!NOTE]
+> The proxy trusts whatever reaches its public route, so it only exposes seed and submitted records
+> already in your API, applies the agent-run cap above, and never takes a model, URL or geometry from
+> the caller. If you want the route closed, put a Cloud Foundry route restriction or an API-key
+> destination in front of it.
 
 ---
 

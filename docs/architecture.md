@@ -359,6 +359,12 @@ reaches the cockpit as the payload of the `search_adverse_media` trace step and 
 "Context only, not scored" card on the assessment tab. Results use the response cache
 (`adverse_media` source), so a primed rehearsal replays them offline.
 
+**Joule (A2A proxy).** `apps/a2a` is a separate, tiny service for SAP BTP Cloud Foundry that exposes
+three skills (screen, investigate, status) to Joule over the A2A protocol. It calls the existing API
+over HTTP, so runs it starts appear in the cockpit and the verdict is still the deterministic rubric's.
+Joule's synchronous `agent-request` has a 60 s limit, so screening replies within a reply budget and a
+live agent run is started and linked rather than awaited. See `docs/sap-hackathon-resources.md`.
+
 The live client follows Bedrock best practice: adaptive retries (`AGENT_RETRY_MAX_ATTEMPTS`,
 default 5) with explicit connect (10s) and read (`AGENT_READ_TIMEOUT_SECONDS`, default 120s)
 timeouts, and an explicit `max_tokens` so Bedrock does not reserve the model maximum. Prompt caching

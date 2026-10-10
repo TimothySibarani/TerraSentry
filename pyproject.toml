@@ -1,5 +1,5 @@
 [tool.uv.workspace]
-members = ["apps/api", "python/*"]
+members = ["apps/api", "apps/a2a", "python/*"]
 
 [dependency-groups]
 dev = [
@@ -15,7 +15,7 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["apps/api/tests", "python"]
+testpaths = ["apps/api/tests", "apps/a2a/tests", "python"]
 
 [tool.ruff]
 target-version = "py313"
@@ -30,4 +30,4 @@ quote-style = "double"
 [tool.pyright]
 pythonVersion = "3.13"
 typeCheckingMode = "standard"
-include = ["apps/api/src", "python"]
+include = ["apps/api/src", "apps/a2a/src", "python"]

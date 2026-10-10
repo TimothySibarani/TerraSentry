@@ -1,0 +1,7 @@
+description: >-
+  Reports the status of a TerraSentry run or batch by id (for example run-1a2b3c4d5e6f
+  or batch-aaaaaa111111). Use it when the user asks for progress or the outcome of
+  an investigation they started earlier.
+target:
+  name: ask_function
+  type: function
