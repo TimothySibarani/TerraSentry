@@ -349,6 +349,16 @@ and `AICORE_MODEL_EXTRACTION` plus `AICORE_SERVICE_KEY` (or the individual `AICO
 service key is passed per call, never exported to `os.environ`. `/health` reports it as
 `aicore_configured`. Setup and the hackathon model catalogue: `docs/sap-hackathon-resources.md`.
 
+**Adverse media (context only).** `ADVERSE_MEDIA_MODE=off|stub|live` adds an optional
+`search_adverse_media` tool to the legality analyst. `live` asks Sonar on AI Core (`AICORE_MODEL_MEDIA`)
+for cited reporting about the supplier; `stub` serves a clearly simulated result for offline demos.
+Findings without a source URL are dropped. The report is kept **outside** the evidence ledger, the
+findings, the DDS and the fingerprint, so the rubric verdict, scripted/live/reference parity and the
+verifier's re-derivation are unchanged (`python/core/tests/test_agent_media.py` asserts this). It
+reaches the cockpit as the payload of the `search_adverse_media` trace step and renders as a
+"Context only, not scored" card on the assessment tab. Results use the response cache
+(`adverse_media` source), so a primed rehearsal replays them offline.
+
 The live client follows Bedrock best practice: adaptive retries (`AGENT_RETRY_MAX_ATTEMPTS`,
 default 5) with explicit connect (10s) and read (`AGENT_READ_TIMEOUT_SECONDS`, default 120s)
 timeouts, and an explicit `max_tokens` so Bedrock does not reserve the model maximum. Prompt caching

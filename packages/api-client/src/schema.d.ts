@@ -781,6 +781,11 @@ export interface components {
          */
         HealthResponse: {
             /**
+             * Adverse Media Mode
+             * @default off
+             */
+            adverse_media_mode: string;
+            /**
              * Aicore Configured
              * @default false
              */

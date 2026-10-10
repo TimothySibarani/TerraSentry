@@ -153,3 +153,28 @@ def test_litellm_failures_map_to_sap_fixes() -> None:
     assert "keybroker" in preflight.friendly_error(auth)
     assert "AICORE_MODEL_" in preflight.friendly_error(missing)
     assert "rate limit" in preflight.friendly_error(limited)
+
+
+async def test_check_media_is_skipped_without_a_media_model() -> None:
+    assert await preflight.check_media(settings=_aicore_settings(aicore_service_key="{}")) is None
+
+
+async def test_check_media_reports_findings_and_citation_passthrough(monkeypatch: Any) -> None:
+    from terrasentry_integrations.sources.media import AdverseMediaReport, MediaCitation, MediaFinding
+
+    class FakeClient:
+        def __init__(self, **_: Any) -> None: ...
+
+        async def search(self, subject: str, country: str | None, **_: Any) -> AdverseMediaReport:
+            finding = MediaFinding(claim="c", citations=[MediaCitation(url="https://a.example")])
+            return AdverseMediaReport(
+                subject=subject, status="success", findings=[finding], response_citations=2
+            )
+
+    monkeypatch.setattr(preflight, "AdverseMediaClient", FakeClient)
+    settings = _aicore_settings(aicore_service_key="{}", aicore_model_media="sonar")
+
+    check = await preflight.check_media(settings=settings)
+
+    assert check is not None and check.ok
+    assert "1 cited finding(s)" in check.detail and "provider citations passed through" in check.detail

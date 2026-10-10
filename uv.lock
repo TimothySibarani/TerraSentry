@@ -2926,6 +2926,7 @@ source = { editable = "python/integrations" }
 dependencies = [
     { name = "aiolimiter" },
     { name = "httpx" },
+    { name = "litellm" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyproj" },
@@ -2938,6 +2939,7 @@ dependencies = [
 requires-dist = [
     { name = "aiolimiter", specifier = ">=1.2" },
     { name = "httpx", specifier = ">=0.28" },
+    { name = "litellm", specifier = ">=1.80" },
     { name = "pydantic", specifier = ">=2.10" },
     { name = "pydantic-settings", specifier = ">=2.6" },
     { name = "pyproj", specifier = ">=3.7" },

@@ -46,6 +46,7 @@ class HealthResponse(BaseModel):
     sap_real: bool = False
     bedrock_configured: bool = False
     aicore_configured: bool = False
+    adverse_media_mode: str = "off"
     default_model: str = "scripted"
     gfw_configured: bool = False
     firms_configured: bool = False

@@ -766,6 +766,11 @@
       "HealthResponse": {
         "description": "Process health plus the offline-rehearsal and SAP-mode state the cockpit badges.",
         "properties": {
+          "adverse_media_mode": {
+            "default": "off",
+            "title": "Adverse Media Mode",
+            "type": "string"
+          },
           "aicore_configured": {
             "default": false,
             "title": "Aicore Configured",

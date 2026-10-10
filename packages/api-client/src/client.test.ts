@@ -138,6 +138,7 @@ describe("ApiClient", () => {
             sap_real: false,
             bedrock_configured: true,
             aicore_configured: false,
+            adverse_media_mode: "off",
             default_model: "scripted",
             gfw_configured: true,
             firms_configured: true,

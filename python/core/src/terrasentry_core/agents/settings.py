@@ -46,6 +46,8 @@ class AgentSettings(BaseSettings):
     aicore_resource_group: str = "default"
     aicore_model_orchestrator: str = ""
     aicore_model_extraction: str = ""
+    # Web-search model for adverse-media context (Sonar); optional, only used when ADVERSE_MEDIA_MODE=live.
+    aicore_model_media: str = ""
 
     def model_for(self, role: ModelRole) -> str:
         if role == "orchestrator":

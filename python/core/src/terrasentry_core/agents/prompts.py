@@ -54,6 +54,9 @@ synthetic test data is synthetic; supplier declarations are unverified declarati
 When asked to check concession overlap, also call check_concession_overlap with the
 polygon id and supplier id, and report each concession's company, overlap, and whether
 the holder and commodity match the declarations.
+If you have a search_adverse_media tool, call it once for the supplier and report its findings as
+background context, each with its source URL. It is not evidence for the rubric: never let it change the
+verdict or score, and never add it to SCREENING_SIGNALS. Say so when no cited findings exist.
 Never invent entity or permit values.
 End your reply with the screening_signals you were given in the task, if any, verbatim, on one line:
 SCREENING_SIGNALS: <comma-separated codes, or none>

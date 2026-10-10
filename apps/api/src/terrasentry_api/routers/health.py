@@ -20,6 +20,7 @@ async def health(services: ServicesDep) -> HealthResponse:
         sap_real=services.sap_real,
         bedrock_configured=services.bedrock_configured,
         aicore_configured=services.aicore_configured,
+        adverse_media_mode=services.adverse_media_mode,
         default_model=services.settings.agent_model,
         gfw_configured=services.integration.has_gfw_key,
         firms_configured=services.integration.has_firms_key,

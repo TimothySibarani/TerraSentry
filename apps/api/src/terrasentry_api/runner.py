@@ -40,6 +40,7 @@ from terrasentry_core.tools.trace import StepHook, TraceCollector, TraceKind, Tr
 from terrasentry_integrations.cache import CacheBackend
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
+from terrasentry_integrations.sources.media import MediaSearch
 
 from terrasentry_api.config import Settings
 from terrasentry_api.sap_actions import SapActionRecord, SapActionService
@@ -109,7 +110,9 @@ class RunManager:
         clock: Callable[[], datetime] = utc_now,
         cache: CacheBackend | None = None,
         sap: SapActionService | None = None,
+        media: MediaSearch | None = None,
     ) -> None:
+        self._media = media
         self._settings = settings
         self._session_factory = session_factory
         self._datasets = datasets
@@ -837,6 +840,7 @@ class RunManager:
             rubric=self._rubric,
             clock=self._clock,
             on_step=on_step,
+            media=self._media,
         )
 
     @staticmethod

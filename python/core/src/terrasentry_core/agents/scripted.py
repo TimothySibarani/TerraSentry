@@ -394,6 +394,9 @@ class AdaptiveAutopilotResponder:
                         {**self._polygon(), "supplier_id": self._record.supplier_id},
                     )
                 )
+            elif "search_adverse_media" in names:
+                # Context lookup belongs to the standard pass, not the signal-driven deep dive.
+                wanted.append(("search_adverse_media", {"supplier_id": self._record.supplier_id}))
         else:
             return None
         completed = set(context.completed_tools())

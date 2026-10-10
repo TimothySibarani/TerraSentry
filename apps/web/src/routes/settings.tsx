@@ -183,6 +183,9 @@ function SettingsPage() {
 						{health.data?.aicoreConfigured ? "configured" : "unconfigured"}
 					</Badge>
 					<Badge variant="outline">
+						Adverse media: {health.data?.adverseMediaMode ?? "unknown"}
+					</Badge>
+					<Badge variant="outline">
 						Default model: {health.data?.defaultModel ?? "unknown"}
 					</Badge>
 					<Badge variant="outline">

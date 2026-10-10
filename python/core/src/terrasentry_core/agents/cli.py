@@ -27,6 +27,7 @@ from terrasentry_integrations.sources.gfw import GfwClient
 
 from terrasentry_core.agents.artifacts import write_agent_run
 from terrasentry_core.agents.factory import MODEL_MODES, model_bundle_for
+from terrasentry_core.agents.media import build_media_client
 from terrasentry_core.agents.orchestrator import RunOrchestrator
 from terrasentry_core.agents.schemas import AgentRunResult, ReviewDecision
 from terrasentry_core.domain.enums import Decision, RunState
@@ -75,11 +76,13 @@ async def _run(args: argparse.Namespace) -> int:
     cache = build_cache(settings, offline=args.offline)
     gfw = GfwClient(settings, cache=cache)
     firms = FirmsClient(settings, cache=cache)
+    media = build_media_client(cache, integration=settings)
     try:
         orchestrator = RunOrchestrator(
             gfw=gfw,
             firms=firms,
             datasets=datasets,
+            media=media,
             models=model_bundle_for(args.model, record),
             window_days=args.window,
             years=args.years,

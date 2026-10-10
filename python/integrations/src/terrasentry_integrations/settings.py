@@ -46,6 +46,11 @@ class IntegrationSettings(BaseSettings):
     sap_client_secret: str = ""
     sap_rate_limit_per_min: int = 60
 
+    # Adverse-media context (Sonar via SAP AI Core). ``off`` disables the tool, ``stub`` serves a
+    # clearly simulated result for offline demos, ``live`` calls the model. Never a scoring input.
+    adverse_media_mode: Literal["off", "stub", "live"] = "off"
+    adverse_media_timeout_seconds: float = 45.0
+
     @property
     def has_gfw_key(self) -> bool:
         return bool(self.gfw_api_key.strip())

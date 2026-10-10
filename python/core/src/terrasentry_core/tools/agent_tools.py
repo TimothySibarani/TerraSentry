@@ -19,6 +19,7 @@ from strands.types.tools import AgentTool
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
 from terrasentry_integrations.sources.gfw_layers import ContextLayer
+from terrasentry_integrations.sources.media import AdverseMediaReport, MediaSearch
 
 from terrasentry_core.agents.investigation import screening_signals
 from terrasentry_core.scoring import concession_commodity, holder_matches
@@ -50,6 +51,10 @@ class ToolContext:
     candidate: RecordAssessment | None = None
     verification: VerificationReport | None = None
     summary: str = ""
+    #: Optional adverse-media lookup. Context only: it never reaches the ledger or the rubric.
+    media: MediaSearch | None = None
+    _media_reports: dict[str, AdverseMediaReport] = field(default_factory=dict, init=False, repr=False)
+    _media_lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False, repr=False)
     _sources: dict[str, PolygonSources] = field(default_factory=dict, init=False, repr=False)
     # ponytail: one acquisition lock per run; per-polygon locks if runs gain multiple parcels.
     _source_lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False, repr=False)
@@ -71,6 +76,21 @@ class ToolContext:
             )
             self._sources[polygon_id] = sources
             return sources
+
+    async def adverse_media(self, supplier_id: str) -> AdverseMediaReport | None:
+        """One adverse-media lookup per supplier per run; ``None`` when the layer is disabled."""
+        if self.media is None:
+            return None
+        async with self._media_lock:
+            if supplier_id not in self._media_reports:
+                record = self.datasets.record_for_supplier(supplier_id)
+                self._media_reports[supplier_id] = await self.media.search(
+                    record.legality.legal_name,
+                    record.polygon.country,
+                    as_of=self.as_of,
+                    refresh=self.refresh,
+                )
+            return self._media_reports[supplier_id]
 
     @property
     def collected_sources(self) -> list[PolygonSources]:
@@ -207,6 +227,23 @@ def _concession_payload(
         "unavailable_layers": unavailable,
         "overlap_found": bool(concessions),
     }
+
+
+def _media_payload(supplier_id: str, report: AdverseMediaReport) -> dict[str, Any]:
+    """Model- and trace-facing view of the report: findings with URLs, no scoring semantics."""
+    body = report.model_dump(mode="json", exclude={"query_hash", "prompt_revision"})
+    payload: dict[str, Any] = {
+        "supplier_id": supplier_id,
+        "context_only": True,
+        "note": "Background context with source URLs, not rubric evidence. Quote claims with their URLs.",
+        "report": body,
+    }
+    if report.status != "success":
+        payload["error"] = report.error or "adverse media unavailable"
+    if len(json.dumps(payload).encode()) > _MODEL_LAYER_BYTES:
+        body["findings"] = body["findings"][:3]
+        body["truncated"] = True
+    return payload
 
 
 def _status(payload: dict[str, Any]) -> str:
@@ -374,7 +411,30 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
         )
         return payload
 
-    return [
+    @tool
+    async def search_adverse_media(supplier_id: str) -> dict[str, Any]:
+        """Search public web reporting about a supplier for adverse media (context only).
+
+        The result is background context with source URLs. It never changes the verdict or score.
+
+        Args:
+            supplier_id: Seed supplier identifier, for example SUP-001.
+        """
+        report = await context.adverse_media(supplier_id)
+        if report is None:
+            return {"supplier_id": supplier_id, "error": "adverse media search is not enabled"}
+        payload = _media_payload(supplier_id, report)
+        context.trace.add(
+            "tool",
+            "search_adverse_media",
+            f"{supplier_id}: {len(report.findings)} cited finding(s)"
+            if report.status == "success"
+            else f"{supplier_id}: adverse media unavailable",
+            payload={"supplier_id": supplier_id, "status": _status(payload), "report": payload["report"]},
+        )
+        return payload
+
+    tools: list[AgentTool] = [
         get_tree_cover_loss,
         get_fire_hotspots,
         get_legality_record,
@@ -382,6 +442,9 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
         get_context_layers,
         check_concession_overlap,
     ]
+    if context.media is not None:
+        tools.append(search_adverse_media)
+    return tools
 
 
 def build_verifier_tools(context: ToolContext) -> list[AgentTool]:

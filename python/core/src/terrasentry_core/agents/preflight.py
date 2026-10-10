@@ -31,6 +31,8 @@ from botocore.exceptions import (
 )
 from strands import Agent
 from strands.models.model import Model
+from terrasentry_integrations.cache import MemoryCache
+from terrasentry_integrations.sources.media import AdverseMediaClient
 
 from terrasentry_core.agents.models import (
     CONNECT_TIMEOUT_SECONDS,
@@ -152,6 +154,37 @@ async def check_role(
     return RoleCheck(role=role, model_id=model_id, ok=True, detail=reply, latency_ms=latency)
 
 
+async def check_media(*, settings: AgentSettings) -> RoleCheck | None:
+    """Ping the optional adverse-media model; informational, it never gates the agent roles."""
+    model_id = settings.aicore_model_media.strip()
+    if not model_id or not settings.aicore_credentials:
+        return None
+    client = AdverseMediaClient(
+        credentials=settings.aicore_credentials, model=model_id, cache=MemoryCache(), timeout=60.0
+    )
+    started = time.perf_counter()
+    report = await client.search("Sime Darby Plantation", "MY")
+    latency = int((time.perf_counter() - started) * 1000)
+    if report.status != "success":
+        return RoleCheck(
+            role="extraction",
+            model_id=model_id,
+            ok=False,
+            detail=friendly_error(RuntimeError(report.error or "unavailable")),
+            latency_ms=latency,
+        )
+    passthrough = (
+        "provider citations passed through" if report.response_citations else "no provider citations"
+    )
+    return RoleCheck(
+        role="extraction",
+        model_id=model_id,
+        ok=True,
+        detail=f"{len(report.findings)} cited finding(s); {passthrough}",
+        latency_ms=latency,
+    )
+
+
 async def run_checks(
     roles: Sequence[ModelRole], *, settings: AgentSettings, provider: Provider = "bedrock"
 ) -> list[RoleCheck]:
@@ -208,6 +241,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         latency = f" in {check.latency_ms} ms" if check.latency_ms is not None else ""
         print(f"{check.role:<14} : {status}{latency} - {check.model_id}")
         print(f"                 {check.detail}")
+
+    if provider == "sap":
+        media = asyncio.run(check_media(settings=settings))
+        if media is not None:
+            status = "ok" if media.ok else "FAILED"
+            print(f"{'media':<14} : {status} in {media.latency_ms} ms - {media.model_id} (optional)")
+            print(f"                 {media.detail}")
 
     if all(check.ok for check in checks):
         return 0

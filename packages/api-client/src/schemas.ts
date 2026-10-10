@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Option, Schema } from "effect";
 
 /**
  * Plain `Schema.Struct`s, not `Schema.Class`es: decoded payloads cross the
@@ -13,6 +13,7 @@ export const HealthResponse = Schema.Struct({
   sap_real: Schema.Boolean,
   bedrock_configured: Schema.Boolean,
   aicore_configured: Schema.Boolean,
+  adverse_media_mode: Schema.String,
   default_model: Schema.String,
   gfw_configured: Schema.Boolean,
   firms_configured: Schema.Boolean,
@@ -182,6 +183,53 @@ export const TraceStep = Schema.Struct({
   payload: Schema.Record(Schema.String, Schema.Unknown),
 });
 export type TraceStep = typeof TraceStep.Type;
+
+/** Adverse-media context carried in a `search_adverse_media` trace step. Never a scoring input. */
+export const MediaCitation = Schema.Struct({
+  url: Schema.String,
+  title: Schema.String,
+  published: Schema.NullOr(Schema.String),
+});
+export type MediaCitation = typeof MediaCitation.Type;
+
+export const MediaFinding = Schema.Struct({
+  claim: Schema.String,
+  citations: Schema.Array(MediaCitation),
+});
+export type MediaFinding = typeof MediaFinding.Type;
+
+export const AdverseMediaReport = Schema.Struct({
+  subject: Schema.String,
+  country: Schema.NullOr(Schema.String),
+  status: Schema.Literals(["success", "unavailable"]),
+  summary: Schema.String,
+  findings: Schema.Array(MediaFinding),
+  model: Schema.String,
+  synthetic: Schema.Boolean,
+  disclosure: Schema.NullOr(Schema.String),
+  cached: Schema.Boolean,
+  error: Schema.NullOr(Schema.String),
+});
+export type AdverseMediaReport = typeof AdverseMediaReport.Type;
+
+const AdverseMediaStepPayload = Schema.Struct({ report: AdverseMediaReport });
+
+/** The run's adverse-media report, or `null` when the layer was off or the step is malformed. */
+export const adverseMediaFromSteps = (
+  steps: ReadonlyArray<TraceStep>,
+): AdverseMediaReport | null => {
+  const step = steps.find(
+    (candidate) =>
+      candidate.kind === "tool" && candidate.name === "search_adverse_media",
+  );
+  if (step === undefined) return null;
+  return Option.getOrNull(
+    Option.map(
+      Schema.decodeUnknownOption(AdverseMediaStepPayload)(step.payload),
+      (payload) => payload.report,
+    ),
+  );
+};
 
 export const ReviewOut = Schema.Struct({
   decision: Schema.Literals(["approve", "override"]),

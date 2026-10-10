@@ -14,6 +14,13 @@ SPECIALIST_NAMES = ("geospatial_analyst", "thermal_analyst", "legality_analyst")
 def build_specialists(model: Model, context: ToolContext) -> list[Agent]:
     """Build the geospatial, thermal, and legality agents for one run."""
     tools = {tool.tool_name: tool for tool in build_source_tools(context)}
+    legality_tools = [
+        tools["get_legality_record"],
+        tools["get_consignment"],
+        tools["check_concession_overlap"],
+    ]
+    if "search_adverse_media" in tools:
+        legality_tools.append(tools["search_adverse_media"])
     return [
         Agent(
             model=model,
@@ -42,11 +49,7 @@ def build_specialists(model: Model, context: ToolContext) -> list[Agent]:
                 "re-task it to check concession overlap and permit coverage."
             ),
             system_prompt=prompts.LEGALITY_PROMPT,
-            tools=[
-                tools["get_legality_record"],
-                tools["get_consignment"],
-                tools["check_concession_overlap"],
-            ],
+            tools=legality_tools,
             callback_handler=None,
         ),
     ]

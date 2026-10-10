@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { TraceStep } from "@terrasentry/api-client";
+import { adverseMediaFromSteps } from "@terrasentry/api-client";
 import { ArrowLeftIcon, RefreshCwIcon } from "lucide-react";
 import { useMemo } from "react";
 
@@ -13,6 +14,7 @@ import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Skeleton } from "#/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import { AdverseMediaCard } from "#/features/runs/adverse-media-card";
 import { AssessmentPanel } from "#/features/runs/assessment-panel";
 import { DdsDownloadButton, DdsPanel } from "#/features/runs/dds-panel";
 import { EvidenceTable } from "#/features/runs/evidence-table";
@@ -91,6 +93,7 @@ function RunDetailScreen({ runId }: { runId: string }) {
 	const ddsReleased =
 		stream.state.ddsReleased || (record.dds?.released ?? false);
 	const steps = mergeSteps(record.steps, stream.state.steps);
+	const adverseMedia = adverseMediaFromSteps(steps);
 	const pendingVerdict = record.pending_assessment;
 	const releasedVerdict = record.assessment;
 
@@ -241,13 +244,14 @@ function RunDetailScreen({ runId }: { runId: string }) {
 						</CardContent>
 					</Card>
 				</TabsContent>
-				<TabsContent value="assessment" className="pt-4">
+				<TabsContent value="assessment" className="flex flex-col gap-4 pt-4">
 					<AssessmentPanel
 						runId={runId}
 						verdict={releasedVerdict ?? pendingVerdict}
 						verification={record.verification}
 						disclosures={record.disclosures}
 					/>
+					{adverseMedia && <AdverseMediaCard report={adverseMedia} />}
 				</TabsContent>
 				<TabsContent value="evidence" className="pt-4">
 					{evidence.isPending ? (

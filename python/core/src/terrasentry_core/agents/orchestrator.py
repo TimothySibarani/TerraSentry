@@ -20,6 +20,7 @@ from strands.multiagent import GraphBuilder
 from strands.multiagent.graph import Graph, GraphState
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
+from terrasentry_integrations.sources.media import MediaSearch
 
 from terrasentry_core.agents.models import ModelBundle
 from terrasentry_core.agents.nodes import FunctionNode, VerifierNode
@@ -92,7 +93,9 @@ class RunOrchestrator:
         rubric: RubricConfig | None = None,
         clock: Callable[[], datetime] = utc_now,
         on_step: StepHook | None = None,
+        media: MediaSearch | None = None,
     ) -> None:
+        self._media = media
         self._gfw = gfw
         self._firms = firms
         self._datasets = datasets
@@ -130,6 +133,7 @@ class RunOrchestrator:
             as_of=assessment_date,
             retrieved_at=started,
             refresh=refresh,
+            media=self._media,
         )
         models = self._models or ModelBundle.from_settings()
         graph = self._build_graph(record, context, models)

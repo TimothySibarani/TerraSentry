@@ -3,7 +3,7 @@
 **Target:** Using the official hackathon SAP BTP and SAP AI Core infrastructure  
 **Upstream repo:** [SAP-AWS-ID-Hackathon-2026/SAP_AWS_Hackathon_ID_2026](https://github.com/SAP-AWS-ID-Hackathon-2026/SAP_AWS_Hackathon_ID_2026) (the `BTP_Instructions/README.md` file is the source for everything below)  
 **Our team slug:** `startorch`  
-**Status:** Phase 2 (`--model sap`) is implemented; Phases 3 and 4 are proposals.
+**Status:** Phase 2 (`--model sap`) and Phase 3 (adverse media) are implemented; Phase 4 (Joule) is a proposal.
 
 ---
 
@@ -122,13 +122,28 @@ calls misbehave on a full run, set `AICORE_MODEL_ORCHESTRATOR=gpt-5.4` (configur
 
 ---
 
-## 5. Later phases (proposals)
+## 5. Phases 3 and 4
 
-### Phase 3: Sonar for adverse media and legality context (proposal)
+### Phase 3: Sonar adverse media (implemented, context only)
 
-A specialist tool that calls `sap/sonar` with a query such as *"recent illegal logging or
-deforestation controversies involving {supplier} in {country}"* and keeps the cited findings as
-context. It is not a scoring input.
+`ADVERSE_MEDIA_MODE=off|stub|live` (default `off`) adds a `search_adverse_media` tool to the legality
+analyst. `live` calls `sap/<AICORE_MODEL_MEDIA>` (set it to `sonar`; the upstream sample uses
+`sonar-pro`) with the same AI Core credentials as `--model sap`. The model must reply with cited JSON;
+findings without an http(s) URL are dropped, and provider citations (`citations` / `search_results`)
+enrich titles and dates when the orchestration route passes them through.
+
+- It is **not** a scoring input: the report stays out of the evidence ledger, findings, DDS and
+  fingerprint, so parity and the verifier are unaffected. It is persisted as the payload of the
+  `search_adverse_media` trace step and rendered as a "Context only, not scored" card.
+- `stub` returns a deterministic, labelled-simulated result (no network) for offline demos.
+- Results are cached under source `adverse_media`, so `--offline` rehearsals replay them.
+- Check it with `uv run python -m terrasentry_core.agents.preflight --provider sap`: the `media` line
+  reports findings and whether citations were passed through. It is informational and never fails the
+  run.
+
+Code map: `python/integrations/.../sources/media.py` (client, stub, parser), `agents/media.py`
+(`build_media_client`), `tools/agent_tools.py` (`search_adverse_media`, `ToolContext.media`),
+`agents/specialists.py`, `apps/web/src/features/runs/adverse-media-card.tsx`.
 
 ### Phase 4: Joule via A2A (proposal)
 

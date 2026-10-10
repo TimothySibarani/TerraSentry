@@ -44,6 +44,7 @@ from terrasentry_integrations.sap import SapGateway, StubSapService, build_sap_g
 from terrasentry_integrations.settings import IntegrationSettings
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
+from terrasentry_integrations.sources.media import MediaSearch
 
 GFW_URL = "https://data-api.globalforestwatch.org/dataset/umd_tree_cover_loss/v1.13/query/json"
 FIRMS_REGEX = r"https://firms\.modaps\.eosdis\.nasa\.gov/api/area/csv/TESTKEY/VIIRS_SNPP_NRT/.*"
@@ -229,6 +230,7 @@ def test_services_factory(
     api_token: str = "",
     bedrock_configured: bool = False,
     aicore_configured: bool = False,
+    media: MediaSearch | None = None,
 ) -> ServicesFactory:
     """A lifespan-compatible factory that never touches Postgres or Redis."""
     resolved = datasets or build_datasets()
@@ -274,6 +276,7 @@ def test_services_factory(
             firms=firms,
             cache=cache_backend,
             sap=sap_actions,
+            media=media,
         )
         services = AppServices(
             settings=settings,
@@ -293,6 +296,7 @@ def test_services_factory(
             offline=offline,
             bedrock_configured=bedrock_configured,
             aicore_configured=aicore_configured,
+            adverse_media_mode="stub" if media is not None else "off",
         )
         try:
             yield services

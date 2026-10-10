@@ -3,6 +3,7 @@ import { DateTime, Effect, Schema, Stream } from "effect";
 
 import { decodeRunEventStream } from "./client";
 import {
+  adverseMediaFromSteps,
   BatchSummary,
   HealthResponse,
   RunDetail,
@@ -22,6 +23,7 @@ describe("HealthResponse", () => {
         sap_real: false,
         bedrock_configured: false,
         aicore_configured: true,
+        adverse_media_mode: "stub",
         default_model: "scripted",
         gfw_configured: true,
         firms_configured: true,
@@ -374,4 +376,57 @@ describe("decodeRunEventStream", () => {
       assert.strictEqual(exit._tag, "Failure");
     }),
   );
+});
+
+describe("adverseMediaFromSteps", () => {
+  const report = {
+    subject: "PT Sumber",
+    country: "ID",
+    status: "success",
+    summary: "One simulated finding.",
+    findings: [
+      {
+        claim: "Simulated dispute.",
+        citations: [
+          { url: "https://example.org/x", title: "Simulated", published: null },
+        ],
+      },
+    ],
+    model: "stub",
+    synthetic: true,
+    disclosure: "Simulated adverse-media result; no web search was performed.",
+    cached: false,
+    error: null,
+  };
+  const step = (
+    payload: Record<string, unknown>,
+    name = "search_adverse_media",
+  ) =>
+    Schema.decodeUnknownSync(TraceStep)({
+      step_id: "STEP-011",
+      kind: "tool",
+      name,
+      detail: "SUP-001: 1 cited finding(s)",
+      at: "2026-10-10T09:00:00Z",
+      payload,
+    });
+
+  it("decodes the report from the media step", () => {
+    const decoded = adverseMediaFromSteps([
+      step({ supplier_id: "SUP-001", status: "ok", report }),
+    ]);
+    assert.strictEqual(
+      decoded?.findings[0]?.citations[0]?.url,
+      "https://example.org/x",
+    );
+    assert.isTrue(decoded?.synthetic);
+  });
+
+  it("returns null when the layer was off or the payload is malformed", () => {
+    assert.isNull(adverseMediaFromSteps([]));
+    assert.isNull(
+      adverseMediaFromSteps([step({ report }, "get_legality_record")]),
+    );
+    assert.isNull(adverseMediaFromSteps([step({ report: { subject: 1 } })]));
+  });
 });
