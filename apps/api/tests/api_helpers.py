@@ -228,6 +228,7 @@ def test_services_factory(
     sap_gateway: SapGateway | None = None,
     api_token: str = "",
     bedrock_configured: bool = False,
+    aicore_configured: bool = False,
 ) -> ServicesFactory:
     """A lifespan-compatible factory that never touches Postgres or Redis."""
     resolved = datasets or build_datasets()
@@ -291,6 +292,7 @@ def test_services_factory(
             sap_real=False,
             offline=offline,
             bedrock_configured=bedrock_configured,
+            aicore_configured=aicore_configured,
         )
         try:
             yield services

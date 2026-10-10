@@ -25,6 +25,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from terrasentry_core.agents.factory import MODEL_MODES
 from terrasentry_core.domain.enums import RunState
 from terrasentry_core.errors import CoreError
 from terrasentry_core.seed.schemas import BatchRecord
@@ -276,7 +277,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     run.add_argument(
         "--model",
-        choices=("scripted", "bedrock"),
+        choices=MODEL_MODES,
         default=None,
         help="agent mode only; defaults to AGENT_MODEL",
     )

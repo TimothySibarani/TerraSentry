@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import api_helpers
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -179,7 +180,8 @@ def test_coverage_catch_fault_scenario_is_rejected_by_the_verifier(
     assert detail["dds"] is None and detail["assessment"] is None
 
 
-def test_coverage_catch_is_not_available_on_bedrock(client: TestClient) -> None:
-    response = client.post("/runs", json={"scenario": "coverage_catch", "model": "bedrock"})
+@pytest.mark.parametrize("model", ["bedrock", "sap"])
+def test_coverage_catch_is_only_available_on_scripted(client: TestClient, model: str) -> None:
+    response = client.post("/runs", json={"scenario": "coverage_catch", "model": model})
     assert response.status_code == 422
     assert "fault injection" in response.json()["detail"]

@@ -1,10 +1,10 @@
 """Model construction for the agent roles.
 
-The app wires Bedrock here; tests and the offline demo inject a
+The app wires Bedrock or SAP AI Core here; tests and the offline demo inject a
 :class:`~terrasentry_core.agents.scripted.ScriptedModel` instead, so importing
-this module never needs AWS credentials. Which model fills each role is an
-environment decision (``BEDROCK_MODEL_ORCHESTRATOR`` / ``BEDROCK_MODEL_EXTRACTION``);
-there is no default model id in the code.
+this module never needs AWS or SAP credentials. Which model fills each role is an
+environment decision (``BEDROCK_MODEL_*`` for Bedrock, ``AICORE_MODEL_*`` for the
+SAP AI Core ``sap`` mode); there is no default model id in the code.
 
 The bedrock-runtime client follows the live-path best practices: adaptive
 retries, an explicit read timeout (Strands applies its own default only when no
@@ -28,6 +28,10 @@ _MODEL_VARIABLE: dict[ModelRole, str] = {
     "orchestrator": "BEDROCK_MODEL_ORCHESTRATOR",
     "extraction": "BEDROCK_MODEL_EXTRACTION",
 }
+_AICORE_MODEL_VARIABLE: dict[ModelRole, str] = {
+    "orchestrator": "AICORE_MODEL_ORCHESTRATOR",
+    "extraction": "AICORE_MODEL_EXTRACTION",
+}
 CONNECT_TIMEOUT_SECONDS = 10
 
 
@@ -44,6 +48,14 @@ class ModelBundle:
         return cls(
             orchestrator=build_model("orchestrator", settings=resolved),
             extraction=build_model("extraction", settings=resolved),
+        )
+
+    @classmethod
+    def from_aicore(cls, settings: AgentSettings | None = None) -> ModelBundle:
+        resolved = settings or get_agent_settings()
+        return cls(
+            orchestrator=build_aicore_model("orchestrator", settings=resolved),
+            extraction=build_aicore_model("extraction", settings=resolved),
         )
 
 
@@ -122,4 +134,56 @@ def build_model(role: ModelRole, *, settings: AgentSettings | None = None) -> Mo
         ) from exc
 
 
-__all__ = ["CONNECT_TIMEOUT_SECONDS", "ModelBundle", "build_model", "cache_config", "client_config"]
+def build_aicore_model(role: ModelRole, *, settings: AgentSettings | None = None) -> Model:
+    """Build the SAP AI Core (Generative AI Hub) model for a role via LiteLLM's ``sap/`` route.
+
+    The service key travels as the per-call ``api_key`` (LiteLLM's SAP provider treats it
+    as the service key), so credentials stay in settings and never touch ``os.environ``.
+    """
+    resolved = settings or get_agent_settings()
+    model_id = resolved.aicore_model_for(role).strip()
+    if not model_id:
+        raise MissingModelError(_AICORE_MODEL_VARIABLE[role])
+    credentials = resolved.aicore_credentials
+    if not credentials:
+        raise ModelConfigurationError(
+            "SAP AI Core credentials are not set; provide AICORE_SERVICE_KEY (or "
+            "AICORE_CLIENT_ID / AICORE_CLIENT_SECRET / AICORE_AUTH_URL / AICORE_BASE_URL) in .env"
+        )
+    from strands.models.litellm import LiteLLMModel
+
+    return LiteLLMModel(
+        client_args={
+            "api_key": credentials,
+            "timeout": resolved.agent_read_timeout_seconds,
+            "num_retries": resolved.agent_retry_max_attempts,
+        },
+        model_id=f"sap/{model_id}",
+        params={
+            "temperature": resolved.agent_temperature,
+            "max_tokens": resolved.agent_max_tokens,
+        },
+    )
+
+
+def cap_max_tokens(model: Model, max_tokens: int) -> None:
+    """Cap output tokens on any model; LiteLLM keeps it under ``params``, Bedrock at the top level."""
+    from strands.models.litellm import LiteLLMModel
+
+    if isinstance(model, LiteLLMModel):
+        params = dict(model.get_config().get("params") or {})
+        params["max_tokens"] = max_tokens
+        model.update_config(params=params)
+        return
+    model.update_config(max_tokens=max_tokens)
+
+
+__all__ = [
+    "CONNECT_TIMEOUT_SECONDS",
+    "ModelBundle",
+    "build_aicore_model",
+    "build_model",
+    "cache_config",
+    "cap_max_tokens",
+    "client_config",
+]

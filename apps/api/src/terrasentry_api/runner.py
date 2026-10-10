@@ -190,7 +190,7 @@ class RunManager:
         model: str | None = None,
     ) -> str:
         batch_run_id = f"batch-{uuid4().hex[:12]}"
-        # runs.model holds the mode string: "deterministic" for screening, else scripted/bedrock.
+        # runs.model holds the mode string: "deterministic" for screening, else scripted/bedrock/sap.
         run_model = (model or self._settings.agent_model) if mode == "agent" else "deterministic"
         # Explicit ids screen submitted (or chosen) records; otherwise the seed demo batch.
         records = (

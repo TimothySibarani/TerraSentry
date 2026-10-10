@@ -21,6 +21,7 @@ describe("HealthResponse", () => {
         sap_mode: "stub",
         sap_real: false,
         bedrock_configured: false,
+        aicore_configured: true,
         default_model: "scripted",
         gfw_configured: true,
         firms_configured: true,

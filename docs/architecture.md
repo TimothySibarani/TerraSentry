@@ -343,6 +343,12 @@ The concrete Bedrock model for each role is configuration, not code:
 model is an `.env` edit. Verify model access and current IDs in the target account before build day
 (PRD risk table).
 
+A third mode, `--model sap`, runs the same roles on SAP AI Core (Generative AI Hub) through
+LiteLLM's `sap/` route (`strands.models.litellm.LiteLLMModel`). It reads `AICORE_MODEL_ORCHESTRATOR`
+and `AICORE_MODEL_EXTRACTION` plus `AICORE_SERVICE_KEY` (or the individual `AICORE_*` fields); the
+service key is passed per call, never exported to `os.environ`. `/health` reports it as
+`aicore_configured`. Setup and the hackathon model catalogue: `docs/sap-hackathon-resources.md`.
+
 The live client follows Bedrock best practice: adaptive retries (`AGENT_RETRY_MAX_ATTEMPTS`,
 default 5) with explicit connect (10s) and read (`AGENT_READ_TIMEOUT_SECONDS`, default 120s)
 timeouts, and an explicit `max_tokens` so Bedrock does not reserve the model maximum. Prompt caching

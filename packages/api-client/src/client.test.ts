@@ -137,6 +137,7 @@ describe("ApiClient", () => {
             sap_mode: "stub",
             sap_real: false,
             bedrock_configured: true,
+            aicore_configured: false,
             default_model: "scripted",
             gfw_configured: true,
             firms_configured: true,

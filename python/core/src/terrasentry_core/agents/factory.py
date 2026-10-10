@@ -2,7 +2,8 @@
 
 ``scripted`` runs the full graph with no network and no Bedrock calls (the
 deterministic verifier checks are still the hard gate); ``bedrock`` uses the
-orchestrator/extraction model ids configured in the environment.
+``BEDROCK_MODEL_*`` ids and ``sap`` the ``AICORE_MODEL_*`` ids (SAP AI Core, via
+LiteLLM) configured in the environment.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from terrasentry_core.agents.scripted import AdaptiveAutopilotResponder, Scripte
 from terrasentry_core.agents.verification import VerificationReport
 from terrasentry_core.seed.schemas import BatchRecord
 
-MODEL_MODES = ("scripted", "bedrock")
+MODEL_MODES = ("scripted", "bedrock", "sap")
 DEFAULT_MODEL_MODE = "scripted"
 #: Scripted-only fault injection: scenario -> (real demo scenario, skip the deep dives).
 FAULT_SCENARIOS: dict[str, tuple[str, bool]] = {"coverage_catch": ("high_risk_live", True)}
@@ -38,9 +39,11 @@ def scripted_bundle(record: BatchRecord, *, skip_deep_dives: bool = False) -> Mo
 
 
 def model_bundle_for(mode: str, record: BatchRecord, *, skip_deep_dives: bool = False) -> ModelBundle:
-    """Resolve a ``scripted`` or ``bedrock`` mode to a concrete :class:`ModelBundle`."""
+    """Resolve a ``scripted``, ``bedrock`` or ``sap`` mode to a concrete :class:`ModelBundle`."""
     if mode == "bedrock":
         return ModelBundle.from_settings()
+    if mode == "sap":
+        return ModelBundle.from_aicore()
     return scripted_bundle(record, skip_deep_dives=skip_deep_dives)
 
 

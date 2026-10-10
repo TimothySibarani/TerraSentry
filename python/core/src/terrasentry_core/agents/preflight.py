@@ -1,13 +1,15 @@
-"""Live Bedrock preflight: verify model access for both agent roles.
+"""Live model preflight: verify model access for both agent roles.
 
 Run this once before the first live agent run (docs/milestones.md section 3):
 
-    uv run python -m terrasentry_core.agents.preflight
+    uv run python -m terrasentry_core.agents.preflight                  # Bedrock
+    uv run python -m terrasentry_core.agents.preflight --provider sap   # SAP AI Core
 
 It builds each role's model exactly the way the orchestrator does, then makes
-one tiny Converse turn per role with ``max_tokens`` capped so the check does
-not reserve meaningful quota. AWS errors are mapped to the fix from
-docs/setup/aws.md. Exit code 0 when every checked role answers, 1 otherwise.
+one tiny turn per role with ``max_tokens`` capped so the check does not reserve
+meaningful quota. AWS errors are mapped to the fix from docs/setup/aws.md and SAP
+AI Core errors to docs/sap-hackathon-resources.md. Exit code 0 when every checked
+role answers, 1 otherwise.
 """
 
 from __future__ import annotations
@@ -18,6 +20,7 @@ import sys
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Literal
 
 from botocore.exceptions import (
     BotoCoreError,
@@ -29,7 +32,13 @@ from botocore.exceptions import (
 from strands import Agent
 from strands.models.model import Model
 
-from terrasentry_core.agents.models import CONNECT_TIMEOUT_SECONDS, build_model, cache_config
+from terrasentry_core.agents.models import (
+    CONNECT_TIMEOUT_SECONDS,
+    build_aicore_model,
+    build_model,
+    cache_config,
+    cap_max_tokens,
+)
 from terrasentry_core.agents.settings import AgentSettings, ModelRole, get_agent_settings
 
 _PING_PROMPT = "Reply with the single word ok."
@@ -37,6 +46,7 @@ _PING_PROMPT = "Reply with the single word ok."
 #: so the ping needs headroom even for a one-word reply.
 PING_MAX_TOKENS = 256
 _ROLES: tuple[ModelRole, ...] = ("orchestrator", "extraction")
+Provider = Literal["bedrock", "sap"]
 
 
 @dataclass(frozen=True)
@@ -75,7 +85,34 @@ def friendly_error(exc: BaseException) -> str:
         return f"AWS profile not found: {exc}; check AWS_PROFILE"
     if isinstance(exc, BotoCoreError):
         return f"AWS client error: {exc}"
-    return f"{type(exc).__name__}: {exc}"
+    return _friendly_litellm_error(exc) or f"{type(exc).__name__}: {exc}"
+
+
+def _friendly_litellm_error(exc: BaseException) -> str | None:
+    """Map a LiteLLM / SAP AI Core failure onto the fix in docs/sap-hackathon-resources.md."""
+    import litellm.exceptions as lx
+
+    detail = str(exc).splitlines()[0] if str(exc) else type(exc).__name__
+    if isinstance(exc, lx.AuthenticationError):
+        return (
+            "SAP AI Core rejected the credentials; refetch the team key from the keybroker "
+            f"and update AICORE_SERVICE_KEY ({detail})"
+        )
+    if isinstance(exc, lx.NotFoundError):
+        return (
+            "SAP AI Core has no deployment for this model id in the resource group; check "
+            f"AICORE_MODEL_* against the deployment table ({detail})"
+        )
+    if isinstance(exc, lx.RateLimitError):
+        return f"SAP AI Core rate limit reached; retry shortly ({detail})"
+    if isinstance(exc, (lx.APIConnectionError, lx.Timeout)):
+        return f"cannot reach SAP AI Core; check AICORE_SERVICE_KEY serviceurls and the network ({detail})"
+    return None
+
+
+def _model_id(role: ModelRole, settings: AgentSettings, provider: Provider) -> str:
+    configured = settings.aicore_model_for(role) if provider == "sap" else settings.model_for(role)
+    return configured.strip() or "(unset)"
 
 
 async def check_role(
@@ -83,14 +120,16 @@ async def check_role(
     *,
     settings: AgentSettings,
     model: Model | None = None,
+    provider: Provider = "bedrock",
 ) -> RoleCheck:
     """Ping one role through the same Strands path a real run uses."""
-    model_id = settings.model_for(role).strip() or "(unset)"
+    model_id = _model_id(role, settings, provider)
+    build = build_aicore_model if provider == "sap" else build_model
     try:
-        resolved = model or build_model(role, settings=settings)
+        resolved = model or build(role, settings=settings)
     except Exception as exc:  # CLI boundary: construction failures map to the same fixes
         return RoleCheck(role=role, model_id=model_id, ok=False, detail=friendly_error(exc))
-    resolved.update_config(max_tokens=PING_MAX_TOKENS)
+    cap_max_tokens(resolved, PING_MAX_TOKENS)
     agent = Agent(
         model=resolved,
         system_prompt="You are a connectivity check. Reply with the single word ok.",
@@ -113,14 +152,22 @@ async def check_role(
     return RoleCheck(role=role, model_id=model_id, ok=True, detail=reply, latency_ms=latency)
 
 
-async def run_checks(roles: Sequence[ModelRole], *, settings: AgentSettings) -> list[RoleCheck]:
-    return [await check_role(role, settings=settings) for role in roles]
+async def run_checks(
+    roles: Sequence[ModelRole], *, settings: AgentSettings, provider: Provider = "bedrock"
+) -> list[RoleCheck]:
+    return [await check_role(role, settings=settings, provider=provider) for role in roles]
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m terrasentry_core.agents.preflight",
-        description="Verify Bedrock model access for the agent roles.",
+        description="Verify live model access (Bedrock or SAP AI Core) for the agent roles.",
+    )
+    parser.add_argument(
+        "--provider",
+        choices=["bedrock", "sap"],
+        default="bedrock",
+        help="which live provider to check (default: bedrock)",
     )
     parser.add_argument(
         "--role",
@@ -133,19 +180,29 @@ def main(argv: Sequence[str] | None = None) -> int:
     settings = get_agent_settings()
     roles: tuple[ModelRole, ...] = _ROLES if args.role == "both" else (args.role,)
 
-    print("TerraSentry Bedrock preflight")
-    print(f"region         : {settings.aws_region}")
-    print(f"profile        : {settings.aws_profile or '(default credential chain)'}")
-    print(f"prompt cache   : {settings.bedrock_prompt_cache}")
-    print(
-        f"retries        : {settings.agent_retry_max_attempts} adaptive, "
-        f"read timeout {settings.agent_read_timeout_seconds}s, "
-        f"connect timeout {CONNECT_TIMEOUT_SECONDS}s"
-    )
-    if cache_config(settings) is not None:
-        print("cache note     : prefixes below the model minimum are ignored by Bedrock")
+    provider: Provider = args.provider
+    if provider == "sap":
+        print("TerraSentry SAP AI Core preflight")
+        print(f"resource group : {settings.aicore_resource_group}")
+        print(f"credentials    : {'set' if settings.aicore_credentials else 'MISSING'}")
+        print(
+            f"retries        : {settings.agent_retry_max_attempts}, "
+            f"timeout {settings.agent_read_timeout_seconds}s"
+        )
+    else:
+        print("TerraSentry Bedrock preflight")
+        print(f"region         : {settings.aws_region}")
+        print(f"profile        : {settings.aws_profile or '(default credential chain)'}")
+        print(f"prompt cache   : {settings.bedrock_prompt_cache}")
+        print(
+            f"retries        : {settings.agent_retry_max_attempts} adaptive, "
+            f"read timeout {settings.agent_read_timeout_seconds}s, "
+            f"connect timeout {CONNECT_TIMEOUT_SECONDS}s"
+        )
+        if cache_config(settings) is not None:
+            print("cache note     : prefixes below the model minimum are ignored by Bedrock")
 
-    checks = asyncio.run(run_checks(roles, settings=settings))
+    checks = asyncio.run(run_checks(roles, settings=settings, provider=provider))
     for check in checks:
         status = "ok" if check.ok else "FAILED"
         latency = f" in {check.latency_ms} ms" if check.latency_ms is not None else ""
@@ -155,7 +212,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     if all(check.ok for check in checks):
         return 0
     sys.stdout.flush()
-    print("\nlive Bedrock path is not ready; see docs/setup/aws.md section 4", file=sys.stderr)
+    label, guide = (
+        ("SAP AI Core", "docs/sap-hackathon-resources.md")
+        if provider == "sap"
+        else ("Bedrock", "docs/setup/aws.md section 4")
+    )
+    print(f"\nlive {label} path is not ready; see {guide}", file=sys.stderr)
     return 1
 
 

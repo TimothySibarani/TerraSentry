@@ -27,7 +27,7 @@ from terrasentry_api.models import SubmittedRecord as SubmittedRecordRow
 from terrasentry_api.models import Supplier as SupplierRow
 from terrasentry_api.sap_actions import disclosure_for_mode
 
-ModelMode = Literal["scripted", "bedrock"]
+ModelMode = Literal["scripted", "bedrock", "sap"]
 BatchMode = Literal["screening", "agent"]
 AGENT_BATCH_MAX_RECORDS = 50
 
@@ -45,6 +45,7 @@ class HealthResponse(BaseModel):
     sap_mode: str = "stub"
     sap_real: bool = False
     bedrock_configured: bool = False
+    aicore_configured: bool = False
     default_model: str = "scripted"
     gfw_configured: bool = False
     firms_configured: bool = False

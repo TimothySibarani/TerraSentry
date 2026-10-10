@@ -5,6 +5,8 @@ Bedrock calls, using the deterministic verifier checks as the gate.
 ``--model bedrock`` uses the orchestrator/extraction models configured in
 ``BEDROCK_MODEL_ORCHESTRATOR`` / ``BEDROCK_MODEL_EXTRACTION`` instead; that
 path needs the Day-1 Bedrock model access from docs/milestones.md section 3.
+``--model sap`` runs the same graph on SAP AI Core models configured in
+``AICORE_*`` (see docs/sap-hackathon-resources.md).
 
 Exit codes: 0 complete, 2 awaiting human review, 1 failed.
 """

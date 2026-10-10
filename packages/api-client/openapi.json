@@ -109,7 +109,8 @@
               {
                 "enum": [
                   "scripted",
-                  "bedrock"
+                  "bedrock",
+                  "sap"
                 ],
                 "type": "string"
               },
@@ -765,6 +766,11 @@
       "HealthResponse": {
         "description": "Process health plus the offline-rehearsal and SAP-mode state the cockpit badges.",
         "properties": {
+          "aicore_configured": {
+            "default": false,
+            "title": "Aicore Configured",
+            "type": "boolean"
+          },
           "auth_enabled": {
             "default": false,
             "title": "Auth Enabled",
@@ -1646,7 +1652,8 @@
               {
                 "enum": [
                   "scripted",
-                  "bedrock"
+                  "bedrock",
+                  "sap"
                 ],
                 "type": "string"
               },

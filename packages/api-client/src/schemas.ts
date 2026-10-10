@@ -12,6 +12,7 @@ export const HealthResponse = Schema.Struct({
   sap_mode: Schema.String,
   sap_real: Schema.Boolean,
   bedrock_configured: Schema.Boolean,
+  aicore_configured: Schema.Boolean,
   default_model: Schema.String,
   gfw_configured: Schema.Boolean,
   firms_configured: Schema.Boolean,
@@ -118,7 +119,7 @@ export const TraceKind = Schema.Literals([
 ]);
 export type TraceKind = typeof TraceKind.Type;
 
-export const ModelMode = Schema.Literals(["scripted", "bedrock"]);
+export const ModelMode = Schema.Literals(["scripted", "bedrock", "sap"]);
 export type ModelMode = typeof ModelMode.Type;
 
 export const Finding = Schema.Struct({

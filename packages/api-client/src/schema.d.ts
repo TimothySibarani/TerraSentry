@@ -490,7 +490,7 @@ export interface components {
              */
             mode: "screening" | "agent";
             /** Model */
-            model?: ("scripted" | "bedrock") | null;
+            model?: ("scripted" | "bedrock" | "sap") | null;
             /** Record Ids */
             record_ids?: string[] | null;
             /**
@@ -780,6 +780,11 @@ export interface components {
          * @description Process health plus the offline-rehearsal and SAP-mode state the cockpit badges.
          */
         HealthResponse: {
+            /**
+             * Aicore Configured
+             * @default false
+             */
+            aicore_configured: boolean;
             /**
              * Auth Enabled
              * @default false
@@ -1168,7 +1173,7 @@ export interface components {
          */
         RunCreate: {
             /** Model */
-            model?: ("scripted" | "bedrock") | null;
+            model?: ("scripted" | "bedrock" | "sap") | null;
             /** Record Id */
             record_id?: string | null;
             /**

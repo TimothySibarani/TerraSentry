@@ -16,11 +16,13 @@ import { healthQuery } from "#/features/health/queries";
 const MODEL_ITEMS = {
 	scripted: "Scripted (offline)",
 	bedrock: "Bedrock (live)",
+	sap: "SAP AI Core (live)",
 } as const;
 
 /**
- * Agent model picker. "Bedrock (live)" is disabled until `/health` reports
- * both role model ids, so a run can never be started against missing config.
+ * Agent model picker. Each live option is disabled until `/health` reports its
+ * credentials and both role model ids, so a run can never be started against
+ * missing config.
  */
 export function ModelSelect({
 	id,
@@ -42,13 +44,16 @@ export function ModelSelect({
 }) {
 	const health = useQuery(healthQuery());
 	const bedrockReady = health.data?.bedrockConfigured ?? false;
+	const sapReady = health.data?.aicoreConfigured ?? false;
+	const selectedReady =
+		value === "scripted" || (value === "bedrock" ? bedrockReady : sapReady);
 
 	// Fall back to scripted if live models disappear (config change, API restart).
 	useEffect(() => {
-		if (value === "bedrock" && health.isSuccess && !bedrockReady) {
+		if (health.isSuccess && !selectedReady) {
 			onChange("scripted");
 		}
-	}, [value, bedrockReady, health.isSuccess, onChange]);
+	}, [selectedReady, health.isSuccess, onChange]);
 
 	return (
 		<Field className={className} data-disabled={disabled || undefined}>
@@ -68,6 +73,9 @@ export function ModelSelect({
 						<SelectItem value="bedrock" disabled={!bedrockReady}>
 							Bedrock (live){bedrockReady ? "" : " — not configured"}
 						</SelectItem>
+						<SelectItem value="sap" disabled={!sapReady}>
+							SAP AI Core (live){sapReady ? "" : " — not configured"}
+						</SelectItem>
 					</SelectGroup>
 				</SelectContent>
 			</Select>
@@ -76,20 +84,35 @@ export function ModelSelect({
 			) : null}
 			{showHint && !disabled && (
 				<FieldDescription>
-					{bedrockReady
-						? "Bedrock runs the supervisor, specialists, and verifier on live models. Scripted replays the same graph with no model calls."
-						: "Set BEDROCK_MODEL_ORCHESTRATOR and BEDROCK_MODEL_EXTRACTION to enable live models. Scripted still uses real GFW and FIRMS data."}
+					{hintFor(value, { bedrockReady, sapReady })}
 				</FieldDescription>
 			)}
 		</Field>
 	);
 }
 
+function hintFor(
+	value: ModelMode,
+	ready: { bedrockReady: boolean; sapReady: boolean },
+): string {
+	const live =
+		"runs the supervisor, specialists, and verifier on live models. Scripted replays the same graph with no model calls.";
+	if (value === "sap" && ready.sapReady) return `SAP AI Core ${live}`;
+	if (value === "bedrock" && ready.bedrockReady) return `Bedrock ${live}`;
+	return "Set BEDROCK_MODEL_ORCHESTRATOR and BEDROCK_MODEL_EXTRACTION (Bedrock) or AICORE_SERVICE_KEY, AICORE_MODEL_ORCHESTRATOR and AICORE_MODEL_EXTRACTION (SAP AI Core) to enable live models. Scripted still uses real GFW and FIRMS data.";
+}
+
 /** The model a new run should start with: live when available and preferred. */
 export function useDefaultModel(): ModelMode {
 	const health = useQuery(healthQuery());
-	return health.data?.bedrockConfigured &&
-		health.data.defaultModel === "bedrock"
-		? "bedrock"
-		: "scripted";
+	if (
+		health.data?.defaultModel === "bedrock" &&
+		health.data.bedrockConfigured
+	) {
+		return "bedrock";
+	}
+	if (health.data?.defaultModel === "sap" && health.data.aicoreConfigured) {
+		return "sap";
+	}
+	return "scripted";
 }

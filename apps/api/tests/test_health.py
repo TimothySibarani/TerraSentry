@@ -16,6 +16,7 @@ def test_health(client: TestClient) -> None:
         "sap_real": False,
         # The test factory builds services without Bedrock ids.
         "bedrock_configured": False,
+        "aicore_configured": False,
         "default_model": "scripted",
         "gfw_configured": True,
         "firms_configured": True,
@@ -28,3 +29,11 @@ def test_health_reports_bedrock_configured_when_both_models_are_set(tmp_path: Pa
     with TestClient(create_app(services_factory=factory)) as client:
         body = client.get("/health").json()
     assert body["bedrock_configured"] is True
+
+
+def test_health_reports_aicore_configured_when_credentials_and_models_are_set(tmp_path: Path) -> None:
+    factory = api_helpers.test_services_factory(tmp_path, aicore_configured=True)
+    with TestClient(create_app(services_factory=factory)) as client:
+        body = client.get("/health").json()
+    assert body["aicore_configured"] is True
+    assert body["bedrock_configured"] is False

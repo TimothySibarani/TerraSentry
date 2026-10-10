@@ -8,6 +8,9 @@ as free access allows, and makes the fallback explicit so the demo never overcla
 > SAP changes program names and trial entitlements regularly. Treat the steps as a map,
 > not a contract, and record what actually worked in `docs/milestones.md` §3 on Day 1.
 
+> [!NOTE]
+> **Hackathon 2026 Environment Available**: If you are participating in the official SAP-AWS ID Hackathon 2026, the committee has already provisioned shared BTP subaccounts, Cloud Foundry team spaces, pre-deployed AI Core models (Claude 4.6 Sonnet, GPT-5.4, Sonar), and Joule Pro-Code keys. See [sap-hackathon-resources.md](../sap-hackathon-resources.md) for credentials, available models, and integration instructions.
+
 ## 1. The decision tree
 
 | Option | What it is | Cost | Demo claim | Effort |

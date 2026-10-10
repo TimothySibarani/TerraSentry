@@ -63,6 +63,7 @@ class AppServices:
     offline: bool = False
     fixtures_loaded: int = 0
     bedrock_configured: bool = False
+    aicore_configured: bool = False
 
     async def aclose(self) -> None:
         await self.run_manager.shutdown()
@@ -151,6 +152,7 @@ async def build_services(
             offline=resolved.cache_offline,
             fixtures_loaded=fixtures_loaded,
             bedrock_configured=not get_agent_settings().missing_models,
+            aicore_configured=not get_agent_settings().missing_aicore,
         )
     except BaseException:
         if sap is not None:

@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiClientError, type RecordOut } from "@terrasentry/api-client";
+import {
+	ApiClientError,
+	type ModelMode,
+	type RecordOut,
+} from "@terrasentry/api-client";
 import { useEffect, useRef, useState } from "react";
 import type { IntakeForm } from "#/features/intake/form";
 import { toSubmission } from "#/features/intake/form";
@@ -70,7 +74,7 @@ export function useScreenPlot() {
 			model,
 		}: {
 			form: IntakeForm;
-			model: "scripted" | "bedrock";
+			model: ModelMode;
 		}) => {
 			const submission = toSubmission(form);
 			const key = JSON.stringify(submission);
