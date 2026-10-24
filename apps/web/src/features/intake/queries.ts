@@ -98,3 +98,16 @@ export function useScreenPlot() {
 		},
 	});
 }
+
+/** Upload a supplier portfolio; valid rows become records, invalid rows come back with reasons. */
+export function useImportPortfolio() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (file: File) =>
+			runApi((api) => api.importRecords(file, file.name)),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["records"] });
+			void queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+		},
+	});
+}

@@ -1,5 +1,6 @@
 from datetime import date
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -7,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """API-owned configuration.
 
-    Source credentials, cache settings, SAP mode, and Bedrock model ids have
+    Source credentials, cache settings, SAP mode, and SAP AI Core model ids have
     canonical homes in ``terrasentry_integrations.settings`` and
     ``terrasentry_core.agents.settings``; they are intentionally not duplicated
     here.
@@ -28,7 +29,7 @@ class Settings(BaseSettings):
     auto_seed: bool = True
     seed_data_dir: str = "data/seed"
 
-    agent_model: str = "scripted"
+    agent_model: Literal["scripted", "sap"] = "scripted"
     run_timeout_seconds: int = 900
     batch_concurrency: int = 4
     # Agent-mode batches run the full agent graph per record; bound them separately.

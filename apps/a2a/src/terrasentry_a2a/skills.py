@@ -140,6 +140,8 @@ class Skills:
         flagged = [item for item in run.findings if item.level != "clear"][:3]
         if flagged:
             lines.append("Top findings:\n" + "\n".join(f"- {item.detail or item.code}" for item in flagged))
+        if run.state == "awaiting_review":
+            lines.append("A reviewer has to decide before anything changes in SAP.")
         if run.state == "failed" and run.error:
             lines.append(f"Reason: {run.error}")
         lines.append(self._link("Open the full assessment in the cockpit", run.run_id))

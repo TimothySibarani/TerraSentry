@@ -28,8 +28,14 @@ from terrasentry_core.agents.orchestrator import RunOrchestrator
 from terrasentry_core.agents.schemas import AgentRunResult, ReviewDecision
 from terrasentry_core.agents.verification import code_checks
 from terrasentry_core.assessment.pipeline import assess_record
-from terrasentry_core.domain.enums import RunState
-from terrasentry_core.errors import CoreError, InvalidReviewDecisionError, SeedLookupError
+from terrasentry_core.domain.enums import Decision, RunState
+from terrasentry_core.errors import (
+    CoreError,
+    ErpActionError,
+    InvalidReviewDecisionError,
+    RunNotCancellableError,
+    SeedLookupError,
+)
 from terrasentry_core.intake import IntakeError
 from terrasentry_core.reference.pipeline import PolygonReport
 from terrasentry_core.scoring import RubricConfig
@@ -43,7 +49,7 @@ from terrasentry_integrations.sources.gfw import GfwClient
 from terrasentry_integrations.sources.media import MediaSearch
 
 from terrasentry_api.config import Settings
-from terrasentry_api.sap_actions import SapActionRecord, SapActionService
+from terrasentry_api.sap_actions import ErpMode, SapActionRecord, SapActionService, planned_status
 from terrasentry_api.store import RunStore
 
 logger = logging.getLogger(__name__)
@@ -124,6 +130,8 @@ class RunManager:
         self._sap = sap
         self._broadcaster = RunBroadcaster()
         self._tasks: set[asyncio.Task[None]] = set()
+        self._run_tasks: dict[str, asyncio.Task[None]] = {}
+        self._cancelled: set[str] = set()
         self._decision_locks: dict[str, asyncio.Lock] = {}
         self._closed = False
 
@@ -142,14 +150,43 @@ class RunManager:
             return
         task = asyncio.create_task(self._guard(run_id, coro))
         self._tasks.add(task)
-        task.add_done_callback(self._tasks.discard)
+        self._run_tasks[run_id] = task
+
+        def _done(finished: asyncio.Task[None]) -> None:
+            self._tasks.discard(finished)
+            if self._run_tasks.get(run_id) is finished:
+                del self._run_tasks[run_id]
+
+        task.add_done_callback(_done)
+
+    async def recover_interrupted(self) -> int:
+        """Startup sweep: runs are in-process tasks, so any open run belongs to a dead process."""
+        async with self._session_factory() as session:
+            ids = await RunStore(session).fail_open_runs("interrupted by an API restart; run it again")
+            await session.commit()
+        return len(ids)
+
+    async def cancel_run(self, run_id: str) -> None:
+        """Stop a scenario run or a batch that this process is executing, then mark it failed."""
+        task = self._run_tasks.get(run_id)
+        if task is None or task.done():
+            raise RunNotCancellableError(run_id)
+        self._cancelled.add(run_id)
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
 
     async def _guard(self, run_id: str, coro: Awaitable[None]) -> None:
         """Last-resort net: an unexpected task failure marks the run failed."""
         try:
             await coro
         except asyncio.CancelledError:
-            raise
+            if run_id not in self._cancelled:
+                raise
+            self._cancelled.discard(run_id)
+            async with self._session_factory() as session:
+                await RunStore(session).fail_open_runs("cancelled by a reviewer", parent_run_id=run_id)
+                await session.commit()
+            await self._fail(run_id, "cancelled by a reviewer")
         except Exception as exc:
             logger.exception("run task %s raised unexpectedly", run_id)
             try:
@@ -169,6 +206,7 @@ class RunManager:
         scenario: str | None,
         model: str,
         refresh: bool = False,
+        erp_mode: ErpMode = "auto",
     ) -> str:
         skip_deep_dives = False
         if scenario in FAULT_SCENARIOS:
@@ -176,7 +214,7 @@ class RunManager:
         record = self._resolve_record(record_id=record_id, scenario=scenario)
         self._require_country(record)
         run_id = f"run-{uuid4().hex[:12]}"
-        await self._create_run(run_id, "scenario", record=record, model=model)
+        await self._create_run(run_id, "scenario", record=record, model=model, erp_mode=erp_mode)
         self._spawn(
             run_id,
             self._execute_scenario(run_id, record, model, refresh, skip_deep_dives=skip_deep_dives),
@@ -191,9 +229,10 @@ class RunManager:
         record_ids: list[str] | None = None,
         mode: str = "screening",
         model: str | None = None,
+        erp_mode: ErpMode = "auto",
     ) -> str:
         batch_run_id = f"batch-{uuid4().hex[:12]}"
-        # runs.model holds the mode string: "deterministic" for screening, else scripted/bedrock/sap.
+        # runs.model holds the mode string: "deterministic" for screening, else scripted/sap.
         run_model = (model or self._settings.agent_model) if mode == "agent" else "deterministic"
         # Explicit ids screen submitted (or chosen) records; otherwise the seed demo batch.
         records = (
@@ -213,6 +252,7 @@ class RunManager:
                 model=run_model,
                 assessment_date=assessment_date,
                 operator=operator,
+                erp_mode=erp_mode,
                 metrics={
                     "mode": mode,
                     "model": run_model if mode == "agent" else None,
@@ -229,6 +269,7 @@ class RunManager:
                     model=run_model,
                     assessment_date=assessment_date,
                     operator=operator,
+                    erp_mode=erp_mode,
                 )
             await session.commit()
         self._spawn(batch_run_id, self._execute_batch(batch_run_id, records, refresh, mode, run_model))
@@ -253,7 +294,7 @@ class RunManager:
 
         orchestrator = self._orchestrator(on_step=None)
         resumed = await orchestrator.resume(result, decision)
-        action = await self._sap_decision_action(resumed, decision)
+        action = await self._erp_action(resumed, decision.decision)
         if action is not None:
             resumed = self._attach_sap(resumed, action)
         await self._store_result(resumed, sap_action=action)
@@ -350,7 +391,7 @@ class RunManager:
         if result is None:
             await self._fail(run_id, failure or "run failed")
             return RunState.FAILED, None
-        action = await self._sap_verdict_action(result)
+        action = await self._erp_action(result, None)
         if action is not None:
             result = self._attach_sap(result, action)
         await self._store_result(result, sap_action=action)
@@ -574,7 +615,7 @@ class RunManager:
                 started_at=started,
                 finished_at=self._clock(),
             )
-        action = await self._sap_verdict_action(result)
+        action = await self._erp_action(result, None)
         if action is not None:
             result = self._attach_sap(result, action)
         await self._store_result(result, sap_action=action)
@@ -582,7 +623,9 @@ class RunManager:
 
     # -- persistence helpers ---------------------------------------------------------
 
-    async def _create_run(self, run_id: str, kind: str, *, record: BatchRecord, model: str) -> None:
+    async def _create_run(
+        self, run_id: str, kind: str, *, record: BatchRecord, model: str, erp_mode: ErpMode = "auto"
+    ) -> None:
         async with self._session_factory() as session:
             store = RunStore(session)
             operator = await store.operator_profile(self._datasets.operator)
@@ -594,6 +637,7 @@ class RunManager:
                 model=model,
                 assessment_date=assessment_date,
                 operator=operator,
+                erp_mode=erp_mode,
             )
             await session.commit()
 
@@ -671,27 +715,54 @@ class RunManager:
             self._publish_step(result.run_id, step)
         self._publish_state(result.run_id, result.state)
 
-    async def _sap_verdict_action(self, result: AgentRunResult) -> SapActionRecord | None:
-        """Apply a released automated verdict; ``awaiting_review`` waits for a human."""
+    async def _erp_mode(self, run_id: str) -> str:
+        async with self._session_factory() as session:
+            run = await RunStore(session).get_run(run_id)
+        return run.erp_mode if run is not None else "auto"
+
+    async def _erp_action(self, result: AgentRunResult, decision: Decision | None) -> SapActionRecord | None:
+        """Apply the vendor status a finished run calls for, when its ERP mode is ``auto``.
+
+        Held runs have no released assessment, so nothing is applied until a human decides.
+        ``confirm`` and ``off`` runs never act here; ``confirm_erp_action`` applies a pending one.
+        """
         if self._sap is None or result.assessment is None:
             return None
-        return await self._sap.apply_verdict(
-            run_id=result.run_id,
-            supplier_id=result.supplier_id,
-            verdict=result.assessment.assessment.verdict,
+        if await self._erp_mode(result.run_id) != "auto":
+            return None
+        status = planned_status(verdict=result.assessment.assessment.verdict, decision=decision)
+        if status is None:
+            return None
+        return await self._sap.apply_status(
+            run_id=result.run_id, supplier_id=result.supplier_id, status=status
         )
 
-    async def _sap_decision_action(
-        self, result: AgentRunResult, decision: ReviewDecision
-    ) -> SapActionRecord | None:
-        """Apply the human decision on the ambiguous branch."""
-        if self._sap is None or result.assessment is None:
-            return None
-        return await self._sap.apply_decision(
-            run_id=result.run_id,
-            supplier_id=result.supplier_id,
-            decision=decision.decision,
-        )
+    async def confirm_erp_action(self, run_id: str) -> SapActionRecord:
+        """Apply the pending ERP action of a finished run (the explicit confirmation path)."""
+        if self._sap is None:
+            raise ErpActionError("no ERP gateway is configured")
+        async with self._decision_lock(run_id):
+            async with self._session_factory() as session:
+                store = RunStore(session)
+                if await store.get_run(run_id) is None:
+                    raise SeedLookupError("run", run_id)
+                result = await store.load_result(run_id)
+                existing = await store.get_sap_action(run_id)
+            if result is None or result.state is not RunState.COMPLETE or result.assessment is None:
+                raise ErpActionError("the run is not finished; a held run needs a review decision first")
+            if existing is not None and existing.status != "failed":
+                raise ErpActionError("an ERP action was already applied to this run")
+            status = planned_status(
+                verdict=result.assessment.assessment.verdict,
+                decision=result.review.decision if result.review is not None else None,
+            )
+            if status is None:
+                raise ErpActionError("this run plans no ERP action")
+            action = await self._sap.apply_status(
+                run_id=run_id, supplier_id=result.supplier_id, status=status
+            )
+            await self._store_result(self._attach_sap(result, action), sap_action=action)
+            return action
 
     def _attach_sap(self, result: AgentRunResult, action: SapActionRecord) -> AgentRunResult:
         """Fold the ERP action into the run: DDS extension, disclosure, trace step."""

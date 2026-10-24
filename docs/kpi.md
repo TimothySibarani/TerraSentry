@@ -1,6 +1,6 @@
 # TerraSentry — KPI table (M6 empirical numbers)
 
-**Status:** S2 live source/Bedrock controls and 50-record fixture replay measured
+**Status:** S2 live source controls and 50-record fixture replay measured; no SAP AI Core agent number yet
 **Date:** 2026-10-02
 **Related:** [prd.md](./prd.md) §4.3/§5 · [milestones.md](./milestones.md) M6 · [setup/rehearsal.md](./setup/rehearsal.md)
 
@@ -23,6 +23,17 @@ Replay timings exclude network acquisition and LLM calls. The "Offline design-si
 records controlled calibration evidence: `apps/api/tests/test_batch_full.py` runs the production runner over all 50
 seed records with the source signals each archetype is designed to exercise.
 
+## Reading this table after the review-flow change (2026-10-13)
+
+High-risk verdicts are now held for a person instead of releasing and blocking the vendor on their own.
+The "Local CLI smoke" and "Live rehearsal" columns were recorded before that change, so their
+high-risk rows (state and ERP counts) describe the old behaviour; the verdicts, timings and cache
+numbers are unaffected. The "Offline design-signal test" column is current: re-run it with
+`uv run pytest apps/api/tests/test_batch_full.py -q`. Re-record the live columns with the commands
+under "Reproduce" to refresh them. The raw reports from the 2026-10-02 rehearsal were written to
+temporary folders that no longer exist, so the live column cannot be re-derived from the repository
+until the rehearsal is run again; keep the report this time by passing `--report docs/evidence/<name>.json`.
+
 ## KPI table
 
 | KPI | Definition | Target | Report field | Offline design-signal test | Local CLI smoke (mock fixtures, 2026-09-11) | Live rehearsal |
@@ -33,9 +44,9 @@ seed records with the source signals each archetype is designed to exercise.
 | P95 per supplier | Nearest-rank p95 per-record elapsed time | recorded baseline | `summary.p95_seconds_per_record` | asserted ≥ median | 0.061 s | 0.854 s replay |
 | Throughput | `record_count / wall_clock_seconds` | recorded baseline | `summary.throughput_records_per_second` | asserted present | 57.34 rec/s | 7.556 rec/s replay |
 | Design match | Expected archetype maps to its intended verdict (confusion diagonal) | Injected design 30/12/8; measure actual live drift | `summary.confusion`, `summary.verdict_breakdown` | 30/12/8 exact | 30/12/8 exact | Real fixtures: 1 compliant / 35 high-risk / 14 ambiguous |
-| HITL under load | Ambiguous records paused for human review in the same batch | 8 held (`awaiting_review`) | `summary.states.awaiting_review` | 8 | 8 | 14 held |
-| ERP gatekeeping | Vendor status actions applied by the batch (approved / blocked / failed) | 30 approved / 12 blocked / 0 failed for released verdicts | `summary.sap_actions` | 30/12/0 asserted | 30/12/0 | 1 approved / 35 blocked / 0 failed (stub) |
-| Verifier coverage | Records accepted by the deterministic verify-before-write checks | 100% | `summary.states.failed` | 0 failed | 0 failed | 0 failed |
+| Held for review under load | Ambiguous **and high-risk** records paused for a person in the same batch (high-risk was auto-released before 2026-10-13) | 20 held on the injected 30/12/8 design (8 ambiguous + 12 high-risk) | `summary.states.awaiting_review` | 20 | 20 | 14 held on the 2026-10-02 replay (that run predates the high-risk hold; it would be 49 of 50 today) |
+| ERP gatekeeping | Vendor status actions applied by the batch (approved / blocked / failed). Only compliant verdicts act on their own; held runs act after a decision | 30 approved / 0 blocked / 0 failed (compliant only; 20 held) | `summary.sap_actions` | 30/0/0 asserted | 30/12/0 (before the hold) | 1 approved / 35 blocked / 0 failed (stub; before the hold) |
+| Verifier coverage | Records accepted by the deterministic verify-before-write checks. In screening mode no model runs, so this passes by construction; it is only a meaningful measure in agent mode, where the coverage check can reject a run | 100% | `summary.states.failed` | 0 failed | 0 failed | 0 failed (screening) |
 | Offline replay | External calls on a re-run from primed fixtures | 0 misses | `summary.cache_stats.misses` / `offline_misses` | asserted 0 on replay | 0 misses, 100 hits | 0 misses / 450 hits |
 | Cycle acceleration | Manual pre-screen time vs system time per supplier | 98% (PRD §5) | n/a | baseline not defined | baseline not defined | pending baseline |
 
@@ -44,7 +55,7 @@ Notes:
 - The CLI smoke values come from deterministic **mock** fixtures and a local Postgres/Redis; they
   validate the operational path and metric plumbing, not real API latency. Current live
   rehearsal rows measure replay of actual GFW/FIRMS fixtures; acquisition is separately
-  reported below. They are not live Bedrock agent-batch throughput.
+  reported below. They are not live agent-batch throughput.
 - `total_record_seconds` (sum of worker time) is also recorded in the report for the
   concurrency-efficiency story: 1.081 s of worker time compressed into 0.872 s wall clock at
   `batch_concurrency = 4`.
@@ -64,8 +75,8 @@ Every batch is labelled with the mode it actually ran, and KPI rows must say whi
 | `agent` | Full agent graph per record (screening, re-tasked deep dives, coverage-checked verifier) | `BATCH_AGENT_CONCURRENCY` | `summary.mode = agent`, `summary.model`, `summary.metrics.token_usage` (graph-level only) |
 
 `summary.unlabelled_count` counts submitted records without a design label; the confusion
-matrix and design match use labelled records only. No agent-mode live number is recorded yet:
-the bounded 10-record Bedrock rehearsal is an open S3 gate, and scripted agent batches only
+matrix and design match use labelled records only. No agent-mode live number is recorded yet (the runbook and a table to fill in are in [evidence/README.md](./evidence/README.md)):
+the bounded 10-record SAP AI Core rehearsal is an open S3 gate, and scripted agent batches only
 validate plumbing, not model latency or cost.
 
 ## Reproduce
@@ -78,8 +89,8 @@ uv run pytest apps/api/tests/test_batch_full.py -q
 pnpm rehearsal:prefetch --size 50 --as-of 2026-09-11 --concurrency 4
 pnpm rehearsal:run --size 50 --as-of 2026-09-11 --report data/runs/batch-2026-09-11.json
 
-# Agent mode (scripted validates plumbing; bedrock is the live measurement)
-uv run python -m terrasentry_api.rehearsal run --size 10 --mode agent --model bedrock \
+# Agent mode (scripted validates plumbing; sap is the live measurement)
+uv run python -m terrasentry_api.rehearsal run --size 10 --mode agent --model sap \
   --as-of 2026-09-11 --report data/runs/agent-batch.json
 ```
 
@@ -139,8 +150,9 @@ Working artifacts: `/tmp/ts-s2-repair-prefetch-50.log`, `/tmp/ts-s2-repair-fixtu
 `/tmp/ts-s2-repair-api-smoke.log`, `/tmp/ts-s2-repair-point.json`. Fixture identity is
 `geometry-v2` and context query revision is `clip-2`; refresh old fixtures before replay.
 
-After fresh AWS login, both Bedrock preflight roles pass. Final-code production runs
-with configured default Bedrock complete with accepted verification and configured-operator
+**Historical (measured on Amazon Bedrock, which was removed on 2026-10-13; these say nothing
+about SAP AI Core timing).** After fresh AWS login, both Bedrock preflight roles passed. Final-code
+production runs with the then-configured default Bedrock model completed with accepted verification and configured-operator
 DDS: WDPA **43.659 s / 23 steps / high-risk** (`run-0647f39f0be5`); clean ID control
 **45.626 s / 21 steps / compliant** (`run-3cd3c56a43e6`). These are single-record live
 agent timings, not S3 agent-batch throughput. Artifacts:

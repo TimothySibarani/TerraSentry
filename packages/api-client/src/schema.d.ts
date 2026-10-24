@@ -332,6 +332,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{run_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Run
+         * @description Stop a run or batch that is executing and mark it failed; 409 when nothing is running.
+         */
+        post: operations["cancel_run_runs__run_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{run_id}/decision": {
         parameters: {
             query?: never;
@@ -346,6 +366,26 @@ export interface paths {
          * @description Approve or override an ambiguous run and release (or keep) its DDS.
          */
         post: operations["decide_run_runs__run_id__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/erp-action": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Erp Action
+         * @description Apply the ERP action a finished run is waiting on (``confirm`` mode, or a retry after a failure).
+         */
+        post: operations["confirm_erp_action_runs__run_id__erp_action_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -484,13 +524,19 @@ export interface components {
          */
         BatchCreate: {
             /**
+             * Erp Mode
+             * @default auto
+             * @enum {string}
+             */
+            erp_mode: "off" | "confirm" | "auto";
+            /**
              * Mode
              * @default screening
              * @enum {string}
              */
             mode: "screening" | "agent";
             /** Model */
-            model?: ("scripted" | "bedrock" | "sap") | null;
+            model?: ("scripted" | "sap") | null;
             /** Record Ids */
             record_ids?: string[] | null;
             /**
@@ -795,11 +841,6 @@ export interface components {
              * @default false
              */
             auth_enabled: boolean;
-            /**
-             * Bedrock Configured
-             * @default false
-             */
-            bedrock_configured: boolean;
             /**
              * Default Model
              * @default scripted
@@ -1177,8 +1218,14 @@ export interface components {
          * @description Start one scenario run for a seed record or a named demo scenario.
          */
         RunCreate: {
+            /**
+             * Erp Mode
+             * @default auto
+             * @enum {string}
+             */
+            erp_mode: "off" | "confirm" | "auto";
             /** Model */
-            model?: ("scripted" | "bedrock" | "sap") | null;
+            model?: ("scripted" | "sap") | null;
             /** Record Id */
             record_id?: string | null;
             /**
@@ -1207,6 +1254,14 @@ export interface components {
             disclosures?: string[];
             /** Elapsed Seconds */
             elapsed_seconds?: number | null;
+            /**
+             * Erp Mode
+             * @default auto
+             * @enum {string}
+             */
+            erp_mode: "off" | "confirm" | "auto";
+            /** Erp Pending */
+            erp_pending?: ("approved" | "blocked") | null;
             /** Error */
             error?: string | null;
             /** Expected Archetype */
@@ -1275,6 +1330,12 @@ export interface components {
             created_at: string;
             /** Elapsed Seconds */
             elapsed_seconds?: number | null;
+            /**
+             * Erp Mode
+             * @default auto
+             * @enum {string}
+             */
+            erp_mode: "off" | "confirm" | "auto";
             /** Error */
             error?: string | null;
             /** Expected Archetype */
@@ -1547,7 +1608,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "run" | "agent" | "retask" | "tool" | "verifier" | "writer" | "review" | "state" | "sap";
+            kind: "run" | "agent" | "retask" | "report" | "tool" | "verifier" | "writer" | "review" | "state" | "sap";
             /** Name */
             name: string;
             /** Payload */
@@ -2272,6 +2333,8 @@ export interface operations {
         parameters: {
             query?: {
                 kind?: string | null;
+                /** @description Only runs in this state */
+                state?: components["schemas"]["RunState"] | null;
                 parent_run_id?: string | null;
                 limit?: number;
                 offset?: number;
@@ -2366,6 +2429,37 @@ export interface operations {
             };
         };
     };
+    cancel_run_runs__run_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     decide_run_runs__run_id__decision_post: {
         parameters: {
             query?: never;
@@ -2388,6 +2482,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_erp_action_runs__run_id__erp_action_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SapActionOut"];
                 };
             };
             /** @description Validation Error */

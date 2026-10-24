@@ -72,7 +72,7 @@ class AgentRunError(CoreError):
 
 
 class MissingModelError(CoreError):
-    """A live agent role was requested without a configured model id (Bedrock or AI Core)."""
+    """A live agent role was requested without a configured model id (SAP AI Core)."""
 
     def __init__(self, variable: str) -> None:
         super().__init__(
@@ -88,6 +88,22 @@ class InvalidReviewDecisionError(CoreError):
     def __init__(self, state: str) -> None:
         super().__init__(f"run is in state {state!r} and cannot accept a review decision")
         self.state = state
+
+
+class ErpActionError(CoreError):
+    """An ERP action was requested for a run that has nothing to apply."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+class RunNotCancellableError(CoreError):
+    """A cancel was requested for a run that is not executing in this process."""
+
+    def __init__(self, run_id: str) -> None:
+        super().__init__(f"run {run_id!r} is not running and cannot be cancelled")
+        self.run_id = run_id
 
 
 class ModelConfigurationError(CoreError):

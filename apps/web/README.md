@@ -1,41 +1,31 @@
-# web
+# @terrasentry/web
 
-A minimal TanStack Start app with one route and Tailwind CSS.
-
-```bash
-pnpm install
-pnpm dev
-```
-
-Edit `src/routes/index.tsx` to get started. Add route files under
-`src/routes`; TanStack Router updates `src/routeTree.gen.ts` for you.
-
-Build the production app with:
+The TerraSentry cockpit: TanStack Start (React 19, Vite, Nitro), Tailwind CSS v4, shadcn/ui on Base UI,
+and an Effect client for the Python API.
 
 ```bash
-pnpm build
+pnpm dev          # from the repo root: web on :3000 and the API on :8000
+pnpm --filter @terrasentry/web test
+pnpm --filter @terrasentry/web typecheck   # also regenerates src/routeTree.gen.ts
 ```
 
-## Shadcn
+## Screens
 
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
+| Route | What it is for |
+| --- | --- |
+| `/` | Overview: needs-your-decision count, demo scenarios, latest batch KPIs |
+| `/screen` | Screen one plot: draw or paste it, declare supplier, permit and lot |
+| `/review` | The queue of ambiguous and high-risk runs waiting for a person; bulk approve or block |
+| `/runs`, `/runs/$runId` | Every run with its live trace, agent brief, assessment, evidence, map and DDS |
+| `/batch`, `/batch/$batchId` | Batch runs with throughput and verdict breakdown |
+| `/suppliers`, `/suppliers/import` | Suppliers by data origin; import a CSV or GeoJSON portfolio |
+| `/settings` | The company named on due diligence statements |
 
-```bash
-pnpm dlx shadcn@latest add button
-```
+## Conventions
 
-
-## Deploy with Nitro
-
-This project uses Nitro as a generic server adapter, so it can run on any Node-compatible host.
-
-```bash
-npm run build
-node dist/server/index.mjs
-```
-
-The build output is a self-contained Node server. To deploy, push the `dist/` directory to your host (Render, Fly.io, your own VPS, etc.) and run the server command above.
-
-For host-specific presets (Vercel, Netlify, Cloudflare, AWS Lambda, etc.) and tuning, see https://v3.nitro.build/deploy.
-
-
+- Design tokens live in `src/styles.css` only; use semantic classes such as `bg-background`,
+  `text-muted-foreground` and `text-status-risk`. The app is dark-only.
+- Data access goes through the Effect `ApiClient` in `packages/api-client`; components never call `fetch`.
+- Add shadcn components with `pnpm dlx shadcn@latest add <name>`, then point imports at `#/lib/utils`
+  and drop the stray `cn` dependency the registry adds.
+- Tests sit next to the code they cover (`*.test.ts(x)`, Vitest and happy-dom).

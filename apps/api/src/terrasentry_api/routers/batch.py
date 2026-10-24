@@ -43,6 +43,7 @@ async def create_batch(
         refresh=payload.refresh,
         record_ids=payload.record_ids,
         mode=payload.mode,
+        erp_mode=payload.erp_mode,
         model=(payload.model or services.settings.agent_model) if payload.mode == "agent" else None,
     )
     return await _summary(RunStore(session), batch_run_id)

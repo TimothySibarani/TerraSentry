@@ -10,7 +10,6 @@ it("offers the fault-injection catch only for the scripted model", () => {
 		"high_risk_live",
 		"coverage_catch",
 	]);
-	expect(ids("bedrock")).toEqual(["compliant_live", "high_risk_live"]);
 	expect(ids("sap")).toEqual(["compliant_live", "high_risk_live"]);
 });
 

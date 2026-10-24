@@ -212,6 +212,7 @@ class RunStore:
         assessment_date: date | None = None,
         operator: OperatorRecord | None = None,
         metrics: dict[str, Any] | None = None,
+        erp_mode: str = "auto",
     ) -> Run:
         row = Run(
             id=run_id,
@@ -224,6 +225,7 @@ class RunStore:
             polygon_id=record.polygon.id if record is not None else None,
             state=state,
             model=model,
+            erp_mode=erp_mode,
             metrics=metrics or {},
         )
         self._session.add(row)
@@ -237,6 +239,7 @@ class RunStore:
         self,
         *,
         kind: str | None = None,
+        state: RunState | None = None,
         parent_run_id: str | None = None,
         limit: int = 50,
         offset: int = 0,
@@ -244,10 +247,30 @@ class RunStore:
         statement = select(Run).order_by(Run.created_at.desc(), Run.id.desc())
         if kind is not None:
             statement = statement.where(Run.kind == kind)
+        if state is not None:
+            statement = statement.where(Run.state == state)
         if parent_run_id is not None:
             statement = statement.where(Run.parent_run_id == parent_run_id)
         result = await self._session.scalars(statement.limit(limit).offset(offset))
         return list(result)
+
+    async def fail_open_runs(self, detail: str, *, parent_run_id: str | None = None) -> list[str]:
+        """Mark queued/running runs failed; scoped to one batch's children when ``parent_run_id`` is set.
+
+        Used by the startup sweep (runs left open by a restart) and by cancelling a batch.
+        """
+        statement = select(Run).where(Run.state.in_([RunState.QUEUED, RunState.RUNNING]))
+        if parent_run_id is not None:
+            statement = statement.where(Run.parent_run_id == parent_run_id)
+        rows = list(await self._session.scalars(statement))
+        now = utc_now()
+        for row in rows:
+            row.state = RunState.FAILED
+            row.error = detail
+            row.summary = row.summary or detail
+            row.finished_at = now
+        await self._session.flush()
+        return [row.id for row in rows]
 
     async def set_state(
         self,

@@ -11,6 +11,16 @@ export function runsQuery() {
 	});
 }
 
+/** Runs a person still has to decide on: ambiguous and high-risk verdicts. */
+export function reviewQueueQuery() {
+	return queryOptions({
+		queryKey: ["runs", "queue"],
+		queryFn: () =>
+			runApi((api) => api.listRuns({ state: "awaiting_review", limit: 200 })),
+		staleTime: 5_000,
+	});
+}
+
 export function runQuery(runId: string) {
 	return queryOptions({
 		queryKey: ["runs", runId],

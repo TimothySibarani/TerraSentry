@@ -205,6 +205,13 @@ export function RunLauncher({
 				)}
 			</div>
 
+			{showBatch && (
+				<p className="text-body-sm text-muted-foreground">
+					The batch runs the 50 seeded demo records. To screen your own
+					suppliers, use Import suppliers.
+				</p>
+			)}
+
 			{showScenarios &&
 				faultScenarios.map((scenario) => (
 					<p key={scenario.id} className="text-body-sm text-muted-foreground">

@@ -9,8 +9,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from terrasentry_core.errors import (
+    ErpActionError,
     InvalidReviewDecisionError,
     InvalidTransitionError,
+    RunNotCancellableError,
     SeedLookupError,
 )
 from terrasentry_core.intake import IntakeError
@@ -54,6 +56,14 @@ def create_app(services_factory: ServicesFactory = build_services) -> FastAPI:
 
     @app.exception_handler(InvalidReviewDecisionError)
     async def _conflict(_: Request, exc: InvalidReviewDecisionError) -> JSONResponse:
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+    @app.exception_handler(ErpActionError)
+    async def _erp_conflict(_: Request, exc: ErpActionError) -> JSONResponse:
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+    @app.exception_handler(RunNotCancellableError)
+    async def _not_cancellable(_: Request, exc: RunNotCancellableError) -> JSONResponse:
         return JSONResponse(status_code=409, content={"detail": str(exc)})
 
     @app.exception_handler(InvalidTransitionError)

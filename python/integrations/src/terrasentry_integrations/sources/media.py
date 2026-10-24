@@ -167,6 +167,9 @@ def parse_report(text: str, known: dict[str, MediaCitation]) -> tuple[str, list[
 async def _litellm_completion(**kwargs: Any) -> Any:
     from litellm import acompletion
 
+    from terrasentry_integrations.sap_ai_core import prepare_litellm
+
+    prepare_litellm()
     return await acompletion(**kwargs)
 
 

@@ -41,7 +41,6 @@ interface PipelineStage {
 
 const LLM_LABEL: Record<ModelMode, string> = {
 	scripted: "Scripted",
-	bedrock: "Bedrock",
 	sap: "SAP AI Core",
 };
 

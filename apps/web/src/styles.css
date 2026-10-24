@@ -17,6 +17,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* shadcn components style orientation through these two variants; Base UI only emits
+   data-orientation, so without them Tabs, Separator and ScrollArea lose their layout. */
+@custom-variant data-horizontal (&[data-orientation="horizontal"]);
+@custom-variant data-vertical (&[data-orientation="vertical"]);
+
 /* ---------------------------------------------------------------------------
    1. Raw brand palette + typography + shape (DESIGN.md front matter)
    Spacing needs no tokens: Tailwind's 4px scale matches DESIGN.md exactly

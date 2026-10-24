@@ -35,6 +35,7 @@ const runSummary = {
   polygon_id: "POLY-001",
   parent_run_id: null,
   model: "scripted",
+  erp_mode: "auto",
   summary: "",
   error: null,
   verdict: null,
@@ -64,7 +65,7 @@ const batchSummaryBody = {
   run_id: "batch-1",
   state: "queued",
   mode: "agent",
-  model: "bedrock",
+  model: "sap",
   record_count: 10,
   unlabelled_count: 3,
   states: {},
@@ -120,6 +121,65 @@ describe("ApiClient", () => {
       ),
     );
   });
+  it.effect("filters the run list by state and caps the page size", () =>
+    Effect.gen(function* () {
+      const api = yield* ApiClient;
+      const held = yield* api.listRuns({
+        state: "awaiting_review",
+        limit: 200,
+      });
+      assert.deepStrictEqual(
+        held.map((run) => run.run_id),
+        ["run-1"],
+      );
+      const all = yield* api.listRuns();
+      assert.strictEqual(all.length, 1);
+    }).pipe(
+      Effect.provide(
+        apiLayer((request, url) => {
+          assert.strictEqual(request.method, "GET");
+          const wanted =
+            url.search === "" ? "" : "?state=awaiting_review&limit=200";
+          assert.strictEqual(url.search, wanted);
+          return jsonResponse([runSummary]);
+        }),
+      ),
+    ),
+  );
+  it.effect(
+    "cancels a run and confirms its ERP action with bodyless POSTs",
+    () =>
+      Effect.gen(function* () {
+        const api = yield* ApiClient;
+        const cancelled = yield* api.cancelRun("run-1");
+        assert.strictEqual(cancelled.run_id, "run-1");
+        const action = yield* api.confirmErpAction("run-1");
+        assert.strictEqual(action.status, "blocked");
+        assert.isTrue(action.purchasing_block);
+      }).pipe(
+        Effect.provide(
+          apiLayer((request, url) => {
+            assert.strictEqual(request.method, "POST");
+            if (url.pathname === "/runs/run-1/cancel") {
+              return jsonResponse(runSummary, 202);
+            }
+            assert.strictEqual(url.pathname, "/runs/run-1/erp-action");
+            return jsonResponse({
+              run_id: "run-1",
+              supplier_id: "SUP-001",
+              vendor_id: "SUP-001",
+              mode: "stub",
+              status: "blocked",
+              purchasing_block: true,
+              real: false,
+              external_reference: null,
+              error: null,
+              performed_at: "2026-10-13T00:00:00Z",
+            });
+          }),
+        ),
+      ),
+  );
   it.effect("GETs and decodes a typed health response", () =>
     Effect.gen(function* () {
       const api = yield* ApiClient;
@@ -136,7 +196,6 @@ describe("ApiClient", () => {
             fixtures_loaded: 0,
             sap_mode: "stub",
             sap_real: false,
-            bedrock_configured: true,
             aicore_configured: false,
             adverse_media_mode: "off",
             default_model: "scripted",
@@ -177,10 +236,10 @@ describe("ApiClient", () => {
       const batch = yield* api.createBatchRun({
         size: 10,
         mode: "agent",
-        model: "bedrock",
+        model: "sap",
       });
       assert.strictEqual(batch.mode, "agent");
-      assert.strictEqual(batch.model, "bedrock");
+      assert.strictEqual(batch.model, "sap");
       assert.strictEqual(batch.unlabelled_count, 3);
     }).pipe(
       Effect.provide(
@@ -190,7 +249,7 @@ describe("ApiClient", () => {
             assert.deepStrictEqual(JSON.parse(request.body.text ?? ""), {
               size: 10,
               mode: "agent",
-              model: "bedrock",
+              model: "sap",
             });
           }
           return jsonResponse(batchSummaryBody, 202);

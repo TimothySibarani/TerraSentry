@@ -47,9 +47,9 @@ def test_decision_event_maps_hitl_choices() -> None:
     ("verdict", "expected"),
     [
         (Verdict.COMPLIANT, RunState.COMPLETE),
-        (Verdict.HIGH_RISK, RunState.COMPLETE),
+        (Verdict.HIGH_RISK, RunState.AWAITING_REVIEW),
         (Verdict.AMBIGUOUS, RunState.AWAITING_REVIEW),
     ],
 )
-def test_state_for_verdict_sends_only_ambiguous_to_review(verdict: Verdict, expected: RunState) -> None:
+def test_state_for_verdict_releases_only_compliant(verdict: Verdict, expected: RunState) -> None:
     assert state_for_verdict(verdict) is expected

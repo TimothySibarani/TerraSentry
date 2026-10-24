@@ -135,7 +135,7 @@ class RunOrchestrator:
             refresh=refresh,
             media=self._media,
         )
-        models = self._models or ModelBundle.from_settings()
+        models = self._models or ModelBundle.from_aicore()
         graph = self._build_graph(record, context, models)
 
         usage: dict[str, int] | None = None

@@ -11,7 +11,6 @@ export const HealthResponse = Schema.Struct({
   fixtures_loaded: Schema.Int,
   sap_mode: Schema.String,
   sap_real: Schema.Boolean,
-  bedrock_configured: Schema.Boolean,
   aicore_configured: Schema.Boolean,
   adverse_media_mode: Schema.String,
   default_model: Schema.String,
@@ -111,6 +110,7 @@ export const TraceKind = Schema.Literals([
   "run",
   "agent",
   "retask",
+  "report",
   "tool",
   "verifier",
   "writer",
@@ -120,7 +120,7 @@ export const TraceKind = Schema.Literals([
 ]);
 export type TraceKind = typeof TraceKind.Type;
 
-export const ModelMode = Schema.Literals(["scripted", "bedrock", "sap"]);
+export const ModelMode = Schema.Literals(["scripted", "sap"]);
 export type ModelMode = typeof ModelMode.Type;
 
 export const Finding = Schema.Struct({
@@ -271,6 +271,9 @@ export const SupplierSapOut = Schema.Struct({
 });
 export type SupplierSapOut = typeof SupplierSapOut.Type;
 
+export const ErpMode = Schema.Literals(["off", "confirm", "auto"]);
+export type ErpMode = typeof ErpMode.Type;
+
 const runSummaryFields = {
   run_id: Schema.String,
   kind: Schema.String,
@@ -280,6 +283,7 @@ const runSummaryFields = {
   polygon_id: Schema.NullOr(Schema.String),
   parent_run_id: Schema.NullOr(Schema.String),
   model: Schema.String,
+  erp_mode: ErpMode,
   assessment_date: Schema.optional(Schema.NullOr(Schema.String)),
   operator_profile: Schema.optional(Schema.NullOr(OperatorRecord)),
   summary: Schema.String,
@@ -320,6 +324,10 @@ export const RunDetail = Schema.Struct({
   pending_assessment: Schema.NullOr(VerdictOut),
   review: Schema.NullOr(ReviewOut),
   sap_action: Schema.NullOr(SapActionOut),
+  // In `confirm` mode: the vendor status waiting for an explicit confirmation.
+  erp_pending: Schema.optional(
+    Schema.NullOr(Schema.Literals(["approved", "blocked"])),
+  ),
   steps: Schema.Array(TraceStep),
   dds: Schema.NullOr(DdsMeta),
 });
@@ -436,6 +444,7 @@ export const RunCreateRequest = Schema.Struct({
   scenario: Schema.optional(Schema.String),
   model: Schema.optional(ModelMode),
   refresh: Schema.optional(Schema.Boolean),
+  erp_mode: Schema.optional(ErpMode),
 });
 export type RunCreateRequest = typeof RunCreateRequest.Type;
 
@@ -452,6 +461,7 @@ export const BatchCreateRequest = Schema.Struct({
   record_ids: Schema.optional(Schema.Array(Schema.String)),
   mode: Schema.optional(BatchMode),
   model: Schema.optional(ModelMode),
+  erp_mode: Schema.optional(ErpMode),
 });
 export type BatchCreateRequest = typeof BatchCreateRequest.Type;
 

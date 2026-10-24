@@ -95,6 +95,16 @@
       "BatchCreate": {
         "description": "Queue a batch over the seed records or explicit record ids.\n\n``screening`` runs the deterministic rubric and verifier with no LLM; ``agent`` runs the\nfull supervisor/specialist/verifier graph per record on ``model``.",
         "properties": {
+          "erp_mode": {
+            "default": "auto",
+            "enum": [
+              "off",
+              "confirm",
+              "auto"
+            ],
+            "title": "Erp Mode",
+            "type": "string"
+          },
           "mode": {
             "default": "screening",
             "enum": [
@@ -109,7 +119,6 @@
               {
                 "enum": [
                   "scripted",
-                  "bedrock",
                   "sap"
                 ],
                 "type": "string"
@@ -779,11 +788,6 @@
           "auth_enabled": {
             "default": false,
             "title": "Auth Enabled",
-            "type": "boolean"
-          },
-          "bedrock_configured": {
-            "default": false,
-            "title": "Bedrock Configured",
             "type": "boolean"
           },
           "default_model": {
@@ -1652,12 +1656,21 @@
       "RunCreate": {
         "description": "Start one scenario run for a seed record or a named demo scenario.",
         "properties": {
+          "erp_mode": {
+            "default": "auto",
+            "enum": [
+              "off",
+              "confirm",
+              "auto"
+            ],
+            "title": "Erp Mode",
+            "type": "string"
+          },
           "model": {
             "anyOf": [
               {
                 "enum": [
                   "scripted",
-                  "bedrock",
                   "sap"
                 ],
                 "type": "string"
@@ -1756,6 +1769,31 @@
               }
             ],
             "title": "Elapsed Seconds"
+          },
+          "erp_mode": {
+            "default": "auto",
+            "enum": [
+              "off",
+              "confirm",
+              "auto"
+            ],
+            "title": "Erp Mode",
+            "type": "string"
+          },
+          "erp_pending": {
+            "anyOf": [
+              {
+                "enum": [
+                  "approved",
+                  "blocked"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erp Pending"
           },
           "error": {
             "anyOf": [
@@ -2009,6 +2047,16 @@
               }
             ],
             "title": "Elapsed Seconds"
+          },
+          "erp_mode": {
+            "default": "auto",
+            "enum": [
+              "off",
+              "confirm",
+              "auto"
+            ],
+            "title": "Erp Mode",
+            "type": "string"
           },
           "error": {
             "anyOf": [
@@ -2754,6 +2802,7 @@
               "run",
               "agent",
               "retask",
+              "report",
               "tool",
               "verifier",
               "writer",
@@ -3926,6 +3975,24 @@
             }
           },
           {
+            "description": "Only runs in this state",
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RunState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only runs in this state",
+              "title": "State"
+            }
+          },
+          {
             "in": "query",
             "name": "parent_run_id",
             "required": false,
@@ -4079,6 +4146,49 @@
         ]
       }
     },
+    "/runs/{run_id}/cancel": {
+      "post": {
+        "description": "Stop a run or batch that is executing and mark it failed; 409 when nothing is running.",
+        "operationId": "cancel_run_runs__run_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
     "/runs/{run_id}/decision": {
       "post": {
         "description": "Approve or override an ambiguous run and release (or keep) its DDS.",
@@ -4127,6 +4237,49 @@
           }
         },
         "summary": "Decide Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/erp-action": {
+      "post": {
+        "description": "Apply the ERP action a finished run is waiting on (``confirm`` mode, or a retry after a failure).",
+        "operationId": "confirm_erp_action_runs__run_id__erp_action_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SapActionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm Erp Action",
         "tags": [
           "runs"
         ]

@@ -3,16 +3,16 @@
 **Target:** Using the official hackathon SAP BTP and SAP AI Core infrastructure  
 **Upstream repo:** [SAP-AWS-ID-Hackathon-2026/SAP_AWS_Hackathon_ID_2026](https://github.com/SAP-AWS-ID-Hackathon-2026/SAP_AWS_Hackathon_ID_2026) (the `BTP_Instructions/README.md` file is the source for everything below)  
 **Our team slug:** `startorch`  
-**Status:** Phase 2 (`--model sap`) and Phase 3 (adverse media) are implemented; Phase 4 (Joule A2A proxy) is implemented and tested locally; deploying it needs your CF and BTP logins.
+**Status:** SAP AI Core is the only live model provider (Bedrock was removed 2026-10-13). Phase 2 (`--model sap`) and Phase 3 (adverse media) are implemented; Phase 4 (Joule A2A proxy) is implemented and tested locally; deploying it needs your CF and BTP logins. The live models were verified on 2026-10-13 (§4.1 and `docs/evidence/README.md`).
 
 ---
 
 ## 1. Why
 
 Local AWS accounts hit quota limits for frontier models on Bedrock. The committee provides hosted
-models on **SAP AI Core (Generative AI Hub)** plus Cloud Foundry and Joule. A third model mode,
-`--model sap`, runs the existing agent graph on those models with no AWS quota involved. `scripted`
-and `bedrock` are unchanged.
+models on **SAP AI Core (Generative AI Hub)** plus Cloud Foundry and Joule, so TerraSentry dropped
+Bedrock: the model modes are now `scripted` (offline, no credentials) and `sap` (the committee's
+models through LiteLLM). Nothing in the repo calls AWS.
 
 ---
 
@@ -103,22 +103,69 @@ exported to `os.environ`. LiteLLM normalises the `/oauth/token` and `/v2` suffix
 
    (Or set `AICORE_CLIENT_ID`, `AICORE_CLIENT_SECRET`, `AICORE_AUTH_URL`, `AICORE_BASE_URL` and
    `AICORE_RESOURCE_GROUP` individually, as Cloud Foundry env vars do.)
-2. Verify both roles:
-   `uv run python -m terrasentry_core.agents.preflight --provider sap`
+2. Verify the roles, structured output and the Sonar name:
+   `uv run python -m terrasentry_core.agents.preflight`
 3. Run the graph: `uv run python -m terrasentry_core.agents --scenario high_risk_live --model sap`
 4. In the cockpit, the model picker enables **SAP AI Core (live)** once `/health` reports
    `aicore_configured: true`. Set `AGENT_MODEL=sap` to make it the default.
 
 Code map: `agents/settings.py` (fields, `missing_aicore`), `agents/models.py` (`build_aicore_model`,
 `ModelBundle.from_aicore`, `cap_max_tokens`), `agents/factory.py` (`MODEL_MODES`),
-`agents/preflight.py` (`--provider`).
+`agents/preflight.py`, and `python/integrations/.../sap_ai_core.py` (the resolution cache).
 
 **Known limits.** LiteLLM's metadata does not list these new model ids, so it reports no
 function-calling or response-schema support for them. The orchestration provider does accept `tools`,
-so tool calls and Strands structured output (which falls back to tool calling) should work. The
-preflight only pings a one-word reply, so confirm with a full `--model sap` run. LiteLLM's `sap`
-provider lists `tools`, `tool_choice` and `response_format` as supported parameters. If Claude's tool
+so tool calls and Strands structured output go through the tool route. LiteLLM **drops
+`tool_choice`**, so that route cannot be forced; the preflight probes it (§4.1). If Claude's tool
 calls misbehave on a full run, set `AICORE_MODEL_ORCHESTRATOR=gpt-5.4` (configuration only, no code).
+
+### 4.1 Checked against the committee repo (2026-10-13)
+
+Compared with `SAP_AWS_Hackathon_ID_2026` (`BTP_Instructions`, and the `joule_a2a` Python and
+JavaScript solutions), and replayed offline against a fake AI Core server (no real key was used).
+
+**Matches.** Deployment ids and model names (§2.1). The route is the one the committee's own reference
+code uses (`sap/gpt-5.4` through LiteLLM). `apps/a2a` follows the reference layout: schema 3.28.0,
+`agent-request` with `agent_type: remote`, the `artifacts[0].parts[0].text` reply path, the same
+Python buildpack, `/health` check and `PORT` command. Offline, `--model sap` completes the documented
+flow: token, `GET /v2/lm/deployments`, configuration check, then `POST …/v2/completion` on the
+orchestration deployment, with the tools, the model name and `AI-Resource-Group: default`.
+
+**Verified live (2026-10-13).** The key is configured and `preflight` passes all three checks:
+Claude 4.6 Sonnet answers in about 5-7 s, GPT-5.4 in about 2.5 s, and structured output arrives through
+the tool route on the Claude orchestrator (so the `tool_choice` risk did not bite). Two real problems
+showed up only against the live service, and both are fixed:
+
+1. **Streamed tool calls crashed** with `'MockValSer' object is not an instance of 'SchemaSerializer'`.
+   Plain pings and non-streaming tool calls worked on both models, but Strands streams every call and
+   a streamed tool call returns OpenAI SDK usage and logprobs objects that pydantic never built.
+   `terrasentry_integrations.sap_ai_core.prepare_litellm` builds them up front (36 classes, about
+   60 ms). `tests/test_sap_ai_core.py` replays the captured wire format in a fresh interpreter and fails
+   without the fix.
+2. **`AGENT_MAX_TOKENS=2048` was too small.** Claude's verifier review was cut off mid-report
+   ("maximum token limit"). The default is now 8192. A running `pnpm dev` does not re-read `.env`, so
+   restart it after changing `.env`.
+
+Put the key in without printing it (fetch it as in §2.2 first):
+
+```bash
+printf "AICORE_SERVICE_KEY='%s'\n" "$(jq -c . ~/.config/terrasentry/aicore-key.json)" >> .env
+printf 'AICORE_MODEL_ORCHESTRATOR=anthropic--claude-4.6-sonnet\nAICORE_MODEL_EXTRACTION=gpt-5.4\n' >> .env
+```
+
+If the secret contains a backslash, dotenv rewrites it inside single quotes; use the individual
+`AICORE_CLIENT_*` fields instead. Then run the preflight and the `high_risk_live` scenario above. The `tool_choice` row below is now confirmed fine on the Claude orchestrator; keep the fallback for other models.
+
+**What the replay found, and what was done about it.**
+
+| Topic | What the replay and the code show | What was done | What to check live |
+| :--- | :--- | :--- | :--- |
+| `tool_choice` | LiteLLM's SAP provider lists it as supported but **drops it** in `transform_request` (confirmed by the replay). Strands' forced structured-output retry cannot force a tool call, so the verifier depends on the model using the structured-output tool unprompted. | `preflight` now probes exactly that on the orchestrator and, if the model ignores the tool, tells you to set `AICORE_MODEL_ORCHESTRATOR=gpt-5.4`. The cause itself is in LiteLLM and is not patched. | The `structured` line of the preflight, then a `high_risk_live` run. |
+| Request overhead | Every model call repeated 3 OAuth token requests, the deployment listing and the configuration lookup before the completion (6 requests per call, measured). | Fixed: `terrasentry_integrations.sap_ai_core` resolves the token creator and the orchestration deployment once per process (a short token refresh buffer, so one-hour tokens still work). Tested against a fake AI Core server: **24 requests for 4 calls became 7**. If LiteLLM's internals change it stays off and logs a warning. | The `--model sap` timing in `docs/evidence/README.md`; watch for 429 on the shared token endpoint. |
+| `sonar` or `sonar-pro` | The table lists `sonar`; the committee's sample code calls `sonar-pro`. | The preflight tries the other name when the configured one fails and prints `AICORE_MODEL_MEDIA=<the one that works>`. | The `media` line of the preflight. |
+| Joule login URL | `BTP_Instructions` uses `https://auisywroy.authentication.ap10.hana.ondemand.com`; the exercise `joule.env.example` uses `https://aws-sap-hackathon-si4ykj9d.authentication.ap10.hana.ondemand.com`. | Documented in the runbook (§5, step 4) and in `apps/a2a/joule/joule.env.example`: use the `uaa.url` from your own key. | `joule login` and `joule status`. |
+| BTP Destination | `BTP_Instructions` says participants have read-only subaccount access, while the exercise tells you to create a Destination in the cockpit. | Fallback written into the runbook (§5, step 3): an issue template for the mentors. | Whether Save works in Connectivity, Destinations. |
+| Unused models | RPT-1.6, TabPFN, embeddings and the image model are not wired in. RPT/TabPFN may only ever be advisory, never a verdict input. | Nothing needed. | n/a |
 
 ---
 
@@ -137,7 +184,7 @@ enrich titles and dates when the orchestration route passes them through.
   `search_adverse_media` trace step and rendered as a "Context only, not scored" card.
 - `stub` returns a deterministic, labelled-simulated result (no network) for offline demos.
 - Results are cached under source `adverse_media`, so `--offline` rehearsals replay them.
-- Check it with `uv run python -m terrasentry_core.agents.preflight --provider sap`: the `media` line
+- Check it with `uv run python -m terrasentry_core.agents.preflight`: the `media` line
   reports findings and whether citations were passed through. It is informational and never fails the
   run.
 
@@ -196,9 +243,14 @@ Deploy runbook (you run these; they need your logins and never print a secret):
 
    `curl https://<app route>/health` should answer `{"status":"ok"}`.
 3. **Create the BTP Destination** `TERRASENTRY_AGENT_STARTORCH` (BTP cockpit, Connectivity,
-   Destinations): type HTTP, URL = the app route, authentication NoAuthentication.
+   Destinations): type HTTP, URL = the app route, proxy type Internet, authentication
+   NoAuthentication. `BTP_Instructions` says participants have read-only subaccount access, so this
+   may be refused. If Save is disabled, open an `Error Report` issue on the committee repo, titled
+   `[Team startorch] BTP Destination: cannot save in Connectivity > Destinations`, with the team
+   name, the Destination name and URL above, and the exact message (no secrets).
 4. **Deploy the Joule capability.** `joule login --no-app-tid` (never `--sso`) with the values from
-   `…/joule/startorch-key`, then from `apps/a2a/joule`: `joule deploy --compile .`, `joule list`,
+   `…/joule/startorch-key`; take `--authurl` from that response's `uaa.url`, because the committee's
+   two guides print different tenant URLs. Then from `apps/a2a/joule`: `joule deploy --compile .`, `joule list`,
    `joule launch terrasentry_assistant`, and ask it to `screen SUP-001`.
 
 > [!NOTE]

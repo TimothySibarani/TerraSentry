@@ -37,11 +37,10 @@ def _orchestrator(source_clients: Any, data: Any, record: Any, *, review=None) -
     )
 
 
-async def test_accepted_verification_releases_the_dds(source_router, source_clients) -> None:
-    data = agent_helpers.datasets()
-    record = data.get_record("REC-001")
-    orchestrator = _orchestrator(source_clients, data, record)
-    result = await orchestrator.run(record.record_id)
+async def test_accepted_verification_releases_the_dds(source_clients) -> None:
+    with respx.mock(assert_all_called=False) as router:
+        _mock_sources(router, loss="empty", fire="empty")
+        result = await _run(source_clients, "compliant_live")
 
     assert result.state is RunState.COMPLETE
     assert result.assessment is not None
@@ -136,16 +135,30 @@ async def test_high_risk_record_retasks_legality_and_geospatial_with_reasons(sou
         _mock_sources(router, overlaps={"protected_areas": {"name": "Reserve", "desig": "National park"}})
         result = await _run(source_clients, "high_risk_live")
 
-    assert result.state is RunState.COMPLETE
+    # A high-risk verdict is held for a person; the DDS is withheld until they decide.
+    assert result.state is RunState.AWAITING_REVIEW
     retasks = [step for step in result.trace if step.kind == "retask"]
     assert sorted(step.name for step in retasks) == ["geospatial_analyst", "legality_analyst"]
     assert all("protected_overlap" in step.detail and step.payload["ordinal"] == 2 for step in retasks)
     ids = {"polygon_id": "PLY-001", "supplier_id": "SUP-001", "status": "ok"}
     assert _tool_calls(result, "get_context_layers") == [{"polygon_id": "PLY-001", "status": "ok"}]
     assert _tool_calls(result, "check_concession_overlap") == [ids]
-    assert result.assessment is not None and result.assessment.assessment.verdict == "high_risk"
+    assert result.assessment is None
+    assert result.pending_assessment is not None
+    assert result.pending_assessment.assessment.verdict == "high_risk"
     assert result.verification is not None and result.verification.accepted
     assert "coverage.get_context_layers" in result.verification.checked_claims
+
+
+async def test_specialist_reports_reach_the_trace_without_changing_the_verdict(source_clients) -> None:
+    with respx.mock(assert_all_called=False) as router:
+        _mock_sources(router, loss="empty", fire="empty")
+        result = await _run(source_clients, "compliant_live")
+
+    reports = [step for step in result.trace if step.kind == "report"]
+    assert {step.name for step in reports} == {"geospatial_analyst", "legality_analyst", "thermal_analyst"}
+    assert all(step.payload["report"] and len(step.payload["report"]) <= 2000 for step in reports)
+    assert result.assessment is not None and result.assessment.assessment.verdict == "compliant"
 
 
 async def test_skipped_deep_dive_is_rejected_by_the_coverage_gate(source_clients) -> None:

@@ -6,16 +6,10 @@ requires-python = ">=3.13"
 dependencies = [
   "terrasentry-integrations",
   "strands-agents[litellm]>=1.0",
-  "boto3>=1.35",
-  # [crt] enables the `aws login` credential provider in botocore.
-  "botocore[crt]>=1.35",
   "pydantic>=2.10",
   "shapely>=2.1",
   "pyproj>=3.7",
 ]
-
-[project.optional-dependencies]
-agentcore = ["bedrock-agentcore>=0.1"]
 
 [tool.uv.sources]
 terrasentry-integrations = { workspace = true }

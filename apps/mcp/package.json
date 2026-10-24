@@ -1,0 +1,12 @@
+{
+  "name": "@terrasentry/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd ../.. && uv run python -m terrasentry_mcp",
+    "lint": "cd ../.. && uv run ruff check apps/mcp",
+    "format": "cd ../.. && uv run ruff format apps/mcp",
+    "typecheck": "cd ../.. && uv run pyright apps/mcp/src",
+    "test": "cd ../.. && uv run pytest apps/mcp/tests"
+  }
+}

@@ -18,7 +18,6 @@ async def health(services: ServicesDep) -> HealthResponse:
         fixtures_loaded=services.fixtures_loaded,
         sap_mode=services.sap_mode,
         sap_real=services.sap_real,
-        bedrock_configured=services.bedrock_configured,
         aicore_configured=services.aicore_configured,
         adverse_media_mode=services.adverse_media_mode,
         default_model=services.settings.agent_model,

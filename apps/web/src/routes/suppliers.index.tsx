@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createColumnHelper } from "@tanstack/react-table";
 import type { SupplierOut } from "@terrasentry/api-client";
-import { SearchIcon } from "lucide-react";
+import { SearchIcon, UploadIcon } from "lucide-react";
 import { useMemo } from "react";
 
 import { DataTable, type TableFeatureSet } from "#/components/data-table";
@@ -10,14 +10,18 @@ import { ErrorState } from "#/components/error-state";
 import { PageHeader } from "#/components/page-header";
 import { ProvenanceBadge } from "#/components/provenance-badge";
 import { Badge } from "#/components/ui/badge";
+import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
 import { suppliersQuery } from "#/features/suppliers/queries";
 import { formatNumber } from "#/lib/format";
 
 export const Route = createFileRoute("/suppliers/")({
-	validateSearch: (search: Record<string, unknown>): { q?: string } => ({
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { q?: string; demo?: "hide" } => ({
 		q: typeof search.q === "string" ? search.q : undefined,
+		demo: search.demo === "hide" ? "hide" : undefined,
 	}),
 	loader: ({ context }) =>
 		context.queryClient.ensureQueryData(suppliersQuery()),
@@ -115,12 +119,15 @@ const columns = helper.columns([
 ]);
 
 function SuppliersPage() {
-	const { q = "" } = Route.useSearch();
+	const { q = "", demo } = Route.useSearch();
+	const hideDemo = demo === "hide";
 	const navigate = useNavigate({ from: Route.fullPath });
 	const suppliers = useQuery(suppliersQuery());
 
 	const filtered = useMemo(() => {
-		const rows = suppliers.data ?? [];
+		const rows = (suppliers.data ?? []).filter(
+			(supplier) => !hideDemo || !supplier.synthetic,
+		);
 		const needle = q.trim().toLowerCase();
 		if (!needle) {
 			return rows;
@@ -138,7 +145,7 @@ function SuppliersPage() {
 				.toLowerCase()
 				.includes(needle),
 		);
-	}, [suppliers.data, q]);
+	}, [suppliers.data, q, hideDemo]);
 
 	return (
 		<div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -147,27 +154,56 @@ function SuppliersPage() {
 				title="Suppliers"
 				description="Seed and submitted suppliers, with declared identity and legality fields labelled by origin."
 				actions={
-					<div className="relative w-full sm:w-72">
-						<SearchIcon
-							aria-hidden="true"
-							className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
-						/>
-						<Input
-							type="search"
-							name="supplier-search"
-							aria-label="Search suppliers"
-							autoComplete="off"
-							placeholder="Search name, group, province…"
-							className="pl-8"
-							value={q}
-							onChange={(event) =>
+					<>
+						<Button
+							variant="outline"
+							size="sm"
+							render={<Link to="/suppliers/import" />}
+						>
+							<UploadIcon data-icon="inline-start" aria-hidden="true" />
+							Import suppliers
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							aria-pressed={hideDemo}
+							onClick={() =>
 								void navigate({
-									search: { q: event.target.value },
+									search: (previous) => ({
+										...previous,
+										demo: hideDemo ? undefined : "hide",
+									}),
 									replace: true,
 								})
 							}
-						/>
-					</div>
+						>
+							{hideDemo ? "Show demo data" : "Hide demo data"}
+						</Button>
+						<div className="relative w-full sm:w-72">
+							<SearchIcon
+								aria-hidden="true"
+								className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+							/>
+							<Input
+								type="search"
+								name="supplier-search"
+								aria-label="Search suppliers"
+								autoComplete="off"
+								placeholder="Search name, group, province…"
+								className="pl-8"
+								value={q}
+								onChange={(event) =>
+									void navigate({
+										search: (previous) => ({
+											...previous,
+											q: event.target.value,
+										}),
+										replace: true,
+									})
+								}
+							/>
+						</div>
+					</>
 				}
 			/>
 			<p
@@ -175,6 +211,7 @@ function SuppliersPage() {
 				className="text-caption-mono-sm text-muted-foreground"
 			>
 				{filtered.length} of {suppliers.data?.length ?? 0} suppliers
+				{hideDemo ? " (demo data hidden)" : ""}
 			</p>
 			{suppliers.isPending && <Skeleton className="h-64" />}
 			{suppliers.isError && (

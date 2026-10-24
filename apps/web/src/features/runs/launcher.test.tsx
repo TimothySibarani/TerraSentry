@@ -38,7 +38,7 @@ function renderLauncher(props: { showScenarios?: boolean } = {}) {
 
 it("offers the labelled fault-injection scenario on the scripted model", async () => {
 	health.mockResolvedValue({
-		bedrockConfigured: false,
+		aicoreConfigured: false,
 		defaultModel: "scripted",
 	});
 	const client = renderLauncher();
@@ -47,10 +47,10 @@ it("offers the labelled fault-injection scenario on the scripted model", async (
 	expect(screen.getAllByText("Fault injection").length).toBeGreaterThan(0);
 });
 
-it("hides the fault-injection scenario when Bedrock is selected", async () => {
+it("hides the fault-injection scenario when SAP AI Core is selected", async () => {
 	health.mockResolvedValue({
-		bedrockConfigured: true,
-		defaultModel: "bedrock",
+		aicoreConfigured: true,
+		defaultModel: "sap",
 	});
 	const client = renderLauncher();
 	await waitFor(() => expect(client.getQueryData(["health"])).toBeDefined());
@@ -64,7 +64,7 @@ it("hides the fault-injection scenario when Bedrock is selected", async () => {
 
 it("starts a screening batch without a model by default", async () => {
 	health.mockResolvedValue({
-		bedrockConfigured: false,
+		aicoreConfigured: false,
 		defaultModel: "scripted",
 	});
 	createBatch.mockClear();
@@ -83,7 +83,7 @@ it("starts a screening batch without a model by default", async () => {
 
 it("sends the selected model for an agent batch and enables the picker", async () => {
 	health.mockResolvedValue({
-		bedrockConfigured: false,
+		aicoreConfigured: false,
 		defaultModel: "scripted",
 	});
 	createBatch.mockClear();

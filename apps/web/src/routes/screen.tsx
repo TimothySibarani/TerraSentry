@@ -178,7 +178,7 @@ function ScreenPlotPage() {
 			<PageHeader
 				eyebrow="New screening"
 				title="Screen a plot"
-				description="Map a supplier's plot and declare its legality and consignment. Agents check it against real Hansen tree-cover loss and NASA FIRMS fire data, a deterministic rubric scores it, and an independent verifier signs off before the EUDR statement is released."
+				description="Screen a supplier's plot before you buy from it. Map the plot, then declare the supplier's permit and the lot. Agents gather real Hansen tree-cover loss and NASA FIRMS fire evidence and write a brief, a fixed rubric scores it, and anything ambiguous or high-risk waits for a person before the EUDR statement is released."
 			/>
 			<div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
 				<Stepper

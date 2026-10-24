@@ -12,6 +12,7 @@ import { type KpiRow, KpiTable } from "#/components/kpi-table";
 import { MetricCard } from "#/components/metric-card";
 import { PageHeader } from "#/components/page-header";
 import { RunStateBadge, VerdictBadge } from "#/components/status-badge";
+import { Button } from "#/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -27,12 +28,15 @@ import {
 	EmptyHeader,
 	EmptyTitle,
 } from "#/components/ui/empty";
-import { Button } from "#/components/ui/button";
 import { Separator } from "#/components/ui/separator";
 import { VerdictBreakdown } from "#/components/verdict-breakdown";
 import { healthQuery } from "#/features/health/queries";
 import { RunLauncher } from "#/features/runs/launcher";
-import { batchRunsQuery, runsQuery } from "#/features/runs/queries";
+import {
+	batchRunsQuery,
+	reviewQueueQuery,
+	runsQuery,
+} from "#/features/runs/queries";
 import { formatDateTime, formatDuration, formatNumber } from "#/lib/format";
 
 export const Route = createFileRoute("/")({
@@ -49,6 +53,10 @@ function Dashboard() {
 	const health = useQuery(healthQuery());
 	const runs = useQuery(runsQuery());
 	const batches = useQuery(batchRunsQuery());
+	const queue = useQuery(reviewQueueQuery());
+	const waiting = (queue.data ?? []).filter(
+		(run) => run.kind !== "batch",
+	).length;
 
 	const recentRuns = (runs.data ?? []).slice(0, 8);
 	const latestBatch = (batches.data ?? []).find(
@@ -99,14 +107,14 @@ function Dashboard() {
 			source: "Batch metrics",
 		},
 		{
-			metric: "Design match (30/12/8)",
-			target: "100% exact",
+			metric: "Seed design match (30/12/8)",
+			target: "Seed batch only; real data may differ",
 			value: designMatch === null ? "—" : `${Math.round(designMatch * 100)}%`,
 			source: "Confusion diagonal",
 		},
 		{
-			metric: "HITL branch under load",
-			target: "8 ambiguous held",
+			metric: "Held for review under load",
+			target: "Ambiguous and high-risk results",
 			value: latestBatch
 				? formatNumber(latestBatch.states.awaiting_review ?? 0)
 				: "—",
@@ -139,7 +147,7 @@ function Dashboard() {
 			<PageHeader
 				eyebrow="Overview"
 				title="Compliance cockpit"
-				description="Screen real supplier plots, follow the agent trace, and read the batch throughput the KPI table is built on."
+				description="Screen the plots your fibre and palm suppliers farm or harvest. Agents investigate and brief, a fixed rubric decides, a person approves anything uncertain or high-risk, and SAP enforces it."
 			/>
 
 			<div className="grid gap-4 lg:grid-cols-5">
@@ -211,12 +219,21 @@ function Dashboard() {
 					}
 				/>
 				<MetricCard
-					label="Runs recorded"
-					value={formatNumber(runs.data?.length ?? 0)}
+					label="Needs your decision"
+					value={
+						<Link
+							to="/review"
+							className="underline-offset-4 hover:underline focus-visible:underline"
+						>
+							{formatNumber(waiting)}
+						</Link>
+					}
 					hint={
 						<span className="flex items-center gap-1">
 							<ListChecksIcon aria-hidden="true" className="size-3" />
-							Scenarios and batch records
+							{waiting > 0
+								? "Held for a person; nothing changes in SAP until you decide"
+								: `Nothing waiting · ${formatNumber(runs.data?.length ?? 0)} runs recorded`}
 						</span>
 					}
 				/>

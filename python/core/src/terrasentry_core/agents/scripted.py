@@ -1,7 +1,7 @@
 """Deterministic offline model for tests, rehearsals, and the offline demo.
 
 This is intentionally not a reasoning model. It replays queued turns or hands
-control to a responder callable, and it emits the Bedrock-shaped stream events
+control to a responder callable, and it emits the Converse-shaped stream events
 the Strands event loop consumes. That protocol is the only coupling to the SDK,
 so an SDK upgrade touches this file alone.
 """

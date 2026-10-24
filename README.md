@@ -5,18 +5,23 @@ parcels against real satellite and geospatial sources (Hansen GFC, NASA FIRMS), 
 deterministic rubric, and produces explainable, audit-ready due-diligence verdicts with a full agent
 trace.
 
-**Status:** Real input landed (S1): submit a plot in `/screen` (draw, paste, upload, or ≤4 ha point)
-with supplier, legality, and consignment, and get an agent-scored verdict and DDS without seed data.
-The live Bedrock run, the live rehearsal, and the two demo scenarios are gated on Day-1 AWS model
-access and API keys — see [docs/milestones.md](./docs/milestones.md) for progress.
+**The idea in one line:** agents investigate and brief, a fixed rubric decides, a person approves
+anything uncertain or high-risk, and SAP enforces it.
+
+**Status:** screening a real plot works end to end (draw, paste, upload or enter a point, then supplier,
+legality and consignment), and so does importing a supplier portfolio. Compliant results release on
+their own; ambiguous and high-risk results wait in a review queue, and nothing changes in SAP until a
+person decides. The same tools are available to Claude Code through an MCP server. What is measured and
+what is still open (live agent batches on SAP AI Core, deploying the Joule proxy, a live SAP tenant) is tracked in
+[docs/milestones.md](./docs/milestones.md) and [docs/kpi.md](./docs/kpi.md).
 
 ## Stack
 
 - **Web:** TanStack Start (React 19, Vite 8, Nitro), TanStack Query/Table, Tailwind CSS v4,
   shadcn/ui on Base UI, Effect 4 for the domain layer.
 - **API:** Python 3.13, FastAPI, SQLAlchemy 2.0 + Alembic, PostgreSQL.
-- **Agents:** Strands Agents SDK on Amazon Bedrock; deterministic scoring stays in code.
-- **Infra:** AWS CDK (TypeScript), Docker, GitHub Actions.
+- **Agents:** Strands Agents SDK on SAP AI Core (`--model sap`, or the offline `scripted` replay); deterministic scoring stays in code.
+- **Hosting:** SAP BTP Cloud Foundry for the Joule A2A proxy; the rest runs locally (Docker Postgres + Redis). AWS is optional and unused today. Docker, GitHub Actions.
 - **Tooling:** Turborepo + pnpm (JS), uv workspaces (Python), Biome, Ruff, Pyright, Vitest, pytest.
 
 ## Repository layout
@@ -24,11 +29,13 @@ access and API keys — see [docs/milestones.md](./docs/milestones.md) for progr
 ```
 apps/web             TanStack Start cockpit
 apps/api             FastAPI service (uv workspace member)
+apps/a2a             Joule A2A proxy for SAP BTP (screen, investigate, status)
+apps/mcp             MCP server for Claude Code and other agents
 packages/api-client  Effect client + generated OpenAPI types
 packages/config      shared TypeScript config
 python/core          agent runtime, domain logic, scoring
 python/integrations  GFW/Hansen, NASA FIRMS, SAP gateway
-infra/cdk            AWS CDK app
+infra/cdk            empty AWS CDK shell (unused)
 docs/                PRD, architecture, milestones
 data/                seed batch and cached fixtures
 ```
@@ -87,7 +94,8 @@ docker compose up --build   # Postgres + API + web
 - [docs/prd.md](./docs/prd.md) — MVP scope and acceptance criteria
 - [docs/milestones.md](./docs/milestones.md) — milestone tracker and gates
 - [docs/kpi.md](./docs/kpi.md) — empirical KPI table and how to reproduce it
-- [docs/setup/README.md](./docs/setup/README.md) — API keys, AWS free tier/Bedrock, SAP trial/sandbox,
-  batch rehearsal
+- [docs/setup/mcp.md](./docs/setup/mcp.md) — use TerraSentry from Claude Code
+- [docs/setup/README.md](./docs/setup/README.md) — API keys, SAP AI Core and the committee's resources,
+  SAP sandbox, batch rehearsal
 - [DESIGN.md](./DESIGN.md) — design tokens and visual language
 - [AGENTS.md](./AGENTS.md) — coding standards and agent instructions

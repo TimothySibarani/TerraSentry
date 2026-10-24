@@ -228,7 +228,6 @@ def test_services_factory(
     offline: bool = False,
     sap_gateway: SapGateway | None = None,
     api_token: str = "",
-    bedrock_configured: bool = False,
     aicore_configured: bool = False,
     media: MediaSearch | None = None,
 ) -> ServicesFactory:
@@ -278,6 +277,7 @@ def test_services_factory(
             sap=sap_actions,
             media=media,
         )
+        await manager.recover_interrupted()
         services = AppServices(
             settings=settings,
             integration=integration,
@@ -294,7 +294,6 @@ def test_services_factory(
             sap_mode="stub",
             sap_real=False,
             offline=offline,
-            bedrock_configured=bedrock_configured,
             aicore_configured=aicore_configured,
             adverse_media_mode="stub" if media is not None else "off",
         )

@@ -9,6 +9,7 @@ from terrasentry_a2a.skills import Skills
 CHILD = f"{BATCH}:REC-001"
 SCREENED = run_payload(
     CHILD,
+    state="awaiting_review",
     record_id="REC-001",
     verdict="high_risk",
     score=72,
@@ -46,12 +47,14 @@ async def test_screen_by_name_returns_verdict_findings_and_an_encoded_link(
     reply = await skills.handle("screen PT Sumber Sejahtera Sriwijaya")
 
     assert "Verdict: **High risk**, score 72." in reply
+    assert "A reviewer has to decide before anything changes in SAP." in reply
     assert "- Overlaps Tanjung Puting." in reply and "No fires" not in reply
     assert "(https://cockpit.test/runs/batch-aaaaaa111111%3AREC-001)" in reply
     sent = api.calls[1].request
     assert sent.url.path == "/batch-runs"
     assert b'"record_ids":["REC-001"]' in sent.content.replace(b" ", b"")
     assert b'"mode":"screening"' in sent.content.replace(b" ", b"")
+    assert b'"erp_mode":"off"' in sent.content.replace(b" ", b"")
 
 
 async def test_screen_that_outlasts_the_reply_budget_answers_with_a_link(
@@ -91,6 +94,7 @@ async def test_investigate_starts_a_run_and_replies_at_once(api: respx.MockRoute
     assert "Started an AI-agent investigation" in reply
     assert "status run-1a2b3c4d5e6f" in reply
     assert b'"record_id":"REC-001"' in api.calls.last.request.content.replace(b" ", b"")
+    assert b'"erp_mode":"off"' in api.calls.last.request.content.replace(b" ", b"")
 
 
 async def test_agent_runs_are_rate_limited(api: respx.MockRouter, clock: VirtualClock) -> None:

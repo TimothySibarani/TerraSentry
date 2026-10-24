@@ -65,7 +65,6 @@ class AppServices:
     sap_real: bool
     offline: bool = False
     fixtures_loaded: int = 0
-    bedrock_configured: bool = False
     aicore_configured: bool = False
     adverse_media_mode: str = "off"
 
@@ -153,6 +152,7 @@ async def build_services(
             sap=sap_actions,
             media=media,
         )
+        await run_manager.recover_interrupted()
         services = AppServices(
             settings=settings,
             integration=resolved,
@@ -170,7 +170,6 @@ async def build_services(
             sap_real=sap_real,
             offline=resolved.cache_offline,
             fixtures_loaded=fixtures_loaded,
-            bedrock_configured=not get_agent_settings().missing_models,
             aicore_configured=not get_agent_settings().missing_aicore,
             adverse_media_mode=resolved.adverse_media_mode if media else "off",
         )

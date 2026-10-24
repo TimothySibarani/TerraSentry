@@ -227,7 +227,7 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 							value={formatNumber(
 								progress?.awaitingReview ?? summary.states.awaiting_review ?? 0,
 							)}
-							hint="Ambiguous records held for HITL"
+							hint="Ambiguous and high-risk records held for a decision"
 						/>
 						<MetricCard
 							label="Failed"

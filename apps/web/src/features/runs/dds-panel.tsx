@@ -87,8 +87,8 @@ export function DdsPanel({
 				<AlertTitle>DDS withheld</AlertTitle>
 				<AlertDescription>
 					The document is stored as <code>pending_assessment</code> until a
-					human decision releases it. This is the designed HITL gate, not an
-					error.
+					person approves or blocks the supplier. Ambiguous and high-risk
+					results are held this way by design; it is not an error.
 				</AlertDescription>
 			</Alert>
 		);

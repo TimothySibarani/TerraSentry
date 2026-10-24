@@ -167,6 +167,9 @@ class Run(Base):
     assessment_date: Mapped[date | None] = mapped_column(Date, default=None)
     operator_profile: Mapped[dict[str, Any] | None] = mapped_column(JSONType, default=None)
     model: Mapped[str] = mapped_column(String(32), default="scripted")
+    #: ERP side effect: ``auto`` applies on release/decision, ``confirm`` waits for an explicit
+    #: confirmation, ``off`` never touches the ERP.
+    erp_mode: Mapped[str] = mapped_column(String(16), default="auto", server_default="auto")
     summary: Mapped[str] = mapped_column(Text, default="")
     error: Mapped[str | None] = mapped_column(Text, default=None)
     disclosures: Mapped[list[str]] = mapped_column(JSONType, default=list)

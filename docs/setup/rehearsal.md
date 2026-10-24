@@ -85,7 +85,7 @@ source, which surfaces a stale fixture set immediately.
 The full-50 path is test-verified offline: `apps/api/tests/test_batch_full.py` injects the design
 signals and asserts the 30/12/8 breakdown, per-record persistence, and an offline fixture replay
 with zero external calls. The real-source prefetch and offline replay now have measured
-numbers in `docs/kpi.md`; live Bedrock agent-batch timing remains a separate S3 gate.
+numbers in `docs/kpi.md`; live SAP AI Core agent-batch timing remains a separate S3 gate.
 
 ## S2 fixture refresh
 
@@ -103,21 +103,21 @@ Unsupported unsplit dateline polygons and dateline/polar point buffers require s
 split polygons. Annual loss beyond the verified release is an explicit data gap; the current
 release ends in 2025. A clean 2027 assessment cannot treat missing 2026 coverage as compliant.
 The measured live-source prefetch and PostgreSQL replay are recorded in `docs/kpi.md`;
-live Bedrock agent-batch throughput remains a separate S3 verification gate.
+live SAP AI Core agent-batch throughput remains a separate S3 verification gate.
 
 ## S3 agent-mode batches
 
 `run` takes `--mode screening|agent` (default `screening`) and, for agent mode,
-`--model scripted|bedrock` (default `AGENT_MODEL`). Agent mode runs the full graph per record
+`--model scripted|sap` (default `AGENT_MODEL`). Agent mode runs the full graph per record
 under `BATCH_AGENT_CONCURRENCY` (default 4, separate from `BATCH_CONCURRENCY`) and the report
 records mode, model, concurrency actually used, per-record timings and graph-level token usage.
 
 ```bash
-uv run python -m terrasentry_api.rehearsal run --size 10 --mode agent --model bedrock \
+uv run python -m terrasentry_api.rehearsal run --size 10 --mode agent --model sap \
   --as-of 2026-09-11 --report data/runs/agent-batch.json
 ```
 
 **Cost note:** every agent record is several model calls (three specialists, re-tasks on
-signals, then the verifier). Record a bounded 10-record Bedrock batch first; only run 50
-records on Bedrock after confirming the cost. Scripted agent batches make no model calls and
+signals, then the verifier). Record a bounded 10-record SAP AI Core batch first; only run 50
+records live after checking the timing (the shared hackathon deployments have no published quota). Scripted agent batches make no model calls and
 measure plumbing only.

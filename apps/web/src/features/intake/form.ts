@@ -126,6 +126,29 @@ export const COMMODITIES: ReadonlyArray<{
 	},
 ];
 
+/** Typical wood lots a fibre buyer screens; they fill the description and HS heading only. */
+export const WOOD_LOTS: ReadonlyArray<{
+	label: string;
+	hs: string;
+	description: string;
+}> = [
+	{
+		label: "Wood pulp",
+		hs: "4703",
+		description: "Chemical wood pulp, bleached hardwood kraft",
+	},
+	{
+		label: "Paper",
+		hs: "4802",
+		description: "Uncoated paper for writing and printing",
+	},
+	{
+		label: "Logs",
+		hs: "4403",
+		description: "Wood in the rough",
+	},
+];
+
 export const CERTIFICATIONS = [
 	"ISPO",
 	"RSPO",

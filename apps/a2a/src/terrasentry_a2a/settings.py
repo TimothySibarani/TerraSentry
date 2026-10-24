@@ -23,7 +23,7 @@ class A2ASettings(BaseSettings):
     a2a_reply_budget_seconds: float = 40.0
     a2a_poll_interval_seconds: float = 1.0
     #: Model for the ``investigate`` skill.
-    a2a_agent_model: Literal["scripted", "bedrock", "sap"] = "sap"
+    a2a_agent_model: Literal["scripted", "sap"] = "sap"
     #: Guard against a public route burning model quota.
     a2a_max_agent_runs_per_hour: int = 10
     #: Public URL advertised in the agent card; falls back to Cloud Foundry's VCAP_APPLICATION.

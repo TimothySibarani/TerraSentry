@@ -57,7 +57,7 @@
     "assessmentDate": null,
     "supplierId": "SUP-TEST",
     "polygonId": "PLY-GOLDEN",
-    "rubricVersion": "1.1.0",
+    "rubricVersion": "1.2.0",
     "score": 70,
     "verdict": "ambiguous",
     "riskLevel": "non_negligible",
@@ -74,7 +74,7 @@
           "EV-concession_dataset-3865f86814a5",
           "EV-legality_dataset-a0703af56b73",
           "EV-legality_dataset-c25ddb18a7a0",
-          "EV-deterministic_rubric-23d680ccd9a5"
+          "EV-deterministic_rubric-52dd64799670"
         ]
       },
       {
@@ -85,7 +85,7 @@
         "evidenceIds": [
           "EV-global_forest_watch-d5169e15dbea",
           "EV-global_forest_watch-e8d292130e43",
-          "EV-deterministic_rubric-5e53c9a5195a"
+          "EV-deterministic_rubric-498651d1c1d6"
         ]
       },
       {
@@ -97,7 +97,7 @@
           "EV-nasa_firms-6023941c8826",
           "EV-nasa_firms-134efe66ab80",
           "EV-nasa_firms-bfc7edc2e85a",
-          "EV-deterministic_rubric-fe26e68e8fa4"
+          "EV-deterministic_rubric-c214cc392437"
         ]
       },
       {
@@ -107,7 +107,7 @@
         "detail": "protected_areas: 0.0000 ha overlap (wdpa_protected_areas/v202512); context signal; legality is not registry-verified",
         "evidenceIds": [
           "EV-global_forest_watch-5d357064cc47",
-          "EV-deterministic_rubric-1f05536a29fb"
+          "EV-deterministic_rubric-18866ad525a4"
         ]
       },
       {
@@ -117,7 +117,7 @@
         "detail": "moratorium: 0.0000 ha overlap (idn_forest_moratorium/v20200923); context signal; legality is not registry-verified",
         "evidenceIds": [
           "EV-global_forest_watch-0a01b5d54d67",
-          "EV-deterministic_rubric-830c88890c04"
+          "EV-deterministic_rubric-bed3a444ab16"
         ]
       },
       {
@@ -127,7 +127,7 @@
         "detail": "peatlands: 0.0000 ha overlap (gfw_peatlands/v20230315); context signal; legality is not registry-verified",
         "evidenceIds": [
           "EV-global_forest_watch-2c43ee9d29e6",
-          "EV-deterministic_rubric-8a4a105954b6"
+          "EV-deterministic_rubric-4e4a72d40ef2"
         ]
       },
       {
@@ -137,7 +137,7 @@
         "detail": "forest_baseline: 0.0000 ha overlap (jrc_global_forest_cover/v2020.3); baseline context only; tree cover loss is assessed separately",
         "evidenceIds": [
           "EV-global_forest_watch-78ea1c274593",
-          "EV-deterministic_rubric-e1eae26abe23"
+          "EV-deterministic_rubric-367cfb3500e5"
         ]
       },
       {
@@ -148,7 +148,7 @@
         "evidenceIds": [
           "EV-legality_dataset-23fc71cc6499",
           "EV-concession_dataset-8a570cddd865",
-          "EV-deterministic_rubric-7273f20496a0"
+          "EV-deterministic_rubric-e4a8012dec2f"
         ]
       },
       {
@@ -158,7 +158,7 @@
         "detail": "certifications on file: ISPO",
         "evidenceIds": [
           "EV-legality_dataset-3c7ce79470b9",
-          "EV-deterministic_rubric-3b71baafe2a5"
+          "EV-deterministic_rubric-553d1000a197"
         ]
       }
     ],
@@ -217,13 +217,13 @@
       "EV-concession_dataset-0717a9e87538"
     ],
     "statement.geoLocationConfidential": [
-      "EV-deterministic_rubric-a740331e6c05"
+      "EV-deterministic_rubric-4d67b3146b28"
     ],
     "assessment.score": [
-      "EV-deterministic_rubric-5271a0e0cfb0"
+      "EV-deterministic_rubric-7412aa05255b"
     ],
     "assessment.verdict": [
-      "EV-deterministic_rubric-a740331e6c05"
+      "EV-deterministic_rubric-4d67b3146b28"
     ]
   },
   "disclosures": [

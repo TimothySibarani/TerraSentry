@@ -19,7 +19,7 @@ RETASK_DETAIL_LIMIT = 160
 NO_REASON = "(no reason given)"
 
 
-def _last_assistant_text(messages: Messages) -> str:
+def last_assistant_text(messages: Messages) -> str:
     for message in reversed(messages):
         if message.get("role") != "assistant":
             continue
@@ -71,7 +71,7 @@ def build_supervisor(model: Model, specialists: Sequence[Agent], *, context: Too
     )
 
     def record_summary(event: AfterInvocationEvent) -> None:
-        summary = _last_assistant_text(event.agent.messages)
+        summary = last_assistant_text(event.agent.messages)
         if summary:
             context.summary = summary
 
@@ -80,4 +80,4 @@ def build_supervisor(model: Model, specialists: Sequence[Agent], *, context: Too
     return agent
 
 
-__all__ = ["build_supervisor", "delegation_reason", "make_delegation_hook"]
+__all__ = ["build_supervisor", "delegation_reason", "last_assistant_text", "make_delegation_hook"]

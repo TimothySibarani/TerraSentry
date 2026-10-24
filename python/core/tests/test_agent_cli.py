@@ -42,6 +42,11 @@ def test_cli_scripted_run_completes_and_writes_artifacts(source_router, tmp_path
             str(REPO_ROOT / "data/seed/operator.json"),
             "--out",
             str(tmp_path),
+            # REC-001 is high risk, so the run waits for a person before the DDS is released.
+            "--decision",
+            "override",
+            "--note",
+            "supplier blocked after review",
         ]
     )
 
@@ -49,6 +54,7 @@ def test_cli_scripted_run_completes_and_writes_artifacts(source_router, tmp_path
     run_file = _run_file(tmp_path)
     payload = json.loads(run_file.read_text(encoding="utf-8"))
     assert payload["state"] == "complete"
+    assert payload["review"]["decision"] == "override"
     assert payload["assessment"]["assessment"]["verdict"] == "high_risk"
     assert payload["verification"]["accepted"] is True
     assert run_file.with_suffix(".dds.json").exists()

@@ -108,14 +108,15 @@ class TerraSentryClient:
             offset += _PAGE
 
     async def start_screening(self, record_id: str) -> Batch:
-        body = {"mode": "screening", "record_ids": [record_id]}
+        # External callers never change the vendor in the ERP; a person does that in the cockpit.
+        body = {"mode": "screening", "record_ids": [record_id], "erp_mode": "off"}
         return Batch.model_validate(await self._request("POST", "/batch-runs", json=body))
 
     async def get_batch(self, batch_id: str) -> Batch:
         return Batch.model_validate(await self._request("GET", f"/batch-runs/{batch_id}"))
 
     async def start_agent_run(self, record_id: str, model: str) -> Run:
-        body = {"record_id": record_id, "model": model}
+        body = {"record_id": record_id, "model": model, "erp_mode": "off"}
         return Run.model_validate(await self._request("POST", "/runs", json=body))
 
     async def get_run(self, run_id: str) -> Run:

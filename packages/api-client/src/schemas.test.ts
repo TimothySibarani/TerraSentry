@@ -21,7 +21,6 @@ describe("HealthResponse", () => {
         fixtures_loaded: 0,
         sap_mode: "stub",
         sap_real: false,
-        bedrock_configured: false,
         aicore_configured: true,
         adverse_media_mode: "stub",
         default_model: "scripted",
@@ -55,6 +54,7 @@ const runSummary = {
   polygon_id: "POLY-001",
   parent_run_id: null,
   model: "scripted",
+  erp_mode: "auto",
   summary: "compliant score 0",
   error: null,
   verdict: "compliant",
@@ -144,7 +144,7 @@ describe("RunSummary", () => {
 
 const batchSummary = {
   mode: "agent",
-  model: "bedrock",
+  model: "sap",
   unlabelled_count: 3,
   run_id: "batch-1",
   state: "complete",
@@ -184,7 +184,7 @@ describe("BatchSummary", () => {
       assert.strictEqual(summary.batch_concurrency, 4);
       assert.strictEqual(summary.sap_actions.blocked, 12);
       assert.strictEqual(summary.mode, "agent");
-      assert.strictEqual(summary.model, "bedrock");
+      assert.strictEqual(summary.model, "sap");
       assert.strictEqual(summary.unlabelled_count, 3);
     }),
   );

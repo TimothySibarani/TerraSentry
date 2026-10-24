@@ -70,9 +70,21 @@ def test_compliant_run_flips_the_vendor_to_approved(client: TestClient, source_r
     assert sap["last_action"]["run_id"] == run_id
 
 
-def test_high_risk_run_blocks_the_vendor(client: TestClient, source_router: object) -> None:
+def test_high_risk_run_waits_for_a_person_before_blocking_the_vendor(
+    client: TestClient, source_router: object
+) -> None:
     run_id = _create_run(client, {"scenario": "high_risk_live"})
-    detail = api_helpers.wait_for_state(client, run_id, {"complete"})
+    held = api_helpers.wait_for_state(client, run_id, {"awaiting_review"})
+
+    assert held["sap_action"] is None
+    assert client.get("/suppliers/SUP-002").json()["sap"]["status"] == "approved"
+
+    decision = client.post(
+        f"/runs/{run_id}/decision",
+        json={"decision": "override", "reviewer": "dana", "note": "confirmed on the permit register"},
+    )
+    assert decision.status_code == 200, decision.text
+    detail = client.get(f"/runs/{run_id}").json()
 
     action = detail["sap_action"]
     assert action is not None
@@ -133,18 +145,19 @@ def test_batch_records_erp_actions_and_counts(client: TestClient, source_router:
     api_helpers.wait_for_state(client, batch_id, {"complete"}, path="/batch-runs")
 
     summary = client.get(f"/batch-runs/{batch_id}").json()
-    assert summary["sap_actions"] == {"approved": 2, "blocked": 1, "failed": 0}
+    assert summary["sap_actions"] == {"approved": 2, "blocked": 0, "failed": 0}
 
-    expected = {"REC-001": "approved", "REC-002": "blocked", "REC-004": "approved"}
-    for record_id, status in expected.items():
+    for record_id in ("REC-001", "REC-004"):
         detail = client.get(f"/runs/{batch_id}:{record_id}")
         assert detail.status_code == 200, detail.text
-        assert detail.json()["sap_action"]["status"] == status
+        assert detail.json()["sap_action"]["status"] == "approved"
         assert len([step for step in detail.json()["steps"] if step["kind"] == "sap"]) == 1
 
-    ambiguous = client.get(f"/runs/{batch_id}:REC-003")
-    assert ambiguous.json()["state"] == "awaiting_review"
-    assert ambiguous.json()["sap_action"] is None
+    # High-risk (REC-002) and ambiguous (REC-003) records wait for a person; nothing is blocked.
+    for record_id in ("REC-002", "REC-003"):
+        held = client.get(f"/runs/{batch_id}:{record_id}")
+        assert held.json()["state"] == "awaiting_review"
+        assert held.json()["sap_action"] is None
 
 
 def test_vendor_state_replays_across_an_api_restart(
@@ -153,7 +166,12 @@ def test_vendor_state_replays_across_an_api_restart(
     first = create_app(services_factory=api_helpers.test_services_factory(tmp_path, datasets))
     with TestClient(first) as client:
         run_id = _create_run(client, {"scenario": "high_risk_live"})
-        api_helpers.wait_for_state(client, run_id, {"complete"})
+        api_helpers.wait_for_state(client, run_id, {"awaiting_review"})
+        decision = client.post(
+            f"/runs/{run_id}/decision",
+            json={"decision": "override", "reviewer": "dana", "note": "block the supplier"},
+        )
+        assert decision.status_code == 200, decision.text
         assert client.get("/suppliers/SUP-002").json()["sap"]["status"] == "blocked"
 
     # A new app over the same database replays the action log into the stub.

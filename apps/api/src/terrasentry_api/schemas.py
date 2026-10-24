@@ -13,7 +13,7 @@ from typing import Any, Literal, cast
 
 from pydantic import BaseModel, Field, model_validator
 from terrasentry_core.agents.verification import VerificationReport
-from terrasentry_core.domain.enums import RunState, Verdict
+from terrasentry_core.domain.enums import Decision, RunState, Verdict
 from terrasentry_core.domain.models import Assessment, Finding
 from terrasentry_core.seed.schemas import BatchRecord, OperatorRecord, Provenance
 from terrasentry_core.tools.trace import TraceStep
@@ -25,9 +25,9 @@ from terrasentry_api.models import Run, RunVerdict
 from terrasentry_api.models import SapAction as SapActionRow
 from terrasentry_api.models import SubmittedRecord as SubmittedRecordRow
 from terrasentry_api.models import Supplier as SupplierRow
-from terrasentry_api.sap_actions import disclosure_for_mode
+from terrasentry_api.sap_actions import ErpMode, disclosure_for_mode, planned_status
 
-ModelMode = Literal["scripted", "bedrock", "sap"]
+ModelMode = Literal["scripted", "sap"]
 BatchMode = Literal["screening", "agent"]
 AGENT_BATCH_MAX_RECORDS = 50
 
@@ -44,7 +44,6 @@ class HealthResponse(BaseModel):
     fixtures_loaded: int = 0
     sap_mode: str = "stub"
     sap_real: bool = False
-    bedrock_configured: bool = False
     aicore_configured: bool = False
     adverse_media_mode: str = "off"
     default_model: str = "scripted"
@@ -60,6 +59,7 @@ class RunCreate(BaseModel):
     scenario: str | None = None
     model: ModelMode | None = None
     refresh: bool = False
+    erp_mode: ErpMode = "auto"
 
     @model_validator(mode="after")
     def _exactly_one_target(self) -> RunCreate:
@@ -88,6 +88,7 @@ class BatchCreate(BaseModel):
     record_ids: list[str] | None = Field(default=None, max_length=500)
     mode: BatchMode = "screening"
     model: ModelMode | None = None
+    erp_mode: ErpMode = "auto"
 
     @model_validator(mode="after")
     def _model_only_for_agent_mode(self) -> BatchCreate:
@@ -175,6 +176,7 @@ class RunSummary(BaseModel):
     polygon_id: str | None = None
     parent_run_id: str | None = None
     model: str
+    erp_mode: ErpMode = "auto"
     assessment_date: date | None = None
     operator_profile: OperatorRecord | None = None
     summary: str = ""
@@ -206,6 +208,7 @@ class RunSummary(BaseModel):
             polygon_id=run.polygon_id,
             parent_run_id=run.parent_run_id,
             model=run.model,
+            erp_mode=cast(ErpMode, run.erp_mode),
             assessment_date=run.assessment_date,
             operator_profile=OperatorRecord.model_validate(run.operator_profile)
             if run.operator_profile
@@ -233,6 +236,8 @@ class RunDetail(RunSummary):
     pending_assessment: VerdictOut | None = None
     review: ReviewOut | None = None
     sap_action: SapActionOut | None = None
+    #: In ``confirm`` mode: the vendor status waiting for an explicit confirmation, else ``None``.
+    erp_pending: Literal["approved", "blocked"] | None = None
     steps: list[TraceStep] = Field(default_factory=list)
     dds: DdsMeta | None = None
 
@@ -256,6 +261,17 @@ class RunDetail(RunSummary):
                 reviewed_at=run.reviewed_at,
             )
         verdict_out = VerdictOut.from_row(verdict) if verdict is not None else None
+        erp_pending = None
+        if (
+            run.erp_mode == "confirm"
+            and run.state is RunState.COMPLETE
+            and (sap_action is None or sap_action.status == "failed")
+        ):
+            planned = planned_status(
+                verdict=verdict.verdict if verdict is not None else None,
+                decision=Decision(run.review_decision) if run.review_decision else None,
+            )
+            erp_pending = cast(Literal["approved", "blocked"] | None, planned)
         return cls(
             **summary.model_dump(),
             disclosures=run.disclosures,
@@ -264,6 +280,7 @@ class RunDetail(RunSummary):
             pending_assessment=(verdict_out if verdict_out is not None and verdict_out.pending else None),
             review=review,
             sap_action=SapActionOut.from_row(sap_action) if sap_action is not None else None,
+            erp_pending=erp_pending,
             steps=steps,
             dds=DdsMeta.from_row(dds) if dds is not None else None,
         )

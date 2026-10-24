@@ -3,12 +3,28 @@
 from __future__ import annotations
 
 from strands import Agent
+from strands.hooks import AfterInvocationEvent, HookCallback
 from strands.models.model import Model
 
 from terrasentry_core.agents import prompts
+from terrasentry_core.agents.supervisor import last_assistant_text
 from terrasentry_core.tools.agent_tools import ToolContext, build_source_tools
+from terrasentry_core.tools.trace import TraceCollector
 
 SPECIALIST_NAMES = ("geospatial_analyst", "thermal_analyst", "legality_analyst")
+#: A specialist's written report is kept in the trace so a reviewer can read what it concluded.
+REPORT_LIMIT = 2000
+
+
+def make_report_hook(name: str, trace: TraceCollector) -> HookCallback[AfterInvocationEvent]:
+    """Record a specialist's final reply as a ``report`` trace step (context only, never scored)."""
+
+    def record_report(event: AfterInvocationEvent) -> None:
+        report = last_assistant_text(event.agent.messages)
+        if report:
+            trace.add("report", name, "reported", payload={"report": report[:REPORT_LIMIT]})
+
+    return record_report
 
 
 def build_specialists(model: Model, context: ToolContext) -> list[Agent]:
@@ -21,7 +37,7 @@ def build_specialists(model: Model, context: ToolContext) -> list[Agent]:
     ]
     if "search_adverse_media" in tools:
         legality_tools.append(tools["search_adverse_media"])
-    return [
+    specialists = [
         Agent(
             model=model,
             name="geospatial_analyst",
@@ -53,6 +69,9 @@ def build_specialists(model: Model, context: ToolContext) -> list[Agent]:
             callback_handler=None,
         ),
     ]
+    for specialist in specialists:
+        specialist.add_hook(make_report_hook(str(specialist.name), context.trace), AfterInvocationEvent)
+    return specialists
 
 
-__all__ = ["SPECIALIST_NAMES", "build_specialists"]
+__all__ = ["REPORT_LIMIT", "SPECIALIST_NAMES", "build_specialists", "make_report_hook"]

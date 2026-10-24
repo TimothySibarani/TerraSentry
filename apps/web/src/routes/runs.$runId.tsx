@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import type { TraceStep } from "@terrasentry/api-client";
+import type { ModelMode, TraceStep } from "@terrasentry/api-client";
 import { adverseMediaFromSteps } from "@terrasentry/api-client";
-import { ArrowLeftIcon, RefreshCwIcon } from "lucide-react";
+import { ArrowLeftIcon, RefreshCwIcon, RotateCcwIcon } from "lucide-react";
 import { useMemo } from "react";
 
 import { ErrorState } from "#/components/error-state";
@@ -13,11 +13,15 @@ import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Skeleton } from "#/components/ui/skeleton";
+import { Spinner } from "#/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { AdverseMediaCard } from "#/features/runs/adverse-media-card";
+import { AgentBrief } from "#/features/runs/agent-brief";
 import { AssessmentPanel } from "#/features/runs/assessment-panel";
 import { DdsDownloadButton, DdsPanel } from "#/features/runs/dds-panel";
+import { ErpPendingCard } from "#/features/runs/erp-pending-card";
 import { EvidenceTable } from "#/features/runs/evidence-table";
+import { useCancelRun, useCreateRun } from "#/features/runs/mutations";
 import {
 	runDdsQuery,
 	runEvidenceQuery,
@@ -56,6 +60,8 @@ function RunDetailScreen({ runId }: { runId: string }) {
 	const navigate = useNavigate({ from: Route.fullPath });
 	const run = useQuery(runQuery(runId));
 	const evidence = useQuery(runEvidenceQuery(runId));
+	const cancel = useCancelRun(runId);
+	const rerun = useCreateRun();
 
 	const seed = useMemo(
 		() => ({
@@ -96,6 +102,13 @@ function RunDetailScreen({ runId }: { runId: string }) {
 	const adverseMedia = adverseMediaFromSteps(steps);
 	const pendingVerdict = record.pending_assessment;
 	const releasedVerdict = record.assessment;
+	const inFlight = state === "queued" || state === "running";
+	const canRunAgain =
+		record.kind !== "batch" && record.record_id !== null && state === "failed";
+	const rerunModel: ModelMode | undefined =
+		record.model === "scripted" || record.model === "sap"
+			? record.model
+			: undefined;
 
 	const tone =
 		verdict === "high_risk"
@@ -138,8 +151,55 @@ function RunDetailScreen({ runId }: { runId: string }) {
 							Refresh
 						</Button>
 						{ddsReleased && <DdsDownloadButton runId={record.run_id} />}
+						{inFlight && (
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={cancel.isPending}
+								onClick={() => cancel.mutate()}
+							>
+								{cancel.isPending && (
+									<Spinner aria-label="Cancelling" data-icon="inline-start" />
+								)}
+								Cancel run
+							</Button>
+						)}
+						{canRunAgain && (
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={rerun.isPending}
+								onClick={() =>
+									rerun.mutate(
+										{
+											record_id: record.record_id ?? undefined,
+											model: rerunModel,
+											erp_mode: record.erp_mode,
+										},
+										{
+											onSuccess: (created) =>
+												void navigate({
+													to: "/runs/$runId",
+													params: { runId: created.run_id },
+												}),
+										},
+									)
+								}
+							>
+								<RotateCcwIcon data-icon="inline-start" aria-hidden="true" />
+								Run again
+							</Button>
+						)}
 						{state === "awaiting_review" && (
-							<ReviewDialog runId={record.run_id} />
+							<ReviewDialog
+								runId={record.run_id}
+								verdict={verdict}
+								erpMode={record.erp_mode}
+								brief={
+									record.model === "deterministic" ? undefined : record.summary
+								}
+								findings={pendingVerdict?.assessment.findings ?? []}
+							/>
 						)}
 					</>
 				}
@@ -190,14 +250,19 @@ function RunDetailScreen({ runId }: { runId: string }) {
 					</AlertDescription>
 				</Alert>
 			)}
-			{state === "needs_more_data" && (
+			{state === "awaiting_review" && (
 				<Alert>
-					<AlertTitle>Needs more data</AlertTitle>
+					<AlertTitle>Waiting for your decision</AlertTitle>
 					<AlertDescription>
-						A source did not answer for this polygon. Re-run with refreshed
-						sources once the API keys are available.
+						The rubric verdict is held for a person
+						{verdict === "high_risk" ? " because it is high risk" : ""}. The
+						statement stays withheld and nothing changes in SAP until someone
+						approves or blocks this supplier.
 					</AlertDescription>
 				</Alert>
+			)}
+			{(cancel.error || rerun.error) && (
+				<ErrorState error={cancel.error ?? rerun.error} />
 			)}
 
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -210,6 +275,17 @@ function RunDetailScreen({ runId }: { runId: string }) {
 				/>
 			</div>
 
+			{record.kind !== "batch" && (
+				<AgentBrief
+					summary={record.summary}
+					model={record.model}
+					steps={steps}
+				/>
+			)}
+
+			{record.kind !== "batch" && record.erp_pending ? (
+				<ErpPendingCard runId={record.run_id} pending={record.erp_pending} />
+			) : null}
 			{record.kind !== "batch" ? (
 				<SapActionCard action={record.sap_action} />
 			) : null}

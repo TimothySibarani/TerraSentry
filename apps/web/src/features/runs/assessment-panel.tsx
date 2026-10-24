@@ -250,9 +250,9 @@ export function AssessmentPanel({
 					<AlertTriangleIcon aria-hidden="true" />
 					<AlertTitle>DDS withheld — human review required</AlertTitle>
 					<AlertDescription>
-						The ambiguous verdict keeps the DDS in{" "}
-						<code>pending_assessment</code>. Record an approve or override
-						decision to release it.
+						This {verdict.assessment.verdict === "high_risk" ? "high-risk" : "ambiguous"}{" "}
+						verdict keeps the DDS in <code>pending_assessment</code>. Approve or
+						block the supplier to release it.
 					</AlertDescription>
 				</Alert>
 			)}

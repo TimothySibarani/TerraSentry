@@ -1,10 +1,7 @@
-"""CLI: run the M3 agent graph for one seed record.
+"""CLI: run the agent graph for one seed record.
 
 ``--model scripted`` (the default) runs the whole graph with no network and no
-Bedrock calls, using the deterministic verifier checks as the gate.
-``--model bedrock`` uses the orchestrator/extraction models configured in
-``BEDROCK_MODEL_ORCHESTRATOR`` / ``BEDROCK_MODEL_EXTRACTION`` instead; that
-path needs the Day-1 Bedrock model access from docs/milestones.md section 3.
+model calls, using the deterministic verifier checks as the gate.
 ``--model sap`` runs the same graph on SAP AI Core models configured in
 ``AICORE_*`` (see docs/sap-hackathon-resources.md).
 

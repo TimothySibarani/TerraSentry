@@ -9,9 +9,9 @@ vi.mock("#/features/health/queries", () => ({
 	healthQuery: () => ({ queryKey: ["health"], queryFn: query }),
 }));
 afterEach(cleanup);
-it("honors a scripted default even with Bedrock configured", async () => {
+it("honors a scripted default even with SAP AI Core configured", async () => {
 	query.mockResolvedValue({
-		bedrockConfigured: true,
+		aicoreConfigured: true,
 		defaultModel: "scripted",
 	});
 	const client = new QueryClient();
@@ -30,12 +30,8 @@ it.each([
 		expected: "scripted",
 	},
 	{
-		health: {
-			bedrockConfigured: true,
-			aicoreConfigured: true,
-			defaultModel: "bedrock",
-		},
-		expected: "bedrock",
+		health: { aicoreConfigured: true, defaultModel: "bedrock" },
+		expected: "scripted",
 	},
 ])("resolves the default model $health", async ({ health, expected }) => {
 	query.mockResolvedValue(health);

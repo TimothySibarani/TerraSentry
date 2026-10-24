@@ -141,8 +141,8 @@ def test_full_batch_matches_the_design_breakdown(
     assert summary["record_count"] == 50
     assert summary["verdict_breakdown"] == {"compliant": 30, "high_risk": 12, "ambiguous": 8}
     assert summary["expected_breakdown"] == {"compliant": 30, "high_risk": 12, "ambiguous": 8}
-    assert summary["states"]["complete"] == 42
-    assert summary["states"]["awaiting_review"] == 8
+    assert summary["states"]["complete"] == 30
+    assert summary["states"]["awaiting_review"] == 20
     assert summary["states"]["failed"] == 0
     assert summary["confusion"] == {
         "compliant": {"compliant": 30, "high_risk": 0, "ambiguous": 0},
@@ -156,8 +156,9 @@ def test_full_batch_matches_the_design_breakdown(
     assert summary["throughput_records_per_second"] is not None
     assert summary["batch_concurrency"] == 8
     assert (summary["mode"], summary["model"], summary["unlabelled_count"]) == ("screening", None, 0)
-    # M7: every released verdict reaches the ERP; ambiguous records wait for HITL.
-    assert summary["sap_actions"] == {"approved": 30, "blocked": 12, "failed": 0}
+    # Only compliant verdicts reach the ERP on their own; high-risk and ambiguous records
+    # (20 of 50) wait for a human decision, so nothing is blocked automatically.
+    assert summary["sap_actions"] == {"approved": 30, "blocked": 0, "failed": 0}
 
     rows = full_client.get(f"/batch-runs/{batch_run_id}/records").json()
     assert len(rows) == 50

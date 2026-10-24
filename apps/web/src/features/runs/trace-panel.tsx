@@ -3,6 +3,7 @@ import {
 	ActivityIcon,
 	BotIcon,
 	FileOutputIcon,
+	FileTextIcon,
 	LandmarkIcon,
 	RouteIcon,
 	ShieldCheckIcon,
@@ -29,6 +30,7 @@ const KIND_ICON: Record<string, typeof ActivityIcon> = {
 	run: ActivityIcon,
 	agent: BotIcon,
 	retask: RouteIcon,
+	report: FileTextIcon,
 	tool: WrenchIcon,
 	verifier: ShieldCheckIcon,
 	writer: FileOutputIcon,
@@ -162,7 +164,18 @@ export function TracePanel({
 										{step.detail}
 									</p>
 								)}
-								{payloadKeys.length > 0 && (
+								{step.kind === "report" &&
+									typeof step.payload?.report === "string" && (
+										<details className="text-body-sm text-muted-foreground">
+											<summary className="cursor-pointer select-none text-caption-mono-sm hover:text-foreground">
+												Read the {step.name.replaceAll("_", " ")}'s report
+											</summary>
+											<p className="mt-1 whitespace-pre-wrap rounded-md bg-canvas-soft p-2">
+												{step.payload.report}
+											</p>
+										</details>
+									)}
+								{step.kind !== "report" && payloadKeys.length > 0 && (
 									<details className="text-caption-mono-sm text-muted-foreground">
 										<summary className="cursor-pointer select-none hover:text-foreground">
 											Payload ({payloadKeys.length} fields)

@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 import api_helpers
-import pytest
 from fastapi.testclient import TestClient
 from terrasentry_api.main import create_app
 from terrasentry_integrations.sources.media import StubMediaClient
@@ -46,12 +45,15 @@ def test_compliant_run_persists_and_releases_the_dds(client: TestClient, source_
     assert "SubmitDdsRequest" in xml.text
 
 
-def test_high_risk_scenario_completes(client: TestClient, source_router: object) -> None:
+def test_high_risk_scenario_is_held_for_a_person(client: TestClient, source_router: object) -> None:
     run_id = _create(client, {"scenario": "high_risk_live"})
-    detail = api_helpers.wait_for_state(client, run_id, {"complete"})
+    detail = api_helpers.wait_for_state(client, run_id, {"awaiting_review"})
 
     assert detail["verdict"] == "high_risk"
-    assert detail["dds"]["released"] is True
+    assert detail["assessment"] is None
+    assert detail["pending_assessment"]["assessment"]["verdict"] == "high_risk"
+    assert detail["dds"]["released"] is False
+    assert detail["sap_action"] is None
 
 
 def test_ambiguous_run_pauses_until_a_decision(client: TestClient, source_router: object) -> None:
@@ -151,7 +153,7 @@ def test_validation_and_not_found_paths(client: TestClient) -> None:
 
 def test_high_risk_scenario_shows_retasks_with_reasons(client: TestClient, signal_router: object) -> None:
     run_id = _create(client, {"scenario": "high_risk_live", "model": "scripted"})
-    detail = api_helpers.wait_for_state(client, run_id, {"complete"})
+    detail = api_helpers.wait_for_state(client, run_id, {"awaiting_review"})
 
     retasks = [step for step in detail["steps"] if step["kind"] == "retask"]
     assert sorted(step["name"] for step in retasks) == ["geospatial_analyst", "legality_analyst"]
@@ -183,9 +185,8 @@ def test_coverage_catch_fault_scenario_is_rejected_by_the_verifier(
     assert detail["dds"] is None and detail["assessment"] is None
 
 
-@pytest.mark.parametrize("model", ["bedrock", "sap"])
-def test_coverage_catch_is_only_available_on_scripted(client: TestClient, model: str) -> None:
-    response = client.post("/runs", json={"scenario": "coverage_catch", "model": model})
+def test_coverage_catch_is_only_available_on_scripted(client: TestClient) -> None:
+    response = client.post("/runs", json={"scenario": "coverage_catch", "model": "sap"})
     assert response.status_code == 422
     assert "fault injection" in response.json()["detail"]
 
@@ -197,7 +198,7 @@ def test_adverse_media_step_is_persisted_and_does_not_change_the_verdict(
         factory = api_helpers.test_services_factory(tmp_path / ("media" if media else "plain"), media=media)
         with TestClient(create_app(services_factory=factory)) as test_client:
             run_id = _create(test_client, {"scenario": "high_risk_live", "model": "scripted"})
-            return api_helpers.wait_for_state(test_client, run_id, {"complete"})
+            return api_helpers.wait_for_state(test_client, run_id, {"awaiting_review"})
 
     (tmp_path / "media").mkdir()
     (tmp_path / "plain").mkdir()
@@ -206,4 +207,4 @@ def test_adverse_media_step_is_persisted_and_does_not_change_the_verdict(
     steps = [step for step in with_media["steps"] if step["name"] == "search_adverse_media"]
     assert len(steps) == 1 and steps[0]["payload"]["report"]["synthetic"] is True
     assert not [step for step in plain["steps"] if step["name"] == "search_adverse_media"]
-    assert with_media["assessment"] == plain["assessment"]
+    assert with_media["pending_assessment"] == plain["pending_assessment"]

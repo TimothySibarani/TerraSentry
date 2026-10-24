@@ -71,3 +71,20 @@ it("shows no re-task summary when the Supervisor did not re-task", () => {
 	);
 	expect(screen.queryByText(/re-task/)).toBeNull();
 });
+
+it("lets a reviewer read a specialist's report without a raw payload dump", () => {
+	const report: TraceStep = {
+		...step(4, "report", "geospatial_analyst", "reported"),
+		payload: {
+			report: "Loss of 3.2 ha in 2023; peat overlap on the north edge.",
+		},
+	};
+	render(<TracePanel status="closed" steps={[report]} />);
+
+	expect(screen.getByText("report")).toBeDefined();
+	expect(
+		screen.getByText(/Read the geospatial analyst's report/),
+	).toBeDefined();
+	expect(screen.getByText(/Loss of 3\.2 ha in 2023/)).toBeDefined();
+	expect(screen.queryByText(/Payload \(/)).toBeNull();
+});
