@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     app_env: str = "local"
     log_level: str = "INFO"
 
-    api_cors_origins: str = "http://localhost:3000"
+    api_cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173"
     # Shared bearer token for write endpoints. Empty = open (local dev only);
     # set it for any deployment reachable by others.
     api_token: str = ""

@@ -1,7 +1,7 @@
 import type { TraceStep } from "@terrasentry/api-client";
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { DateTime } from "effect";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AgentBrief, specialistReports } from "./agent-brief";
 
@@ -52,6 +52,59 @@ describe("AgentBrief", () => {
 		cleanup();
 		const empty = render(<AgentBrief summary="  " model="sap" steps={[]} />);
 		expect(empty.container.textContent).toBe("");
+	});
+
+	it("renders markdown formatting in the agent brief summary", () => {
+		render(
+			<AgentBrief
+				summary={"## Evidence Summary\n- **77.16 ha** loss detected"}
+				model="sap"
+				steps={[]}
+			/>,
+		);
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Evidence Summary" }),
+		).toBeDefined();
+		expect(screen.getByText("77.16 ha")).toBeDefined();
+	});
+
+	it("toggles between technical brief and public summary with a breathing animation", () => {
+		vi.useFakeTimers();
+		render(
+			<AgentBrief
+				summary={"## Evidence Summary\n- **77.16 ha** loss detected on PLY-001"}
+				model="sap"
+				steps={[]}
+			/>,
+		);
+
+		const button = screen.getByRole("button", { name: /simplify for public/i });
+		expect(button).toBeDefined();
+
+		// Click to trigger simplifying breathing state
+		fireEvent.click(button);
+
+		// Breathing animation and processing indicators are visible
+		expect(screen.getByTestId("breathing-simplifying")).toBeDefined();
+		expect(screen.getAllByText(/Simplifying…/i).length).toBeGreaterThanOrEqual(1);
+
+		// Advance timer for breathing animation
+		act(() => {
+			vi.advanceTimersByTime(800);
+		});
+
+		expect(screen.getByText("Public view")).toBeDefined();
+		expect(
+			screen.getByText(/Public Summary: What You Need to Know/i),
+		).toBeDefined();
+		expect(screen.getByRole("button", { name: /technical brief/i })).toBeDefined();
+
+		// Switch back to technical brief
+		fireEvent.click(screen.getByRole("button", { name: /technical brief/i }));
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Evidence Summary" }),
+		).toBeDefined();
+		vi.useRealTimers();
 	});
 
 	it("collects only report steps", () => {

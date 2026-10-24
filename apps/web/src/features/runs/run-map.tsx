@@ -111,7 +111,7 @@ export function RunMapPanel({
 					}
 				/>
 			</div>
-			<MapView polygons={polygons} points={points} />
+			<MapView polygons={polygons} points={points} basemap="satellite" />
 		</div>
 	);
 }

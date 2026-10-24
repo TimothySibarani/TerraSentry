@@ -1,6 +1,6 @@
 import type { RunSummary } from "@terrasentry/api-client";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createColumnHelper } from "@tanstack/react-table";
 import { useMemo } from "react";
 
@@ -33,16 +33,27 @@ const helper = createColumnHelper<TableFeatureSet, RunSummary>();
 const columns = helper.columns([
 	helper.accessor("record_id", {
 		header: "Record",
-		cell: (info) => (
-			<span className="flex flex-col">
-				<span className="font-mono text-xs text-foreground">
-					{info.getValue() ?? info.row.original.run_id}
-				</span>
-				<span className="text-caption-mono-sm text-muted-foreground">
-					{info.row.original.kind}
-				</span>
-			</span>
-		),
+		cell: (info) => {
+			const run = info.row.original;
+			const target =
+				run.kind === "batch"
+					? { to: "/batch/$batchId" as const, params: { batchId: run.run_id } }
+					: { to: "/runs/$runId" as const, params: { runId: run.run_id } };
+			return (
+				<Link
+					{...target}
+					className="flex flex-col text-left group"
+					onClick={(event) => event.stopPropagation()}
+				>
+					<span className="font-mono text-xs font-medium text-foreground underline underline-offset-2 hover:text-accent-sunset">
+						{info.getValue() ?? run.run_id}
+					</span>
+					<span className="text-caption-mono-sm text-muted-foreground">
+						{run.kind}
+					</span>
+				</Link>
+			);
+		},
 	}),
 	helper.accessor("state", {
 		header: "State",
@@ -88,7 +99,7 @@ const columns = helper.columns([
 
 function RunsPage() {
 	const { kind = "all" } = Route.useSearch();
-	const navigate = useNavigate({ from: Route.fullPath });
+	const navigate = useNavigate();
 	const runs = useQuery(runsQuery());
 
 	const filtered = useMemo(() => {
@@ -106,7 +117,11 @@ function RunsPage() {
 			<Tabs
 				value={kind}
 				onValueChange={(value) =>
-					void navigate({ search: { kind: value as string }, replace: true })
+					void navigate({
+						to: "/runs",
+						search: { kind: value as string },
+						replace: true,
+					})
 				}
 			>
 				<TabsList>
@@ -129,16 +144,21 @@ function RunsPage() {
 					emptyMessage="No runs match this filter yet."
 					initialSorting={[{ id: "started_at", desc: true }]}
 					getRowId={(run) => run.run_id}
-					onRowClick={(run) =>
-						void navigate(
+					onRowClick={(run) => {
+						const destination =
 							run.kind === "batch"
 								? {
-										to: "/batch/$batchId",
+										to: "/batch/$batchId" as const,
 										params: { batchId: run.run_id },
 									}
-								: { to: "/runs/$runId", params: { runId: run.run_id } },
-						)
-					}
+								: {
+										to: "/runs/$runId" as const,
+										params: { runId: run.run_id },
+									};
+						void navigate(destination).catch((err) => {
+							console.error("Navigation failed:", err);
+						});
+					}}
 				/>
 			)}
 		</div>

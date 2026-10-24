@@ -252,3 +252,20 @@
   letter-spacing: var(--text-caption-mono-sm--letter-spacing);
   text-transform: uppercase;
 }
+
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.75;
+    transform: scale(0.995);
+    box-shadow: 0 0 0 0 rgb(255 122 23 / 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.005);
+    box-shadow: 0 0 24px 2px rgb(255 122 23 / 0.2);
+  }
+}
+
+@utility animate-breathe {
+  animation: breathe 2s ease-in-out infinite;
+}

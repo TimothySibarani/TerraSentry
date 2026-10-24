@@ -167,13 +167,13 @@ export function MapView({
 	polygons,
 	points = [],
 	className,
-	basemap = "default",
+	basemap = "satellite",
 }: {
 	polygons: ReadonlyArray<MapPolygon>;
 	points?: ReadonlyArray<MapPoint>;
 	className?: string;
 	/** `satellite` shows imagery and the tree-cover-loss overlay. */
-	basemap?: "default" | "satellite";
+	basemap?: "default" | "satellite" | "fallback";
 }) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<MapLibreMap | null>(null);
@@ -185,6 +185,7 @@ export function MapView({
 	useEffect(() => {
 		let cancelled = false;
 		let map: MapLibreMap | null = null;
+		let resizeObserver: ResizeObserver | null = null;
 		void (async () => {
 			try {
 				const [maplibregl, worker] = await Promise.all([
@@ -199,23 +200,31 @@ export function MapView({
 				maplibregl.setWorkerUrl(worker.default);
 				maplibreRef.current = maplibregl;
 				const styleUrl = import.meta.env.VITE_MAP_STYLE_URL;
-				map = new maplibregl.Map({
-					container: containerRef.current,
-					style:
-						basemap === "satellite"
+				const style =
+					basemap === "fallback"
+						? FALLBACK_STYLE
+						: basemap === "satellite"
 							? satelliteStyle({ showLoss: true })
 							: styleUrl && styleUrl.length > 0
 								? styleUrl
-								: FALLBACK_STYLE,
+								: satelliteStyle({ showLoss: false });
+				map = new maplibregl.Map({
+					container: containerRef.current,
+					style,
 					center: [101.5, -1.5],
 					zoom: 4,
-					attributionControl:
-						styleUrl || basemap === "satellite" ? { compact: true } : false,
+					attributionControl: { compact: true },
 				});
 				map.addControl(
 					new maplibregl.NavigationControl({ showCompass: false }),
 					"top-right",
 				);
+				if (containerRef.current) {
+					resizeObserver = new ResizeObserver(() => {
+						map?.resize();
+					});
+					resizeObserver.observe(containerRef.current);
+				}
 				map.on("load", () => {
 					readyRef.current = true;
 					if (!cancelled) {
@@ -238,6 +247,7 @@ export function MapView({
 		})();
 		return () => {
 			cancelled = true;
+			resizeObserver?.disconnect();
 			mapRef.current = null;
 			maplibreRef.current = null;
 			map?.remove();

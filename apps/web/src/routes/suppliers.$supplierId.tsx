@@ -230,7 +230,7 @@ function SupplierDetailPage() {
 							</li>
 						))}
 					</ul>
-					<MapView polygons={polygons} />
+					<MapView polygons={polygons} basemap="satellite" />
 				</CardContent>
 			</Card>
 		</div>

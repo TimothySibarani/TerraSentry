@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { RouteError } from "#/components/error-state";
 import { AppSidebar } from "#/components/layout/app-sidebar";
 import { Button } from "#/components/ui/button";
+import { healthQuery } from "#/features/health/queries";
 import {
 	Empty,
 	EmptyContent,
@@ -65,6 +66,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 		],
 	}),
+	loader: ({ context }) => context.queryClient.ensureQueryData(healthQuery()),
 	shellComponent: RootDocument,
 	errorComponent: RouteError,
 	notFoundComponent: NotFound,
