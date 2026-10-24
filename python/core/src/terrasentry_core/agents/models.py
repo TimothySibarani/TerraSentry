@@ -65,11 +65,18 @@ def build_aicore_model(role: ModelRole, *, settings: AgentSettings | None = None
             "num_retries": resolved.agent_retry_max_attempts,
         },
         model_id=f"sap/{model_id}",
-        params={
-            "temperature": resolved.agent_temperature,
-            "max_tokens": resolved.agent_max_tokens,
-        },
+        params=_params(role, resolved),
     )
+
+
+def _params(role: ModelRole, settings: AgentSettings) -> dict[str, object]:
+    params: dict[str, object] = {"max_tokens": settings.agent_max_tokens}
+    if role == "orchestrator" and settings.agent_reasoning_effort is not None:
+        # Reasoning models reject a pinned temperature; the rubric, not sampling, decides.
+        params["reasoning_effort"] = settings.agent_reasoning_effort
+    else:
+        params["temperature"] = settings.agent_temperature
+    return params
 
 
 def cap_max_tokens(model: Model, max_tokens: int) -> None:

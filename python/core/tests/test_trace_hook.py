@@ -120,7 +120,15 @@ def test_second_delegation_to_a_specialist_is_a_visible_retask() -> None:
         ("retask", "legality_analyst"),
     ]
     retask = trace.steps[2]
-    assert retask.detail == reason and retask.payload == {"reason": reason, "ordinal": 2}
+    assert retask.detail == reason
+    assert retask.payload == {
+        "event": "start",
+        "reason": reason,
+        "ordinal": 2,
+        "agent": "legality_analyst",
+        "invocation": 2,
+        "input": reason,
+    }
     assert trace.steps[3].payload["ordinal"] == 3
 
 

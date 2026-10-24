@@ -564,13 +564,50 @@ instead — the API contract does not change.
 
 ### Live agent trace
 
-The demo needs the reasoning visible. The API persists every delegation, re-task (with its reason),
-tool call (name, ids and ok/error status), specialist report (up to 2,000 characters of what each
-specialist wrote), verifier check, writer and ERP step as run steps, and streams them to the cockpit.
-It does not store full model transcripts or raw tool results; those live in the evidence ledger, and
-the supervisor's closing summary is stored on the run and shown as the "Agent brief". Operator-grade observability (OpenTelemetry) is out of
-scope; the Postgres run trace is the demo's source of truth because it is deterministic and
-replayable from `data/fixtures`.
+The API persists run steps in `run_steps.payload` and streams the same facts through the existing
+SSE `step` event. No separate workspace endpoint or database migration is required. Trace kinds
+are `run`, `agent`, `retask`, `report`, `thought`, `tool`, `verifier`, `writer`, `review`, `state`
+and `sap`.
+
+- One `run/configuration` step records the supervisor task, record identifiers and consignment
+  context, model ids per role, temperature/max tokens when configured, and the actual agents'
+  names, roles, tools and system prompts. Only those allowed model parameters are copied; model
+  client configuration and credentials are excluded. Assessor and DDS writer are labelled `code`.
+- Delegation and re-task steps carry `agent`, a 1-based `invocation`, and the input the specialist
+  received. Re-tasks preserve `reason` and `ordinal`. The verifier records its actual review input.
+- Source `tool` steps retain their names, kind and existing ids/status fields. New fields are
+  `agent`, `invocation`, `tool_use_id`, `input`, `result`, `duration_ms` (monotonic) and `started_at`
+  (UTC). Verifier inspection tools retain kind `verifier` with the same enrichment. Serialized UTF-8
+  tool input is capped at 1 KiB and result at 4 KiB; oversized values become a preview with
+  `truncated: true`. These caps affect the recorded copy, never the value returned to the model.
+- `thought` steps contain only model-emitted reasoning blocks and pre-tool assistant notes,
+  labelled separately in the inspector. Combined thought text is capped at 2 KiB and truncation
+  is flagged. Final report text is not duplicated as a thought. Scripted runs emit no reasoning.
+  **Thoughts never count toward verification coverage:** `coverage_checks` trusts only server
+  `tool` steps with the required name and ids.
+- Each specialist invocation emits a `report` finish even without written text. It includes
+  `agent`, `invocation` and per-invocation `usage` (`inputTokens`, `outputTokens`, `totalTokens`).
+  The supervisor records usage on its single finish step; verifier usage accompanies its existing
+  `verification` result. The supervisor summary remains the run's Agent brief.
+
+The cockpit's pure `deriveAgentRun` function decodes payloads with Effect Schema and derives
+pipeline stages, per-agent invocation spans, thoughts, calls and totals from precise timestamps.
+The run header shows models, parameters, counts and a collapsible pipeline checklist. The Trace
+workspace contains a roster, waterfall, recorded-run replay scrubber and per-agent inspector;
+`?agent=` and `?step=` make selections linkable. Live runs follow the clock; replay derives state
+from steps at or before the playhead. The inspector uses a Sheet below `lg`. All new status and
+span animations use existing CSS utilities with reduced-motion guards. The Log view retains the
+flat trace with millisecond UTC timestamps and elapsed offsets.
+
+Historical runs without configuration or attribution use the run's model mode and a static
+source-tool-to-specialist map mirroring `build_specialists`. Missing prompts, inputs, results,
+reasoning and token usage are shown as unrecorded; they are not reconstructed. Old specialist
+spans without a finish are closed by supervisor completion or the next invocation.
+
+System prompts, tool data and any emitted reasoning are visible to the same audience that can
+open the run. Review that access before a multi-tenant deployment. Trace caps bound individual
+payloads, but batch trace volume still needs measurement. Partial thought token streaming and a
+batch child workspace remain follow-up work. OpenTelemetry remains outside this cockpit trace.
 
 ### Secrets and configuration
 

@@ -1608,7 +1608,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "run" | "agent" | "retask" | "report" | "tool" | "verifier" | "writer" | "review" | "state" | "sap";
+            kind: "run" | "agent" | "retask" | "report" | "thought" | "tool" | "verifier" | "writer" | "review" | "state" | "sap";
             /** Name */
             name: string;
             /** Payload */

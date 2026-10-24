@@ -3,26 +3,42 @@
 from __future__ import annotations
 
 from strands import Agent
-from strands.hooks import AfterInvocationEvent, HookCallback
+from strands.hooks import AfterInvocationEvent, BeforeToolCallEvent, HookCallback, MessageAddedEvent
 from strands.models.model import Model
 
 from terrasentry_core.agents import prompts
-from terrasentry_core.agents.supervisor import last_assistant_text
+from terrasentry_core.agents.supervisor import invocation_usage, make_thought_hook, make_tool_start_hook
 from terrasentry_core.tools.agent_tools import ToolContext, build_source_tools
-from terrasentry_core.tools.trace import TraceCollector
 
 SPECIALIST_NAMES = ("geospatial_analyst", "thermal_analyst", "legality_analyst")
 #: A specialist's written report is kept in the trace so a reviewer can read what it concluded.
 REPORT_LIMIT = 2000
 
 
-def make_report_hook(name: str, trace: TraceCollector) -> HookCallback[AfterInvocationEvent]:
+def make_report_hook(name: str, context: ToolContext) -> HookCallback[AfterInvocationEvent]:
     """Record a specialist's final reply as a ``report`` trace step (context only, never scored)."""
 
     def record_report(event: AfterInvocationEvent) -> None:
-        report = last_assistant_text(event.agent.messages)
-        if report:
-            trace.add("report", name, "reported", payload={"report": report[:REPORT_LIMIT]})
+        report = (
+            " ".join(
+                block["text"] for block in event.result.message.get("content", []) if "text" in block
+            ).strip()
+            if event.result is not None
+            else ""
+        )
+        context.trace.add(
+            "report",
+            name,
+            "reported" if report else "finished without a report",
+            payload={
+                "agent": name,
+                "invocation": context.invocations.get(name, 1),
+                "event": "finish",
+                "report": report[:REPORT_LIMIT],
+                "usage": invocation_usage(event.agent),
+                "failed": event.result is None,
+            },
+        )
 
     return record_report
 
@@ -70,7 +86,9 @@ def build_specialists(model: Model, context: ToolContext) -> list[Agent]:
         ),
     ]
     for specialist in specialists:
-        specialist.add_hook(make_report_hook(str(specialist.name), context.trace), AfterInvocationEvent)
+        specialist.add_hook(make_report_hook(str(specialist.name), context), AfterInvocationEvent)
+        specialist.add_hook(make_thought_hook(context), MessageAddedEvent)
+        specialist.add_hook(make_tool_start_hook(context, "tool", tools), BeforeToolCallEvent)
     return specialists
 
 

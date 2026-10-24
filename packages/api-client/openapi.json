@@ -2803,6 +2803,7 @@
               "agent",
               "retask",
               "report",
+              "thought",
               "tool",
               "verifier",
               "writer",

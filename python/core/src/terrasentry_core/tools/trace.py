@@ -14,7 +14,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 TraceKind = Literal[
-    "run", "agent", "retask", "report", "tool", "verifier", "writer", "review", "state", "sap"
+    "run", "agent", "retask", "report", "thought", "tool", "verifier", "writer", "review", "state", "sap"
 ]
 StepHook = Callable[["TraceStep"], None]
 

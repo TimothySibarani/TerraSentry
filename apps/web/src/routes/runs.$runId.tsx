@@ -11,12 +11,13 @@ import { SapActionCard } from "#/components/sap-panel";
 import { RunStateBadge, VerdictBadge } from "#/components/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Skeleton } from "#/components/ui/skeleton";
 import { Spinner } from "#/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { AdverseMediaCard } from "#/features/runs/adverse-media-card";
 import { AgentBrief } from "#/features/runs/agent-brief";
+import { deriveAgentRun } from "#/features/runs/agent-run";
+import { AgentWorkspace } from "#/features/runs/agent-workspace";
 import { AssessmentPanel } from "#/features/runs/assessment-panel";
 import { DdsDownloadButton, DdsPanel } from "#/features/runs/dds-panel";
 import { ErpPendingCard } from "#/features/runs/erp-pending-card";
@@ -29,12 +30,15 @@ import {
 } from "#/features/runs/queries";
 import { ReviewDialog } from "#/features/runs/review-dialog";
 import { RunMapPanel } from "#/features/runs/run-map";
-import { TracePanel } from "#/features/runs/trace-panel";
+import { RunOverview, useRunClock } from "#/features/runs/run-overview";
 import { useRunStream } from "#/features/runs/use-run-stream";
-import { formatDateTime, formatDuration, formatScore } from "#/lib/format";
 
 export const Route = createFileRoute("/runs/$runId")({
-	validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { tab?: string; agent?: string; step?: string } => ({
+		agent: typeof search.agent === "string" ? search.agent : undefined,
+		step: typeof search.step === "string" ? search.step : undefined,
 		tab: typeof search.tab === "string" ? search.tab : undefined,
 	}),
 	loader: async ({ context, params }) => {
@@ -56,7 +60,7 @@ function RunDetailPage() {
 }
 
 function RunDetailScreen({ runId }: { runId: string }) {
-	const { tab = "trace" } = Route.useSearch();
+	const { tab = "trace", agent, step } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 	const run = useQuery(runQuery(runId));
 	const evidence = useQuery(runEvidenceQuery(runId));
@@ -74,10 +78,11 @@ function RunDetailScreen({ runId }: { runId: string }) {
 		[run.data],
 	);
 	const stream = useRunStream(runId, seed);
+	const now = useRunClock(stream.state.state ?? run.data?.state ?? "queued");
 
 	if (run.isPending) {
 		return (
-			<div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+			<div className="mx-auto flex w-full max-w-[100rem] flex-col gap-6">
 				<Skeleton className="h-28" />
 				<Skeleton className="h-96" />
 			</div>
@@ -100,6 +105,16 @@ function RunDetailScreen({ runId }: { runId: string }) {
 		stream.state.ddsReleased || (record.dds?.released ?? false);
 	const steps = mergeSteps(record.steps, stream.state.steps);
 	const adverseMedia = adverseMediaFromSteps(steps);
+	const agentRun = deriveAgentRun(steps, {
+		model: record.model,
+		state,
+		now,
+		verification: record.verification,
+	});
+	const hasBrief =
+		record.kind !== "batch" &&
+		record.model !== "deterministic" &&
+		record.summary.trim() !== "";
 	const pendingVerdict = record.pending_assessment;
 	const releasedVerdict = record.assessment;
 	const inFlight = state === "queued" || state === "running";
@@ -120,7 +135,7 @@ function RunDetailScreen({ runId }: { runId: string }) {
 					: "neutral";
 
 	return (
-		<div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+		<div className="mx-auto flex w-full max-w-[100rem] flex-col gap-6">
 			<Link
 				to="/runs"
 				className="flex w-fit items-center gap-1 text-body-sm text-muted-foreground no-underline hover:text-foreground"
@@ -238,14 +253,24 @@ function RunDetailScreen({ runId }: { runId: string }) {
 						{record.verification &&
 						!record.verification.accepted &&
 						record.verification.challenges.length > 0 ? (
-							<Link
-								to="/runs/$runId"
-								params={{ runId }}
-								search={{ tab: "assessment" }}
-								className="underline underline-offset-4"
-							>
-								View verification
-							</Link>
+							<span className="flex flex-wrap gap-4">
+								<Link
+									to="/runs/$runId"
+									params={{ runId }}
+									search={{ tab: "trace", agent: "verifier" }}
+									className="underline underline-offset-4"
+								>
+									Inspect the verifier
+								</Link>
+								<Link
+									to="/runs/$runId"
+									params={{ runId }}
+									search={{ tab: "assessment" }}
+									className="underline underline-offset-4"
+								>
+									View verification
+								</Link>
+							</span>
 						) : null}
 					</AlertDescription>
 				</Alert>
@@ -265,23 +290,11 @@ function RunDetailScreen({ runId }: { runId: string }) {
 				<ErrorState error={cancel.error ?? rerun.error} />
 			)}
 
-			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				<Meta label="Score" value={formatScore(score)} />
-				<Meta label="Model" value={record.model} />
-				<Meta label="Elapsed" value={formatDuration(record.elapsed_seconds)} />
-				<Meta
-					label="Started"
-					value={formatDateTime(record.started_at ?? record.created_at)}
-				/>
-			</div>
-
-			{record.kind !== "batch" && (
-				<AgentBrief
-					summary={record.summary}
-					model={record.model}
-					steps={steps}
-				/>
-			)}
+			<RunOverview
+				run={agentRun}
+				score={score}
+				started={record.started_at ?? record.created_at}
+			/>
 
 			{record.kind !== "batch" && record.erp_pending ? (
 				<ErpPendingCard runId={record.run_id} pending={record.erp_pending} />
@@ -293,11 +306,15 @@ function RunDetailScreen({ runId }: { runId: string }) {
 			<Tabs
 				value={tab}
 				onValueChange={(value) =>
-					void navigate({ search: { tab: value as string }, replace: true })
+					void navigate({
+						search: (previous) => ({ ...previous, tab: value as string }),
+						replace: true,
+					})
 				}
 			>
 				<TabsList variant="line">
 					<TabsTrigger value="trace">Trace</TabsTrigger>
+					{hasBrief && <TabsTrigger value="brief">Brief</TabsTrigger>}
 					<TabsTrigger value="assessment">Assessment</TabsTrigger>
 					<TabsTrigger value="evidence">
 						Evidence ({evidence.data?.length ?? 0})
@@ -306,20 +323,40 @@ function RunDetailScreen({ runId }: { runId: string }) {
 					<TabsTrigger value="dds">DDS</TabsTrigger>
 				</TabsList>
 				<TabsContent value="trace" className="pt-4">
-					<Card>
-						<CardHeader>
-							<CardTitle>Agent trace</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<TracePanel
-								steps={steps}
-								status={stream.status}
-								error={stream.error}
-								onReconnect={stream.reconnect}
-							/>
-						</CardContent>
-					</Card>
+					<AgentWorkspace
+						run={agentRun}
+						model={record.model}
+						state={state}
+						record={record}
+						selectedAgent={agent}
+						selectedStep={step}
+						onSelect={(agent, step) =>
+							void navigate({
+								search: (previous) => ({ ...previous, agent, step }),
+								replace: true,
+							})
+						}
+						onOpenMap={() =>
+							void navigate({
+								search: (previous) => ({ ...previous, tab: "map" }),
+								replace: true,
+							})
+						}
+						steps={steps}
+						status={stream.status}
+						error={stream.error}
+						onReconnect={stream.reconnect}
+					/>
 				</TabsContent>
+				{hasBrief && (
+					<TabsContent value="brief" className="pt-4">
+						<AgentBrief
+							summary={record.summary}
+							model={record.model}
+							steps={steps}
+						/>
+					</TabsContent>
+				)}
 				<TabsContent value="assessment" className="flex flex-col gap-4 pt-4">
 					<AssessmentPanel
 						runId={runId}
@@ -368,17 +405,4 @@ function mergeSteps(
 		merged.set(step.step_id, step);
 	}
 	return [...merged.values()];
-}
-
-function Meta({ label, value }: { label: string; value: string }) {
-	return (
-		<Card size="sm">
-			<CardContent className="flex flex-col gap-1">
-				<p className="eyebrow-sm text-muted-foreground">{label}</p>
-				<p className="truncate text-body-sm tabular-nums text-foreground">
-					{value}
-				</p>
-			</CardContent>
-		</Card>
-	);
 }

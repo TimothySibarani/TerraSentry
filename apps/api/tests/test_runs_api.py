@@ -204,7 +204,11 @@ def test_adverse_media_step_is_persisted_and_does_not_change_the_verdict(
     (tmp_path / "plain").mkdir()
     plain, with_media = run(None), run(StubMediaClient())
 
-    steps = [step for step in with_media["steps"] if step["name"] == "search_adverse_media"]
+    steps = [
+        step
+        for step in with_media["steps"]
+        if step["name"] == "search_adverse_media" and step["payload"]["event"] == "tool_end"
+    ]
     assert len(steps) == 1 and steps[0]["payload"]["report"]["synthetic"] is True
     assert not [step for step in plain["steps"] if step["name"] == "search_adverse_media"]
     assert with_media["pending_assessment"] == plain["pending_assessment"]

@@ -50,7 +50,11 @@ async def test_media_step_is_traced_only_when_enabled(source_router, source_clie
     with_media = await _run(source_clients, media=StubMediaClient())
 
     assert not [step for step in without.trace if step.name == "search_adverse_media"]
-    steps = [step for step in with_media.trace if step.name == "search_adverse_media"]
+    steps = [
+        step
+        for step in with_media.trace
+        if step.name == "search_adverse_media" and step.payload["event"] == "tool_end"
+    ]
     assert len(steps) == 1
     report = steps[0].payload["report"]
     assert steps[0].payload["status"] == "ok"

@@ -1,4 +1,5 @@
 import type { TraceStep } from "@terrasentry/api-client";
+import { DateTime } from "effect";
 import {
 	ActivityIcon,
 	BotIcon,
@@ -10,7 +11,6 @@ import {
 	UserCheckIcon,
 	WrenchIcon,
 } from "lucide-react";
-
 import { ErrorState } from "#/components/error-state";
 import { Badge } from "#/components/ui/badge";
 import {
@@ -23,13 +23,13 @@ import {
 import { Skeleton } from "#/components/ui/skeleton";
 import { Spinner } from "#/components/ui/spinner";
 import type { RunStreamStatus } from "#/features/runs/use-run-stream";
-import { formatDateTime } from "#/lib/format";
 import { cn } from "#/lib/utils";
 
 const KIND_ICON: Record<string, typeof ActivityIcon> = {
 	run: ActivityIcon,
 	agent: BotIcon,
 	retask: RouteIcon,
+	thought: FileTextIcon,
 	report: FileTextIcon,
 	tool: WrenchIcon,
 	verifier: ShieldCheckIcon,
@@ -148,7 +148,13 @@ export function TracePanel({
 										#{String(index + 1).padStart(2, "0")}
 									</span>
 									<span className="ml-auto text-caption-mono-sm text-muted-foreground">
-										{formatDateTime(step.at)}
+										{DateTime.formatIso(step.at).slice(11, 23)} UTC +
+										{(
+											(DateTime.toEpochMillis(step.at) -
+												DateTime.toEpochMillis(steps[0]?.at ?? step.at)) /
+											1000
+										).toFixed(3)}
+										s
 									</span>
 								</div>
 								{step.detail && (

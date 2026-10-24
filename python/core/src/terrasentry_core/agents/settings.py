@@ -23,6 +23,10 @@ class AgentSettings(BaseSettings):
 
     agent_temperature: float = Field(default=0.0, ge=0.0, le=1.0)
     agent_max_tokens: int = Field(default=8192, gt=0)
+    #: Opt-in model reasoning for the orchestrator role (``AGENT_REASONING_EFFORT``). When set,
+    #: LiteLLM's ``reasoning_effort`` is sent and the reasoning shows in the trace; off by default
+    #: because not every SAP AI Core model accepts it.
+    agent_reasoning_effort: Literal["low", "medium", "high"] | None = None
     agent_retry_max_attempts: int = Field(default=5, ge=1, le=10)
     agent_read_timeout_seconds: int = Field(default=120, gt=0)
     #: SAP AI Core credentials: either the whole keybroker service-key JSON, or

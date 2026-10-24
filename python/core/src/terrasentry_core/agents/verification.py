@@ -339,7 +339,8 @@ def coverage_checks(
     expected_ids = {"polygon_id": record.polygon.id, "supplier_id": record.legality.supplier_id}
     codes = triggering_codes(candidate.assessment.findings)
     deep_dives = required_deep_dives(candidate.assessment.findings)
-    tool_steps = [step for step in steps if step.kind == "tool"]
+    # ``tool_start`` steps are written before a call returns, so they prove nothing.
+    tool_steps = [step for step in steps if step.kind == "tool" and step.payload.get("event") != "tool_start"]
     challenges: list[VerificationChallenge] = []
     checked: list[str] = []
 

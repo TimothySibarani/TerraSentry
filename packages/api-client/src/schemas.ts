@@ -111,6 +111,7 @@ export const TraceKind = Schema.Literals([
   "agent",
   "retask",
   "report",
+  "thought",
   "tool",
   "verifier",
   "writer",
@@ -220,7 +221,10 @@ export const adverseMediaFromSteps = (
 ): AdverseMediaReport | null => {
   const step = steps.find(
     (candidate) =>
-      candidate.kind === "tool" && candidate.name === "search_adverse_media",
+      candidate.kind === "tool" &&
+      candidate.name === "search_adverse_media" &&
+      // A `tool_start` step precedes the result and carries no report.
+      candidate.payload?.event !== "tool_start",
   );
   if (step === undefined) return null;
   return Option.getOrNull(
