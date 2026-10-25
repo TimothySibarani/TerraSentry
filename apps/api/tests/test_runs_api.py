@@ -31,6 +31,11 @@ def test_compliant_run_persists_and_releases_the_dds(client: TestClient, source_
     assert detail["review"] is None
     assert len(detail["steps"]) >= 5
     assert detail["elapsed_seconds"] >= 0
+    assert detail["created_at"].endswith("Z")
+    assert detail["started_at"].endswith("Z")
+    assert detail["finished_at"].endswith("Z")
+    assert detail["dds"]["created_at"].endswith("Z")
+    assert all(step["at"].endswith("Z") for step in detail["steps"])
 
     evidence = client.get(f"/runs/{run_id}/evidence")
     assert evidence.status_code == 200
@@ -92,6 +97,7 @@ def test_stream_replays_steps_and_finishes(client: TestClient, source_router: ob
     assert events[-1]["data"]["state"] == "complete"
     steps = [event for event in events if event["event"] == "step"]
     assert len(steps) == len(detail["steps"])
+    assert all(step["data"]["at"].endswith("+00:00") or step["data"]["at"].endswith("Z") for step in steps)
     assert "dds_writer" in [step["data"]["name"] for step in steps]
 
 

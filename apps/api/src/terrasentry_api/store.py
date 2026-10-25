@@ -167,10 +167,8 @@ class RunStore:
         return OperatorRecord.model_validate(row.profile) if row else fallback.model_copy(deep=True)
 
     async def save_operator(self, profile: OperatorRecord) -> datetime:
-        from sqlalchemy.dialects.postgresql import insert as pg_insert
-        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+        from sqlalchemy.dialects.sqlite import insert
 
-        insert = pg_insert if self._session.get_bind().dialect.name == "postgresql" else sqlite_insert
         timestamp = utc_now()
         statement = insert(OperatorSetting).values(
             id=1, profile=profile.model_dump(mode="json"), updated_at=timestamp

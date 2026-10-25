@@ -63,7 +63,7 @@ class EvidenceEntry(BaseModel):
 
 
 class EvidenceLedger:
-    """In-memory ledger; persistence to Postgres arrives with M4."""
+    """In-memory ledger; the API persists snapshots in the SQLite audit store."""
 
     def __init__(self) -> None:
         self._entries: dict[str, EvidenceEntry] = {}

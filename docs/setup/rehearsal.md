@@ -8,14 +8,15 @@ calls — so demo-day throughput is decoupled from GFW/FIRMS rate limits.
 ## Prerequisites
 
 - `GFW_API_KEY` and `FIRMS_MAP_KEY` in `.env` (see [data-sources.md](./data-sources.md)).
-- Postgres and Redis up and migrated:
+- SQLite audit schema initialized (no database servers needed):
 
 ```bash
-pnpm db:up
 pnpm db:upgrade
 ```
 
-- `CACHE_BACKEND=redis` (the default) so the offline run primes the same cache the API uses.
+- `CACHE_BACKEND=sqlite` (the default), with `CACHE_SQLITE_PATH=data/sqlite/cache.db`.
+- Stop the API before `rehearsal:run` on the same audit file. Each run manager's startup recovery
+  assumes exclusive ownership of active runs. Restart the API after the CLI exits to view results.
 
 ## 1. Prefetch the cache (live, ~10 min at default limits)
 
@@ -46,7 +47,7 @@ uv run python -m terrasentry_api.rehearsal run --offline --fixtures-dir data/fix
 
 - `--offline` makes a cache miss fail fast instead of calling a source; with the fixtures primed,
   `cache_stats.offline_misses` must be `0` on the report.
-- The command runs the real `RunManager` against Postgres, so the batch is also visible in the
+- The command runs the real `RunManager` against SQLite, so the batch is also visible in the
   cockpit and via `GET /batch-runs`.
 - The JSON report contains the parent summary (`wall_clock_seconds`,
   `average/median/p95_seconds_per_record`, `throughput_records_per_second`, `verdict_breakdown`,
@@ -102,7 +103,7 @@ Legacy submissions without country require resubmission. Run `pnpm db:upgrade` f
 Unsupported unsplit dateline polygons and dateline/polar point buffers require supported
 split polygons. Annual loss beyond the verified release is an explicit data gap; the current
 release ends in 2025. A clean 2027 assessment cannot treat missing 2026 coverage as compliant.
-The measured live-source prefetch and PostgreSQL replay are recorded in `docs/kpi.md`;
+The historical live-source prefetch and PostgreSQL replay are recorded in `docs/kpi.md`;
 live SAP AI Core agent-batch throughput remains a separate S3 verification gate.
 
 ## S3 agent-mode batches

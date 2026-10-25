@@ -7,20 +7,24 @@ re-run makes zero external calls and stays auditable.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
+import sqlite3
+import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Protocol
 
+import aiosqlite
 from pydantic import BaseModel, Field, ValidationError
-from redis.asyncio import Redis
+from tenacity import retry, retry_if_exception, stop_after_delay, wait_fixed
 
 from terrasentry_integrations.errors import CacheMissError, IntegrationError
 from terrasentry_integrations.settings import IntegrationSettings
-
-#: Fail fast when Redis is down instead of hanging a source fetch.
-REDIS_TIMEOUT_SECONDS = 2.0
 
 
 def geometry_hash(geometry: dict[str, Any]) -> str:
@@ -60,7 +64,7 @@ class CacheStats:
 
 
 class CacheBackend(Protocol):
-    """Storage contract shared by the Redis and in-memory implementations."""
+    """Storage contract shared by the SQLite and in-memory implementations."""
 
     offline: bool
 
@@ -144,102 +148,174 @@ class MemoryCache(BaseCache):
         self._entries.clear()
 
 
-class RedisCache(BaseCache):
-    """Redis-backed cache with an optional TTL."""
+# Switching a new file to WAL can return SQLITE_BUSY without invoking SQLite's busy timeout.
+@retry(
+    retry=retry_if_exception(
+        lambda exc: (
+            isinstance(exc, sqlite3.OperationalError)
+            and getattr(exc, "sqlite_errorcode", None) == sqlite3.SQLITE_BUSY
+        )
+    ),
+    wait=wait_fixed(0.05),
+    stop=stop_after_delay(30),
+    reraise=True,
+)
+async def _enable_wal(connection: aiosqlite.Connection) -> None:
+    async with connection.execute("PRAGMA journal_mode=WAL"):
+        pass
+
+
+class SQLiteCache(BaseCache):
+    """Persistent response snapshots in a disposable SQLite file."""
 
     def __init__(
         self,
-        redis: Redis,
+        path: Path,
         *,
         prefix: str = "ts:cache:v1",
         ttl_seconds: int = 0,
         offline: bool = False,
     ) -> None:
         super().__init__(offline=offline, ttl_seconds=ttl_seconds)
-        self._redis = redis
+        self._path = path
         self._prefix = prefix
+        self._connection: aiosqlite.Connection | None = None
+        self._lock = asyncio.Lock()
+        self._closed = False
 
-    @classmethod
-    def from_url(
-        cls,
-        url: str,
-        *,
-        prefix: str = "ts:cache:v1",
-        ttl_seconds: int = 0,
-        offline: bool = False,
-    ) -> RedisCache:
-        return cls(
-            Redis.from_url(
-                url,
-                decode_responses=True,
-                socket_connect_timeout=REDIS_TIMEOUT_SECONDS,
-                socket_timeout=REDIS_TIMEOUT_SECONDS,
-            ),
-            prefix=prefix,
-            ttl_seconds=ttl_seconds,
-            offline=offline,
-        )
+    @asynccontextmanager
+    async def _transaction(self) -> AsyncIterator[aiosqlite.Connection]:
+        async with self._lock:
+            if self._closed:
+                raise IntegrationError("SQLite cache is closed")
+            try:
+                if self._connection is None:
+                    await asyncio.to_thread(self._path.parent.mkdir, parents=True, exist_ok=True)
+                    connection = await aiosqlite.connect(self._path, timeout=30)
+                    try:
+                        await _enable_wal(connection)
+                        async with connection.execute(
+                            "CREATE TABLE IF NOT EXISTS cache_entries ("
+                            "namespace TEXT NOT NULL, source TEXT NOT NULL, geometry_hash TEXT NOT NULL, "
+                            "date_window TEXT NOT NULL, entry TEXT NOT NULL, expires_at REAL, "
+                            "PRIMARY KEY (namespace, source, geometry_hash, date_window))"
+                        ):
+                            pass
+                        await connection.commit()
+                    except BaseException:
+                        await connection.close()
+                        raise
+                    self._connection = connection
+                yield self._connection
+                await self._connection.commit()
+            except BaseException as exc:
+                if self._connection is not None:
+                    await self._connection.rollback()
+                if isinstance(exc, (OSError, sqlite3.Error)):
+                    raise IntegrationError(
+                        f"SQLite cache at {self._path} operation failed; "
+                        "check directory permissions and database integrity"
+                    ) from exc
+                raise
 
-    def _key(self, source: str, geometry_hash: str, date_window: str) -> str:
-        return f"{self._prefix}:{self._key_parts(source, geometry_hash, date_window)}"
+    @staticmethod
+    def _decode(raw: str) -> CacheEntry:
+        try:
+            return CacheEntry.model_validate_json(raw)
+        except ValidationError as exc:
+            raise IntegrationError(f"corrupt SQLite cache entry: {exc}") from exc
 
     async def get(self, source: str, geometry_hash: str, date_window: str) -> CacheEntry | None:
-        raw = await self._redis.get(self._key(source, geometry_hash, date_window))
-        if raw is None:
+        key = (self._prefix, source, geometry_hash, date_window)
+        async with self._transaction() as connection:
+            await connection.execute(
+                "DELETE FROM cache_entries WHERE namespace=? AND source=? AND geometry_hash=? "
+                "AND date_window=? AND expires_at<=?",
+                (*key, time.time()),
+            )
+            async with connection.execute(
+                "SELECT entry FROM cache_entries WHERE namespace=? AND source=? "
+                "AND geometry_hash=? AND date_window=?",
+                key,
+            ) as cursor:
+                row = await cursor.fetchone()
+        if row is None:
             self._record_miss(source, geometry_hash, date_window)
             return None
-        try:
-            entry = CacheEntry.model_validate_json(raw)
-        except ValidationError as exc:
-            raise IntegrationError(f"corrupt cache entry for {source} window={date_window}: {exc}") from exc
-        return self._record_hit(entry)
+        return self._record_hit(self._decode(row[0]))
 
     async def set(self, entry: CacheEntry) -> None:
-        key = self._key(entry.source, entry.geometry_hash, entry.date_window)
-        raw = entry.model_dump_json()
-        if self.ttl_seconds > 0:
-            await self._redis.set(key, raw, ex=self.ttl_seconds)
-        else:
-            await self._redis.set(key, raw)
+        async with self._transaction() as connection:
+            expires_at = time.time() + self.ttl_seconds if self.ttl_seconds > 0 else None
+            await connection.execute(
+                "INSERT INTO cache_entries VALUES (?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT (namespace, source, geometry_hash, date_window) "
+                "DO UPDATE SET entry=excluded.entry, expires_at=excluded.expires_at",
+                (
+                    self._prefix,
+                    entry.source,
+                    entry.geometry_hash,
+                    entry.date_window,
+                    entry.model_dump_json(),
+                    expires_at,
+                ),
+            )
         self._stats.writes += 1
 
     async def delete(self, source: str, geometry_hash: str, date_window: str) -> bool:
-        removed = await self._redis.delete(self._key(source, geometry_hash, date_window))
-        return bool(removed)
+        async with (
+            self._transaction() as connection,
+            connection.execute(
+                "DELETE FROM cache_entries WHERE namespace=? AND source=? AND geometry_hash=? "
+                "AND date_window=? AND (expires_at IS NULL OR expires_at>?)",
+                (self._prefix, source, geometry_hash, date_window, time.time()),
+            ) as cursor,
+        ):
+            return cursor.rowcount > 0
 
     async def clear_source(self, source: str) -> int:
-        removed = 0
-        async for key in self._redis.scan_iter(match=f"{self._prefix}:{source}:*"):
-            await self._redis.delete(key)
-            removed += 1
-        return removed
+        async with (
+            self._transaction() as connection,
+            connection.execute(
+                "DELETE FROM cache_entries WHERE namespace=? AND source=? "
+                "AND (expires_at IS NULL OR expires_at>?)",
+                (self._prefix, source, time.time()),
+            ) as cursor,
+        ):
+            return cursor.rowcount
 
     async def iter_entries(self) -> list[CacheEntry]:
-        entries: list[CacheEntry] = []
-        async for key in self._redis.scan_iter(match=f"{self._prefix}:*"):
-            raw = await self._redis.get(key)
-            if raw is None:
-                continue
-            try:
-                entries.append(CacheEntry.model_validate_json(raw))
-            except ValidationError as exc:
-                raise IntegrationError(f"corrupt cache entry at {key!r}: {exc}") from exc
-        entries.sort(key=lambda entry: (entry.source, entry.geometry_hash, entry.date_window))
-        return entries
+        async with self._transaction() as connection:
+            await connection.execute(
+                "DELETE FROM cache_entries WHERE namespace=? AND expires_at<=?",
+                (self._prefix, time.time()),
+            )
+            async with connection.execute(
+                "SELECT entry FROM cache_entries WHERE namespace=? "
+                "ORDER BY source, geometry_hash, date_window",
+                (self._prefix,),
+            ) as cursor:
+                rows = await cursor.fetchall()
+        return [self._decode(row[0]) for row in rows]
 
     async def ping(self) -> None:
-        await self._redis.ping()
+        async with self._transaction() as connection, connection.execute("SELECT 1"):
+            pass
 
     async def close(self) -> None:
-        await self._redis.aclose()
+        async with self._lock:
+            if self._connection is not None:
+                await self._connection.close()
+                self._connection = None
+            self._closed = True
 
 
 def build_cache(settings: IntegrationSettings, *, offline: bool = False) -> CacheBackend:
-    """Build the configured cache backend (Redis by default, memory for dev/tests)."""
+    """SQLite by default; memory for isolated tests and ephemeral runs."""
     if settings.cache_backend == "memory":
         return MemoryCache(offline=offline, ttl_seconds=settings.cache_ttl_seconds)
-    return RedisCache.from_url(
-        settings.redis_url,
+    return SQLiteCache(
+        settings.cache_sqlite_path,
         prefix=settings.cache_prefix,
         ttl_seconds=settings.cache_ttl_seconds,
         offline=offline,

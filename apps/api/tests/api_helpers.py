@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Any
 
 from fastapi.testclient import TestClient
-from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine
 from terrasentry_api.config import Settings
 from terrasentry_api.db import create_engine_and_session
@@ -189,8 +188,6 @@ def test_settings(
 
 async def _create_all(engine: AsyncEngine) -> None:
     async with engine.begin() as connection:
-        # SQLite test readers must not block the concurrent batch writer; production uses Postgres.
-        await connection.exec_driver_sql("PRAGMA journal_mode=WAL")
         await connection.run_sync(Base.metadata.create_all)
 
 
@@ -200,21 +197,6 @@ def load_seed_datasets() -> SeedDatasets:
         batch_path=SEED_DIR / "batch_50.json",
         operator_path=SEED_DIR / "operator.json",
     )
-
-
-def _tolerate_concurrent_writers(engine: AsyncEngine) -> None:
-    """Batches write from many tasks at once; plain SQLite answers 'database is locked'.
-
-    WAL lets readers proceed beside a writer and the busy timeout makes writers queue instead
-    of failing, which is what Postgres does natively.
-    """
-
-    @event.listens_for(engine.sync_engine, "connect")
-    def _configure(dbapi_connection: Any, _record: object) -> None:
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA busy_timeout=30000")
-        cursor.close()
 
 
 def test_services_factory(
@@ -231,7 +213,7 @@ def test_services_factory(
     aicore_configured: bool = False,
     media: MediaSearch | None = None,
 ) -> ServicesFactory:
-    """A lifespan-compatible factory that never touches Postgres or Redis."""
+    """A lifespan-compatible factory that uses isolated SQLite and memory cache."""
     resolved = datasets or build_datasets()
 
     @asynccontextmanager
@@ -252,7 +234,6 @@ def test_services_factory(
             sap_mode="stub",
         )
         engine, session_factory = create_engine_and_session(settings.database_url)
-        _tolerate_concurrent_writers(engine)
         await _create_all(engine)
         cache_backend = cache or MemoryCache()
         gfw = GfwClient(integration, cache=cache_backend)

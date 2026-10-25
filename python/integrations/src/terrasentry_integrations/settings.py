@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,8 +27,8 @@ class IntegrationSettings(BaseSettings):
     firms_rate_limit_per_10min: int = 300
     firms_day_range_max: int = 5
 
-    cache_backend: Literal["redis", "memory"] = "redis"
-    redis_url: str = "redis://localhost:6379/0"
+    cache_backend: Literal["sqlite", "memory"] = "sqlite"
+    cache_sqlite_path: Path = Path("data/sqlite/cache.db")
     cache_prefix: str = "ts:cache:v1"
     cache_ttl_seconds: int = 7_776_000
     # Fixture-backed rehearsals: prime the cache from data/fixtures and refuse
@@ -50,6 +51,12 @@ class IntegrationSettings(BaseSettings):
     # clearly simulated result for offline demos, ``live`` calls the model. Never a scoring input.
     adverse_media_mode: Literal["off", "stub", "live"] = "off"
     adverse_media_timeout_seconds: float = 45.0
+
+    @field_validator("cache_sqlite_path")
+    @classmethod
+    def resolve_cache_path(cls, value: Path) -> Path:
+        root = Path(__file__).resolve().parents[4]
+        return (root / value).resolve()
 
     @property
     def has_gfw_key(self) -> bool:

@@ -24,7 +24,7 @@ from terrasentry_api.main import create_app
 from terrasentry_core.seed.schemas import BatchRecord
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_core.tools.sources import PolygonSources
-from terrasentry_integrations.cache import MemoryCache
+from terrasentry_integrations.cache import SQLiteCache
 from terrasentry_integrations.fixtures import export_fixtures, prime_fixtures
 from terrasentry_integrations.settings import IntegrationSettings
 from terrasentry_integrations.sources.firms import FireDetection, FirmsHotspotResult
@@ -175,7 +175,7 @@ async def test_offline_batch_replays_from_fixtures(
     source_router: Any,
 ) -> None:
     fixture_dir = tmp_path / "fixtures"
-    live_cache = MemoryCache()
+    live_cache = SQLiteCache(tmp_path / "cache.db")
     live_factory = api_helpers.test_services_factory(
         tmp_path, full_datasets, cache=live_cache, batch_concurrency=4
     )
@@ -187,9 +187,15 @@ async def test_offline_batch_replays_from_fixtures(
     calls_after_live = len(source_router.calls)
     assert calls_after_live >= 4
 
-    offline_cache = MemoryCache(offline=True)
-    primed = await prime_fixtures(offline_cache, fixture_dir)
+    # Persisted responses are reusable after close, independently of fixture import.
+    persisted = SQLiteCache(tmp_path / "cache.db", offline=True)
+    assert len(await persisted.iter_entries()) == exported
+    await persisted.close()
+    priming = SQLiteCache(tmp_path / "offline-cache.db", offline=True, ttl_seconds=60)
+    primed = await prime_fixtures(priming, fixture_dir)
     assert primed == exported
+    await priming.close()
+    offline_cache = SQLiteCache(tmp_path / "offline-cache.db", offline=True)
     offline_factory = api_helpers.test_services_factory(
         tmp_path, full_datasets, cache=offline_cache, batch_concurrency=4, offline=True
     )
@@ -253,7 +259,9 @@ async def test_rehearsal_report_carries_mode_model_and_timings_for_an_agent_batc
     full_datasets: SeedDatasets,
     source_router: Any,
 ) -> None:
-    factory = api_helpers.test_services_factory(tmp_path, full_datasets, batch_agent_concurrency=2)
+    factory = api_helpers.test_services_factory(
+        tmp_path, full_datasets, batch_agent_concurrency=2, cache=SQLiteCache(tmp_path / "cache.db")
+    )
     async with factory() as services:
         report = await rehearsal.run_recorded_batch(
             services=services, size=4, mode="agent", model="scripted", poll_seconds=0.01

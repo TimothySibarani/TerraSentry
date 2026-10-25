@@ -49,6 +49,7 @@ def test_submitted_record_runs_to_a_released_dds(client: TestClient, source_rout
     assert record["provenance"] == "supplier_declared"
     assert 480 < record["area_ha"] < 510
     assert record["latest_run"] is None
+    assert record["created_at"].endswith("Z")
 
     run = client.post("/runs", json={"record_id": record["record_id"], "model": "scripted"})
     assert run.status_code == 202, run.text
@@ -68,6 +69,7 @@ def test_submitted_record_runs_to_a_released_dds(client: TestClient, source_rout
 
     listed = client.get(f"/records/{record['record_id']}").json()
     assert listed["latest_run"]["verdict"] == "compliant"
+    assert listed["created_at"] == record["created_at"]
 
 
 def test_point_plot_and_geometry_preview(client: TestClient) -> None:

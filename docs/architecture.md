@@ -23,8 +23,9 @@ the UI as a cockpit over a Python-owned API.
   approves anything uncertain or high-risk, and SAP enforces it. Every section below serves that line.
 - **One backend**, in Python: FastAPI owns persistence, business logic, batch runs, and the agent
   runtime. This avoids a second TypeScript backend and the duplicate domain models that come with it.
-- **One database**, PostgreSQL: suppliers, runs, per-step agent traces, evidence, verdicts, DDS
-  documents, and cached source responses are relational data with a real audit-trail requirement.
+- **SQLite audit store**: suppliers, runs, per-step agent traces, evidence, verdicts, DDS
+  documents and ERP actions remain relational audit data. A separate disposable SQLite file
+  caches source responses.
 - **Agents run on Strands Agents SDK** against **SAP AI Core** (Generative AI Hub) through LiteLLM,
   using the SDK's multi-agent patterns (agents-as-tools and graph) to implement Supervisor,
   Specialists, and Independent Verifier. A `scripted` mode replays the same graph offline.
@@ -36,9 +37,8 @@ the UI as a cockpit over a Python-owned API.
   TanStack Query. The FastAPI OpenAPI schema remains the contract source of truth.
 - **Hosting uses what the hackathon provides.** The Joule A2A proxy is a Cloud Foundry app in the
   committee's SAP BTP space. The API, database and cockpit run on a developer machine (a tunnel makes
-  the API reachable from Cloud Foundry), because the committee's instructions list no database
-  service. AWS
-  (containers, RDS) is a possible later hosting target, but nothing in the repo calls AWS today.
+  the API reachable from Cloud Foundry), with SQLite files on persistent local disk. AWS is a possible
+  later hosting target, but nothing in the repo calls AWS today.
 
 ---
 
@@ -55,9 +55,9 @@ the UI as a cockpit over a Python-owned API.
 | Effect <-> React bridge | `ManagedRuntime` + TanStack Query loaders/hooks | `effect`, `@tanstack/react-query` |
 | Maps | MapLibre GL JS; Esri World Imagery by default, Amazon Location tiles via `VITE_SATELLITE_TILES_URL` | `maplibre-gl`, `terra-draw` |
 | Backend | FastAPI + Uvicorn, SSE for live traces | `fastapi[standard]`, `sse-starlette` |
-| ORM / migrations | SQLAlchemy 2.0 async + Alembic | `sqlalchemy[asyncio]`, `asyncpg`, `alembic` |
-| Database | PostgreSQL 16+ (local/Docker or Neon for dev; any managed Postgres later) | `postgresql+asyncpg://` |
-| Source response cache | Redis with per-entry TTL (in-memory backend for tests) | `redis` (M1), facade in `python/integrations/.../cache.py` |
+| ORM / migrations | SQLAlchemy 2.0 async + Alembic | `sqlalchemy[asyncio]`, `aiosqlite`, `alembic` |
+| Database | SQLite audit store on persistent local disk | `sqlite+aiosqlite:///data/sqlite/audit.db` |
+| Source response cache | SQLite with per-entry TTL (memory for tests) | `aiosqlite`, `data/sqlite/cache.db`, facade in `python/integrations/.../cache.py` |
 | Agent framework | Strands Agents SDK on SAP AI Core; multi-agent graph | `strands-agents[litellm]` |
 | Models | Role-based routing: one orchestrator/verifier model, one extraction model | `LiteLLMModel` (`sap/` route); ids from `AICORE_MODEL_*` env |
 | Geo / math | Shapely, pyproj | `shapely`, `pyproj` |
@@ -124,7 +124,7 @@ TerraSentry/
 │       └── src/terrasentry_integrations/
 │           ├── sources/              GFW/Hansen, NASA FIRMS clients (+ shared http.py)
 │           ├── sap/                  SapGateway protocol + sandbox/stub clients
-│           ├── cache.py              Redis/memory cache keyed by source + geometry + window
+│           ├── cache.py              SQLite/memory cache keyed by source + geometry + window
 │           ├── preflight.py          live credential/latency/quota probe
 │           └── settings.py           pydantic-settings for sources and cache
 ├── packages/
@@ -179,7 +179,7 @@ TerraSentry/
         +---------------------------------------------------+
         |  apps/api  ·  FastAPI                             |
         |  REST + SSE + batch worker (asyncio)              |
-        |  SQLAlchemy async -> PostgreSQL                   |
+        |  SQLAlchemy async -> SQLite                       |
         +---------+---------------------------+-------------+
                   |                           |
                   v                           v
@@ -203,7 +203,7 @@ TerraSentry/
 
 **Request flow (live scenario):** `POST /runs` creates a run and starts the agent task ->
 supervisor calls specialist tools -> each tool result is written to the evidence ledger and the run
-trace in Postgres -> the verifier independently cross-checks -> the deterministic rubric scores ->
+trace in SQLite -> the verifier independently cross-checks -> the deterministic rubric scores ->
 DDS payload is generated -> the run ends `complete` or `awaiting_review`. The UI subscribes to
 `GET /runs/{id}/stream` (SSE) for the step-by-step trace, then fetches the final dossier.
 
@@ -298,25 +298,38 @@ the database.
 **Why:** the agents are Python, so making the backend Python removes a network hop and avoids
 maintaining domain models twice. FastAPI's OpenAPI output becomes the contract for the TS client.
 Background work runs as asyncio tasks with a bounded semaphore, which is sufficient for a 50-record
-batch and needs no extra infrastructure (Celery/Redis) on demo day.
+batch and needs no external job queue on demo day.
 
 **Rejected:** Hono/NestJS backend in TypeScript (would need the domain model, DB access, and job
 scheduling duplicated across languages); GraphQL (no client-driven query complexity to justify it);
 gRPC (browsers need a proxy; REST + SSE is simpler and demo-visible).
 
-### 5.4 Database: PostgreSQL + SQLAlchemy 2.0
+### 5.4 Database: SQLite + SQLAlchemy 2.0
 
-**Decision:** PostgreSQL with SQLAlchemy 2.0 async + asyncpg + Alembic. Dev on Neon free tier or a
-local/Docker Postgres; a managed Postgres (RDS, Aurora, Neon) if it is ever hosted.
+**Decision:** SQLite through SQLAlchemy 2.0 async + aiosqlite + Alembic. The audit store is
+`data/sqlite/audit.db`; disposable source responses live separately in `data/sqlite/cache.db`.
+Relative paths resolve from the repository root. A fresh audit file is migrated and seeded from
+the committed demo data. Legacy PostgreSQL/Redis data and volumes are left untouched.
 
-**Why:** the audit trail is inherently relational and queryable: suppliers -> parcels -> runs ->
-steps -> evidence -> verdicts -> DDS. JSONB handles flexible agent traces and raw payload snapshots
-without a second store. Aggregate throughput queries for the batch are trivial SQL.
+**Why:** the hackathon runs one API process on a developer machine. Its audit trail remains
+relational (suppliers → parcels → runs → steps/evidence/verdicts/DDS/ERP actions), JSON remains
+validated at application boundaries, and SQLite removes database-server setup. Existing migrations
+already support SQLite batch alterations; all six revision IDs remain.
 
-**Rejected:** DynamoDB (single-table design overhead for trace/aggregate access patterns; local dev
-needs Java tooling; the PRD's DynamoDB mention is only the SAP-less fallback for a status write);
-SQLite as the deployed store (no concurrency story for batch runs; keep it only as an optional
-unit-test backend); Prisma/Drizzle (the DB is owned by Python; a TS ORM would be a second writer).
+**Concurrency and integrity:** runtime connections use WAL, a 30-second busy timeout and enforced
+foreign keys. Writes remain short; batch concurrency is bounded by existing semaphores. WAL permits
+one writer per file. A UTC datetime column type normalizes instants and restores timezone metadata
+on reads. Alembic alone disables FK enforcement for referenced-table rebuilds, then validates with
+`foreign_key_check`. Stop writers before migrations and backups.
+
+**Operational boundary:** one API process, one persistent local disk, no replicas or shared network
+WAL storage. Stop the API before a rehearsal manager opens the same audit file: startup recovery
+assumes ownership of active runs. Compose persists both files in its API volume. The cache owns its
+single disposable table and can initialize independently of the API's Alembic migrations.
+
+**Rejected for this scope:** database servers and distributed job infrastructure add setup without
+helping the bounded demo. Revisit a server database if multiple API replicas or sustained concurrent
+writers become requirements. The former decision to reserve SQLite only for tests is superseded.
 
 ### 5.5 Agent orchestration: Strands Agents SDK
 
@@ -438,18 +451,17 @@ move to TS, away from the Python domain; Effect `Schema` already covers parsing 
 | Models | SAP AI Core through LiteLLM (committee-provided, no quota issues) | none |
 | Joule proxy (`apps/a2a`) | Cloud Foundry app in the committee's `hackathon-<team>` space (`cf push`) | none |
 | API, cockpit, MCP server | A developer machine; a tunnel exposes the API to Cloud Foundry | a container host if a public deployment is wanted |
-| Database | Local/Docker Postgres or Neon | any managed Postgres (RDS or Aurora if AWS is chosen) |
-| Cache | Redis (Docker) or the in-memory backend | managed Redis |
-| Object storage (raw payloads, raster chips, DDS artifacts) | Postgres JSONB and local files | S3 (not built) |
+| Database | SQLite audit file | one persistent local host |
+| Cache | SQLite cache file or memory for tests | no external cache service |
+| Object storage (raw payloads, raster chips, DDS artifacts) | SQLite JSON and local files | S3 (not built) |
 | Maps | Esri World Imagery by default | Amazon Location tiles via `VITE_SATELLITE_TILES_URL` (optional) |
 | Secrets | `.env` (gitignored); `cf set-env` on Cloud Foundry | a secrets manager if hosted |
-| Observability | The Postgres run trace | OpenTelemetry, if hosted |
+| Observability | The SQLite run trace | OpenTelemetry, if hosted |
 | IaC | `infra/cdk` is an empty AWS CDK shell | fill it only if the API moves to AWS |
 
-**Nothing in the repo calls AWS today.** The committee's instructions cover models, Cloud Foundry
-and Joule but mention no database or Redis service, so a public deployment of the API needs one from
-somewhere: ask the mentors whether the BTP marketplace has one, or use RDS or Neon. AWS is the right
-choice only if that happens; it is not part of the story the product tells.
+**Nothing in the repo calls AWS today.** A public deployment needs a persistent local filesystem
+for SQLite, not a managed database service. The Joule proxy can remain on Cloud Foundry and call
+the API over HTTPS. See `docs/setup/aws.md` for the supported single-host boundary.
 
 **Rejected:** Terraform (adds a second language and state management for a small team; CDK keeps
 infra in TypeScript next to the app); SST v3 (great TanStack Start deployment DX; can be evaluated
@@ -462,12 +474,12 @@ PRD section 5 makes this a build-blocking concern, so it is designed in from the
 
 - `httpx.AsyncClient` with `tenacity` exponential backoff + jitter and an `aiolimiter` per-source
   concurrency cap.
-- Persistent Redis cache keyed by `(source, geometry_hash, date_window)` with a per-entry TTL
-  (`ts:cache:v1:*`). Each entry stores the request description plus a normalized snapshot of the
-  source-derived result (including `fetched_at`), so cached re-runs make zero external calls and
-  remain auditable. Postgres stays the audit/evidence store; Redis is only the hot response cache.
-  An in-memory backend serves tests and no-Docker smoke runs. Fixtures are deliberately not
-  committed — warm the cache with a live run, then use `--offline` for rehearsals.
+- Persistent SQLite cache keyed by `(namespace, source, geometry_hash, date_window)`. Each row
+  stores the full response envelope and a write-time TTL (90 days by default; <=0 disables expiry).
+  Expired entries count as misses, including in offline mode. `CACHE_PREFIX` selects the namespace.
+  `audit.db` preserves run/evidence history; `cache.db` is disposable and independently initialized.
+  Memory remains available for tests. Fixture export/prime preserves offline rehearsals across
+  processes; priming refreshes TTL without changing the source's original `fetched_at`.
 - A preflight script runs 5-10 dummy lookups before committing engineering time to the 50-record
   batch, per the PRD action item, and reports observed latency and quota behaviour.
 
@@ -513,7 +525,7 @@ works unchanged in server contexts (Nitro SSR today, a future worker or server f
 **Rejected:** `@effect/atom-react` as the default React state layer — it is on the 4.0 beta line
 while `effect` is on RC, and TanStack Query already provides the SSR dehydration the cockpit needs.
 Revisit only if client state outgrows server-cache patterns. Also rejected: `effect/unstable/sql`
-and `effect/unstable/httpapi` for this project, because PostgreSQL and the HTTP API are owned by
+and `effect/unstable/httpapi` for this project, because SQLite and the HTTP API are owned by
 Python (section 5.3).
 
 ---
@@ -624,7 +636,7 @@ web app only receives `VITE_*` values at build time.
                                                         |  HTTPS (tunnel)
    Claude Code  --MCP-->  apps/mcp (stdio)  ------------+
                                                         v
-   browser  -->  apps/web :3000  -->  apps/api :8000 (FastAPI)  -->  Postgres + Redis (local/Docker)
+   browser  -->  apps/web :3000  -->  apps/api :8000 (FastAPI)  -->  SQLite audit + cache (local files)
                                               |
                                               +-->  SAP AI Core (models)   +-->  GFW / FIRMS
 ```
@@ -632,10 +644,9 @@ web app only receives `VITE_*` values at build time.
 - **Demo topology (today):** `pnpm dev` runs web (port 3000) and API (port 8000) with CORS and the
   Effect API client. Web calls `VITE_API_BASE_URL` directly. Only the Joule proxy is deployed, to
   the committee's Cloud Foundry space; it reaches the API through a tunnel (`docs/sap-hackathon-resources.md`).
-- **If it were hosted:** two containers behind one entry point, a managed Postgres, and secrets from
-  the host's secret store. The committee's instructions name Cloud Foundry as the host, so
-  the host would be Cloud Foundry (needs a database service) or AWS (containers plus RDS, with the
-  CDK shell in `infra/cdk` as the starting point). Neither is built or claimed.
+- **If hosted:** API and web containers on one host with persistent local storage for SQLite.
+  One API worker/replica owns run recovery, review locks and SSE. Container replacement retains
+  the named volume; deleting it resets audit data and cache. Hosting automation remains unbuilt.
 
 ---
 
@@ -668,7 +679,7 @@ web app only receives `VITE_*` values at build time.
    accounts.
 3. **Agents:** Strands supervisor/specialists/verifier wired to the same tools; parity against the
    reference pipeline.
-4. **API:** Postgres models + Alembic, run/step/batch endpoints, SSE.
+4. **API:** SQLite models + Alembic, run/step/batch endpoints, SSE.
 5. **Cockpit:** Effect runtime + query modules, supplier table, run detail with live trace, batch
    summary, map.
 6. **Batch:** 50-record generation around real forest coordinates; measure throughput.
@@ -679,9 +690,10 @@ web app only receives `VITE_*` values at build time.
 
 ## 10. Getting started
 
-Prerequisites: Node >= 22 (corepack enabled), pnpm via corepack, `uv`, and Docker (for the local
-Postgres + Redis from `pnpm db:up`) or your own Postgres connection string in `DATABASE_URL`
-(Neon free tier is the zero-install option; set `CACHE_BACKEND=memory` for a no-Docker smoke run).
+Prerequisites: Node >= 22 (corepack enabled), pnpm via corepack, and `uv`. Local development
+requires no database containers. Set `DATABASE_URL=sqlite+aiosqlite:///data/sqlite/audit.db`,
+`CACHE_BACKEND=sqlite`, and `CACHE_SQLITE_PATH=data/sqlite/cache.db` in an existing `.env`;
+remove obsolete `REDIS_URL`. Preserve the rest of your credentials.
 
 ```bash
 corepack enable
@@ -689,7 +701,6 @@ pnpm install
 uv sync
 cp .env.example .env
 
-pnpm db:up      # Postgres + Redis containers
 pnpm db:upgrade # apply the Alembic audit schema
 pnpm dev        # web on :3000 and API on :8000
 pnpm check      # Biome + Ruff + tsc + Pyright
@@ -718,6 +729,9 @@ pnpm exec turbo run typecheck --filter=@terrasentry/web
 ---
 
 ## 11. Current scaffold status (2026-09-10)
+
+Historical implementation/measurement notes below retain the backend used at the time. The
+2026-10-25 SQLite decision in §5.4 supersedes older PostgreSQL/Redis setup and validation notes.
 
 > Entries below dated before 2026-10-13 mention Amazon Bedrock, AgentCore and `--model bedrock`.
 > That model mode was **removed on 2026-10-13** (see the last entry); the entries stay as written
@@ -986,7 +1000,7 @@ that nothing calls. Live on the same day: the preflight passes on Claude 4.6 Son
 | SAP access: API Hub sandbox or BTP trial obtained? | `SAP_MODE=sandbox` vs `stub` | Resolved 2026-09-11: no access in the build environment → `stub`; promote by setting `SAP_MODE` + credentials (no code change) |
 | Which SAP AI Core model names does our key serve, and does the orchestrator model use the structured-output tool? | Config only (`AICORE_MODEL_*`) | `preflight` on the first live run |
 | Does GFW expose a bulk/async query endpoint for 50 polygons? | Batch wall-clock time | First 10-record pipeline run |
-| Is Neon acceptable for team dev, or install Postgres? | Dev setup friction | Team environment review |
-| Does the BTP marketplace offer a Postgres/Redis service for a hosted API? | Whether the API can leave the laptop | Ask the mentors before the demo |
+| Does the demo need more than one API writer process? | Revisit server database/job coordination | Only when the single-process boundary becomes insufficient |
+| Which persistent local host should run a public API? | SQLite volume durability | Only if the API must leave the developer machine |
 | TanStack Query vs `@effect/atom-react` for client state | Cockpit state architecture | Only if client state outgrows server-cache patterns |
 | Add durable HITL (LangGraph-style interrupts)? | Approval UX | Only if in-process review proves insufficient |

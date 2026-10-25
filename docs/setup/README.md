@@ -4,7 +4,7 @@ Operational guides for getting every external dependency working without spendin
 
 | Doc | Covers | Needed by |
 | --- | --- | --- |
-| [data-sources.md](./data-sources.md) | GFW/Hansen key, NASA FIRMS MAP_KEY, Redis cache | M1 |
+| [data-sources.md](./data-sources.md) | GFW/Hansen key, NASA FIRMS MAP_KEY, SQLite cache | M1 |
 | [aws.md](./aws.md) | Optional: AWS hosting, only if the API must leave your laptop (nothing uses AWS today) | M8 (if at all) |
 | [sap.md](./sap.md) | BTP trial, Integration Suite, Business Accelerator Hub sandbox, stub fallback | M7 |
 | [sap-hackathon-resources.md](../sap-hackathon-resources.md) | Hackathon BTP, AI Core models (Claude 4.6, GPT-5.4, Sonar), Joule A2A | M3, M7, M8 |
@@ -26,7 +26,7 @@ Work top to bottom; record each result in `docs/milestones.md` §3.
 - [ ] Request NASA FIRMS MAP_KEY (emailed) — [data-sources.md](./data-sources.md)
 - [ ] Check SAP Business Accelerator Hub sandbox and BTP trial access — [sap.md](./sap.md)
 - [ ] Copy `.env.example` to `.env` and fill in the keys
-- [ ] Start Redis (`docker compose up -d redis`) or set `CACHE_BACKEND=memory` for a smoke run
+- [ ] Initialize SQLite with `pnpm db:upgrade`; cache tables are created on first use
 - [ ] Run the preflight probe and paste the numbers into the M1 notes:
 
 ```bash
@@ -39,7 +39,7 @@ uv run python -m terrasentry_integrations.preflight --polygons data/seed/demo_po
 corepack enable && pnpm install
 uv sync --all-packages
 cp .env.example .env            # fill in GFW_API_KEY and FIRMS_MAP_KEY
-docker compose up -d redis      # cache (CI uses fakeredis instead)
+pnpm db:upgrade                # SQLite audit schema; the cache initializes on first use
 
 uv run python -m terrasentry_integrations.preflight   # live probe, needs keys
 uv run python -m terrasentry_core.reference            # live reference run, then cached
@@ -50,8 +50,7 @@ uv run python -m terrasentry_core.agents.preflight     # SAP AI Core check, need
 ## API + database (M4)
 
 ```bash
-pnpm db:up                            # postgres + redis containers (or a Neon DATABASE_URL)
-pnpm db:upgrade                       # alembic upgrade head
+pnpm db:upgrade                       # create/migrate SQLite (`pnpm db:up` is an alias)
 pnpm dev                              # API :8000 + web :3000; AUTO_SEED fills suppliers/parcels
 # Smoke the run API (scripted model, warm the cache first for --offline-style speed):
 curl -s localhost:8000/runs -H 'content-type: application/json' \
@@ -64,6 +63,12 @@ uv run pytest apps/api/tests          # SQLite + mocked sources, no Docker neede
 
 Set `AGENT_MODEL=sap` (with `AICORE_*` from [sap-hackathon-resources.md](../sap-hackathon-resources.md))
 to run the live agent path; the screening batch is deterministic and needs no model access.
+
+Existing `.env` files need `DATABASE_URL=sqlite+aiosqlite:///data/sqlite/audit.db`,
+`CACHE_BACKEND=sqlite`, and `CACHE_SQLITE_PATH=data/sqlite/cache.db`; remove `REDIS_URL`.
+The migration starts from seed and does not import old PostgreSQL/Redis data or delete old volumes.
+One API process owns the audit file; stop it before a headless rehearsal. Storage/backup details:
+[data-sources.md §3](./data-sources.md#3-sqlite-cache).
 
 ### Real plot intake (S1)
 
@@ -81,7 +86,7 @@ real GFW and FIRMS.
 
 Everything runs on free or committee-provided resources. The hackathon provides the models (SAP AI
 Core), Cloud Foundry and Joule, so there is no model quota to chase and no cloud bill. All M1 work
-runs locally with Redis in Docker. SAP also has a free 90-day BTP trial with a limited Integration
+runs locally with SQLite files and no database containers. SAP also has a free 90-day BTP trial with a limited Integration
 Suite, and the Business Accelerator Hub offers free sandbox endpoints; if neither works we ship the
 schema-accurate stub and disclose it. AWS is optional and only matters if the API has to be hosted
-publicly ([aws.md](./aws.md) ends with a teardown and cost-guardrail section for that case).
+publicly ([aws.md](./aws.md) describes the persistent-host requirements).

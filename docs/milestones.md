@@ -7,6 +7,15 @@
 This is the living tracker for the MVP. Update the status columns as work lands; keep the
 definitions of done and decision gates unchanged unless the PRD changes.
 
+**Storage update (2026-10-25):** runtime persistence and response caching now use separate SQLite
+files. Setup, CI and containers no longer require database servers. Older PostgreSQL/Redis and
+fakeredis references below describe historical milestone evidence; the current architecture and
+runbooks supersede those operational instructions. Fresh stores start from committed seed; legacy
+volumes are retained. SQLite validation: 462 Python and 168 web/client tests passed, `pnpm check`
+and generated-contract drift checks passed, populated/empty migration round trips passed, and
+operator/record/cache state survived API container replacement. Concurrent cache startup passed
+60 fresh-file trials. These checks are separate from historical throughput numbers.
+
 **Tracking conventions**
 
 - Status values: `Todo`, `In progress`, `Done`, `Blocked`.

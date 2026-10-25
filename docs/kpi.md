@@ -10,6 +10,14 @@ target, and the machine-readable field in a batch report produced by
 The dashboard KPI table (`apps/web/src/routes/index.tsx` + `components/kpi-table.tsx`) mirrors the
 same rows for the latest completed batch.
 
+## Storage change (2026-10-25)
+
+New runs use SQLite for audit data and source responses. PostgreSQL/Redis timings below are
+historical measurements and must not be presented as SQLite throughput. The automated migration
+coverage exercises real Alembic schemas, persisted cache reuse and scripted screening/agent replay;
+these checks verify behavior, not live-source or live-model performance. Re-record a rehearsal
+report on the target demo machine before updating numerical KPI claims.
+
 ## How a row gets a number
 
 1. `pnpm rehearsal:prefetch --as-of <date>` warms the source cache with real GFW/FIRMS data and

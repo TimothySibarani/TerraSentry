@@ -49,6 +49,7 @@ def test_compliant_run_flips_the_vendor_to_approved(client: TestClient, source_r
     assert action["mode"] == "stub"
     assert action["real"] is False
     assert action["error"] is None
+    assert action["performed_at"].endswith("Z")
 
     steps = [step for step in detail["steps"] if step["kind"] == "sap"]
     assert len(steps) == 1

@@ -98,7 +98,7 @@ async def build_services(
     settings: Settings = default_settings,
     integration: IntegrationSettings | None = None,
 ) -> AsyncIterator[AppServices]:
-    """Build the real services: Postgres engine, Redis cache, live source clients.
+    """Build the real services: SQLite audit engine and response cache, live source clients.
 
     ``integration`` is an optional override so the rehearsal CLI can force an
     offline cache/fixture directory without mutating process env.
@@ -111,7 +111,9 @@ async def build_services(
     sap: SapGateway | None = None
     try:
         await check_database(engine, settings.database_url)
-        await check_cache(cache, resolved.redis_url)
+        await check_cache(
+            cache, str(resolved.cache_sqlite_path) if resolved.cache_backend == "sqlite" else "memory"
+        )
         fixtures_loaded = 0
         if resolved.cache_fixtures_dir:
             fixtures_loaded = await prime_fixtures(cache, Path(resolved.cache_fixtures_dir))

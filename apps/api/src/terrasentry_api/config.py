@@ -1,8 +1,11 @@
 from datetime import date
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -25,7 +28,7 @@ class Settings(BaseSettings):
     api_token: str = ""
     import_max_bytes: int = 5 * 1024 * 1024
 
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/terrasentry"
+    database_url: str = "sqlite+aiosqlite:///data/sqlite/audit.db"
     auto_seed: bool = True
     seed_data_dir: str = "data/seed"
 
@@ -40,6 +43,17 @@ class Settings(BaseSettings):
     # ISO date; pins source date windows so prefetched fixtures stay valid for
     # a later offline rehearsal (M6). Empty means "use the wall clock".
     rehearsal_as_of: str = ""
+
+    @field_validator("database_url")
+    @classmethod
+    def resolve_database_url(cls, value: str) -> str:
+        url = make_url(value)
+        if url.drivername != "sqlite+aiosqlite" or url.host or url.query:
+            raise ValueError("DATABASE_URL must be sqlite+aiosqlite:///path/to/audit.db; update .env")
+        if url.database and url.database != ":memory:":
+            root = Path(__file__).resolve().parents[4]
+            url = url.set(database=str((root / url.database).resolve()))
+        return url.render_as_string(hide_password=False)
 
     @property
     def cors_origins(self) -> list[str]:

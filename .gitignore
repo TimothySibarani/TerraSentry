@@ -55,3 +55,12 @@ Thumbs.db
 .21st/
 
 skills-lock.json
+
+# Local SQLite data and journal files
+data/sqlite/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*

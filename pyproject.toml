@@ -3,8 +3,6 @@ members = ["apps/api", "apps/a2a", "apps/mcp", "python/*"]
 
 [dependency-groups]
 dev = [
-  "aiosqlite>=0.20",
-  "fakeredis>=2.26",
   "pytest>=8.3",
   "pytest-asyncio>=0.25",
   "pytest-cov>=6.0",

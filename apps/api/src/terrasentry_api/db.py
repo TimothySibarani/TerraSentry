@@ -7,8 +7,11 @@ different backend and ``app.openapi()`` never opens a connection.
 
 from __future__ import annotations
 
-from sqlalchemy import inspect, text
+from pathlib import Path
+
+from sqlalchemy import event, inspect, text
 from sqlalchemy.engine import make_url
+from sqlalchemy.engine.interfaces import DBAPIConnection
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -16,6 +19,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import ConnectionPoolEntry
 from terrasentry_integrations.cache import CacheBackend
 
 from terrasentry_api.models import Supplier
@@ -29,15 +33,14 @@ class CacheNotReadyError(RuntimeError):
     """The source cache is unreachable; the message carries remediation."""
 
 
-async def check_cache(cache: CacheBackend, redis_url: str) -> None:
+async def check_cache(cache: CacheBackend, target: str) -> None:
     """Fail fast with operator guidance when the configured cache is down."""
-    target = make_url(redis_url).render_as_string(hide_password=True)
     try:
         await cache.ping()
     except Exception as exc:
         raise CacheNotReadyError(
-            f"the source cache at {target} is unreachable. Start local infrastructure"
-            " with `pnpm db:up` (Postgres + Redis) or set CACHE_BACKEND=memory in .env."
+            f"the source cache at {target} is unreachable. Check CACHE_SQLITE_PATH and directory"
+            " permissions, or set CACHE_BACKEND=memory in .env."
         ) from exc
 
 
@@ -45,7 +48,7 @@ async def check_database(engine: AsyncEngine, database_url: str) -> None:
     """Fail fast with operator guidance when the audit store is unusable.
 
     Separates "cannot connect" from "connected but schema missing" so the
-    operator knows whether to start infrastructure or run the migrations.
+    operator knows whether to fix the storage path or run the migrations.
     """
     target = make_url(database_url).render_as_string(hide_password=True)
     try:
@@ -56,9 +59,8 @@ async def check_database(engine: AsyncEngine, database_url: str) -> None:
             )
     except (OSError, SQLAlchemyError) as exc:
         raise DatabaseNotReadyError(
-            f"the audit database at {target} is unreachable. Start local infrastructure"
-            " with `pnpm db:up` (Postgres + Redis) or point DATABASE_URL in .env at a"
-            " running Postgres, then run `pnpm db:upgrade`."
+            f"the audit database at {target} is unreachable. Check DATABASE_URL and directory"
+            " permissions, then run `pnpm db:upgrade`."
         ) from exc
     if not has_schema:
         raise DatabaseNotReadyError(
@@ -71,7 +73,26 @@ def create_engine_and_session(
     database_url: str,
 ) -> tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:
     """Build the async engine and session factory for ``database_url``."""
-    engine = create_async_engine(database_url, pool_pre_ping=True)
+    url = make_url(database_url)
+    if url.database and url.database != ":memory:":
+        try:
+            Path(url.database).parent.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise DatabaseNotReadyError(
+                "cannot create audit database directory; check DATABASE_URL and directory permissions"
+            ) from exc
+    engine = create_async_engine(database_url, connect_args={"timeout": 30}, pool_pre_ping=True)
+
+    @event.listens_for(engine.sync_engine, "connect")
+    def configure_connection(connection: DBAPIConnection, _record: ConnectionPoolEntry) -> None:
+        cursor = connection.cursor()
+        try:
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA busy_timeout=30000")
+            cursor.execute("PRAGMA foreign_keys=ON")
+        finally:
+            cursor.close()
+
     return engine, async_sessionmaker(engine, expire_on_commit=False)
 
 

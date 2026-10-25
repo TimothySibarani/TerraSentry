@@ -19,9 +19,9 @@ what is still open (live agent batches on SAP AI Core, deploying the Joule proxy
 
 - **Web:** TanStack Start (React 19, Vite 8, Nitro), TanStack Query/Table, Tailwind CSS v4,
   shadcn/ui on Base UI, Effect 4 for the domain layer.
-- **API:** Python 3.13, FastAPI, SQLAlchemy 2.0 + Alembic, PostgreSQL.
+- **API:** Python 3.13, FastAPI, SQLAlchemy 2.0 + Alembic, SQLite audit store and response cache.
 - **Agents:** Strands Agents SDK on SAP AI Core (`--model sap`, or the offline `scripted` replay); deterministic scoring stays in code.
-- **Hosting:** SAP BTP Cloud Foundry for the Joule A2A proxy; the rest runs locally (Docker Postgres + Redis). AWS is optional and unused today. Docker, GitHub Actions.
+- **Hosting:** SAP BTP Cloud Foundry for the Joule A2A proxy; the rest runs locally (SQLite files; Docker is optional). AWS is optional and unused today. Docker, GitHub Actions.
 - **Tooling:** Turborepo + pnpm (JS), uv workspaces (Python), Biome, Ruff, Pyright, Vitest, pytest.
 
 ## Repository layout
@@ -42,21 +42,28 @@ data/                seed batch and cached fixtures
 
 ## Getting started
 
-Prerequisites: Node >= 22 with corepack, [uv](https://docs.astral.sh/uv/), and Docker (for
-Postgres + Redis via `pnpm db:up`) or your own Postgres connection string (Neon free tier, local
-install) in `DATABASE_URL`.
+Prerequisites: Node >= 22 with corepack and [uv](https://docs.astral.sh/uv/). Database
+servers and Docker are not needed for local development.
 
 ```bash
 corepack enable
 pnpm install
 uv sync --all-packages
 cp .env.example .env
-pnpm db:up      # Postgres + Redis containers (skip if using an external DATABASE_URL)
-pnpm db:upgrade # apply the Alembic audit schema
+pnpm db:upgrade # create/migrate the SQLite audit schema (`pnpm db:up` is an alias)
 
-pnpm dev        # web on :3000 and API on :8000; also starts Postgres + Redis and migrates when they are local
-                # (set CACHE_BACKEND=memory to skip Redis; a non-local DATABASE_URL skips Docker)
+pnpm dev        # web on :3000 and API on :8000; applies migrations automatically
 ```
+
+SQLite files live in `data/sqlite/`: `audit.db` preserves runs and submitted records;
+`cache.db` holds source responses with a 90-day TTL. Relative paths resolve from the repo root.
+For an existing `.env`, change `DATABASE_URL=sqlite+aiosqlite:///data/sqlite/audit.db`,
+set `CACHE_BACKEND=sqlite` and `CACHE_SQLITE_PATH=data/sqlite/cache.db`, and remove `REDIS_URL`.
+This starts fresh from the committed seed; old server data/volumes are left untouched.
+
+Run one API process. Stop it before running `pnpm rehearsal:run` against the same audit file:
+startup recovery assumes it owns queued/running work. Stop writers before copying SQLite files
+for backup; do not copy only a live WAL database's main file. See the [storage runbook](docs/setup/data-sources.md#3-sqlite-cache).
 
 Data-source keys (GFW, FIRMS) and cloud access are covered in
 [docs/setup/README.md](./docs/setup/README.md). Once keys are in `.env`:
@@ -85,8 +92,10 @@ pnpm gen:api    # regenerate packages/api-client from the FastAPI schema
 Containers:
 
 ```bash
-docker compose up --build   # Postgres + API + web
+docker compose up --build   # API + web; SQLite files persist in the sqlite-data volume
 ```
+
+Container replacement retains the named volume. `docker compose down -v` deletes it and resets both stores.
 
 ## Documentation
 

@@ -76,22 +76,8 @@ jobs:
   migrations:
     name: Alembic migrations
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: terrasentry
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d terrasentry"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     env:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/terrasentry
+      DATABASE_URL: sqlite+aiosqlite:////tmp/terrasentry-migrations.db
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -103,6 +89,11 @@ jobs:
         run: uv run alembic -c apps/api/alembic.ini upgrade head
       - name: Fail on model/migration drift
         run: uv run alembic -c apps/api/alembic.ini check
+      - name: Downgrade and re-upgrade disposable database
+        run: |
+          uv run alembic -c apps/api/alembic.ini downgrade base
+          uv run alembic -c apps/api/alembic.ini upgrade head
+          uv run alembic -c apps/api/alembic.ini check
 
   docker:
     name: Docker images

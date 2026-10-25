@@ -74,7 +74,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dir", default="data/fixtures", help="fixture directory")
     parser.add_argument(
         "--backend",
-        choices=["redis", "memory"],
+        choices=["sqlite", "memory"],
         default=None,
         help="override CACHE_BACKEND (memory only useful for smoke checks)",
     )
