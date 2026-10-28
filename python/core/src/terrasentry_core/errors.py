@@ -3,6 +3,8 @@
 Mirrors the ``terrasentry_integrations.errors`` style: every failure the core can
 raise has a named type so callers (agents, API, CLI) can branch on it instead of
 parsing messages.
+
+test
 """
 
 from __future__ import annotations
