@@ -21,7 +21,7 @@ what is still open (live agent batches on SAP AI Core, deploying the Joule proxy
   shadcn/ui on Base UI, Effect 4 for the domain layer.
 - **API:** Python 3.13, FastAPI, SQLAlchemy 2.0 + Alembic, SQLite audit store and response cache.
 - **Agents:** Strands Agents SDK on SAP AI Core (`--model sap`, or the offline `scripted` replay); deterministic scoring stays in code.
-- **Hosting:** SAP BTP Cloud Foundry for the Joule A2A proxy; the rest runs locally (SQLite files; Docker is optional). AWS is optional and unused today. Docker, GitHub Actions.
+- **Hosting:** SAP BTP Cloud Foundry for the Joule A2A proxy; the rest runs locally (SQLite files; Docker is optional). AWS is potentially used for future backend deployment. Docker, GitHub Actions.
 - **Tooling:** Turborepo + pnpm (JS), uv workspaces (Python), Biome, Ruff, Pyright, Vitest, pytest.
 
 ## Repository layout
@@ -35,7 +35,7 @@ packages/api-client  Effect client + generated OpenAPI types
 packages/config      shared TypeScript config
 python/core          agent runtime, domain logic, scoring
 python/integrations  GFW/Hansen, NASA FIRMS, SAP gateway
-infra/cdk            empty AWS CDK shell (unused)
+infra/cdk            AWS CDK shell
 docs/                PRD, architecture, milestones
 data/                seed batch and cached fixtures
 ```
