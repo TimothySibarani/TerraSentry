@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from typing import Any, cast
 
-from sqlalchemy import Nullable, func, select
+from sqlalchemy import Nullable, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from terrasentry_core.agents.schemas import AgentRunResult, ReviewDecision
@@ -211,6 +211,7 @@ class RunStore:
         operator: OperatorRecord | None = None,
         metrics: dict[str, Any] | None = None,
         erp_mode: str = "auto",
+        options: dict[str, Any] | None = None,
     ) -> Run:
         row = Run(
             id=run_id,
@@ -225,6 +226,7 @@ class RunStore:
             model=model,
             erp_mode=erp_mode,
             metrics=metrics or {},
+            options=options,
         )
         self._session.add(row)
         await self._session.flush()
@@ -232,6 +234,11 @@ class RunStore:
 
     async def get_run(self, run_id: str) -> Run | None:
         return await self._session.get(Run, run_id)
+
+    async def delete_run(self, run_id: str) -> None:
+        """Delete one run. Steps, verdict, DDS, evidence and SAP rows go with it via the FK cascade."""
+        await self._session.execute(delete(Run).where(Run.id == run_id))
+        await self.commit()
 
     async def list_runs(
         self,

@@ -165,6 +165,38 @@ export function AgentTimeline({
 						style={{ left: `${pct(playhead)}%` }}
 					/>
 				</div>
+				{run.config.record.record_id && (
+					<a
+						href="#run-input"
+						aria-label="Run input: open what this run was given"
+						className="grid items-center gap-x-3 rounded-md py-1.5 text-body-sm no-underline outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50"
+						style={grid}
+					>
+						<span className="flex min-w-0 flex-col pl-6">
+							<span className="text-foreground">Run input</span>
+							<span className="truncate text-caption-mono-sm text-muted-foreground">
+								given at +0
+							</span>
+						</span>
+						<span className="relative flex h-5 min-w-0 items-center">
+							<span
+								aria-hidden="true"
+								className="absolute left-0 size-2.5 -translate-x-1/2 rotate-45 bg-accent-breeze"
+							/>
+							<span className="truncate pl-3 font-mono text-xs text-muted-foreground">
+								{[
+									run.config.record.record_id,
+									run.config.record.polygon_id,
+									run.config.record.supplier_id,
+									run.config.record.region,
+									run.config.record.commodity?.replaceAll("_", " "),
+								]
+									.filter(Boolean)
+									.join(" · ")}
+							</span>
+						</span>
+					</a>
+				)}
 				<div
 					role="tree"
 					aria-label="Agents"

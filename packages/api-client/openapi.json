@@ -160,6 +160,84 @@
         "title": "BatchCreate",
         "type": "object"
       },
+      "BatchRecord": {
+        "properties": {
+          "consignment": {
+            "$ref": "#/components/schemas/ConsignmentRecord"
+          },
+          "expected_ambiguity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "borderline_area",
+                  "old_fire_scar",
+                  "permit_gap"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Ambiguity"
+          },
+          "expected_archetype": {
+            "anyOf": [
+              {
+                "enum": [
+                  "compliant",
+                  "high_risk",
+                  "ambiguous"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Archetype"
+          },
+          "expected_signal": {
+            "anyOf": [
+              {
+                "enum": [
+                  "deforestation",
+                  "fire",
+                  "legal"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Signal"
+          },
+          "legality": {
+            "$ref": "#/components/schemas/LegalityRecord"
+          },
+          "polygon": {
+            "$ref": "#/components/schemas/SeedPolygon"
+          },
+          "record_id": {
+            "title": "Record Id",
+            "type": "string"
+          },
+          "supplier_id": {
+            "title": "Supplier Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_id",
+          "supplier_id",
+          "polygon",
+          "legality",
+          "consignment"
+        ],
+        "title": "BatchRecord",
+        "type": "object"
+      },
       "BatchSummary": {
         "description": "Aggregate throughput view over one batch parent run.",
         "properties": {
@@ -438,6 +516,126 @@
           "harvest_year"
         ],
         "title": "ConsignmentInput",
+        "type": "object"
+      },
+      "ConsignmentRecord": {
+        "description": "One product lot declared in the DDS, with realistic HS/species structure.",
+        "properties": {
+          "commodity": {
+            "enum": [
+              "oil_palm",
+              "wood",
+              "rubber",
+              "cocoa",
+              "coffee"
+            ],
+            "title": "Commodity",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "disclosure": {
+            "default": "SYNTHETIC TEST DATA \u2014 consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats.",
+            "title": "Disclosure",
+            "type": "string"
+          },
+          "harvest_year": {
+            "title": "Harvest Year",
+            "type": "integer"
+          },
+          "hs_heading": {
+            "title": "Hs Heading",
+            "type": "string"
+          },
+          "net_weight_kg": {
+            "title": "Net Weight Kg",
+            "type": "number"
+          },
+          "production_place": {
+            "title": "Production Place",
+            "type": "string"
+          },
+          "provenance": {
+            "default": "synthetic",
+            "enum": [
+              "synthetic",
+              "supplier_declared",
+              "document_extracted",
+              "sap_import",
+              "real_source",
+              "operator_configured",
+              "derived",
+              "legacy_unknown"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          },
+          "species_common": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Species Common"
+          },
+          "species_scientific": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Species Scientific"
+          },
+          "supplementary_unit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplementary Unit"
+          },
+          "supplementary_unit_qualifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplementary Unit Qualifier"
+          },
+          "supplier_id": {
+            "title": "Supplier Id",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "supplier_id",
+          "commodity",
+          "description",
+          "hs_heading",
+          "net_weight_kg",
+          "production_place",
+          "harvest_year"
+        ],
+        "title": "ConsignmentRecord",
         "type": "object"
       },
       "DdsMeta": {
@@ -886,6 +1084,57 @@
         "title": "ImportRowError",
         "type": "object"
       },
+      "InputBrief": {
+        "description": "The few input fields a batch table shows per record.",
+        "properties": {
+          "area_ha": {
+            "title": "Area Ha",
+            "type": "number"
+          },
+          "commodity": {
+            "title": "Commodity",
+            "type": "string"
+          },
+          "expected_ambiguity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Ambiguity"
+          },
+          "expected_signal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Signal"
+          },
+          "permit_status": {
+            "title": "Permit Status",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          }
+        },
+        "required": [
+          "region",
+          "area_ha",
+          "permit_status",
+          "commodity"
+        ],
+        "title": "InputBrief",
+        "type": "object"
+      },
       "LatestRunOut": {
         "properties": {
           "created_at": {
@@ -1004,6 +1253,161 @@
           }
         },
         "title": "LegalityInput",
+        "type": "object"
+      },
+      "LegalityRecord": {
+        "properties": {
+          "beneficial_owners": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Beneficial Owners",
+            "type": "array"
+          },
+          "certifications": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Certifications",
+            "type": "array"
+          },
+          "concession_area_ha": {
+            "title": "Concession Area Ha",
+            "type": "number"
+          },
+          "declared_holder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Holder"
+          },
+          "disclosure": {
+            "default": "SYNTHETIC TEST DATA \u2014 companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person.",
+            "title": "Disclosure",
+            "type": "string"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "hgu_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hgu Number"
+          },
+          "kabupaten": {
+            "title": "Kabupaten",
+            "type": "string"
+          },
+          "legal_name": {
+            "title": "Legal Name",
+            "type": "string"
+          },
+          "nib": {
+            "title": "Nib",
+            "type": "string"
+          },
+          "npwp": {
+            "title": "Npwp",
+            "type": "string"
+          },
+          "pbp_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pbp Number"
+          },
+          "permit_expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permit Expiry"
+          },
+          "permit_status": {
+            "default": "active",
+            "enum": [
+              "active",
+              "expired",
+              "suspended",
+              "none"
+            ],
+            "title": "Permit Status",
+            "type": "string"
+          },
+          "provenance": {
+            "default": "synthetic",
+            "enum": [
+              "synthetic",
+              "supplier_declared",
+              "document_extracted",
+              "sap_import",
+              "real_source",
+              "operator_configured",
+              "derived",
+              "legacy_unknown"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          },
+          "province": {
+            "title": "Province",
+            "type": "string"
+          },
+          "sanctions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sanctions",
+            "type": "array"
+          },
+          "supplier_id": {
+            "title": "Supplier Id",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": true,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "trading_name": {
+            "title": "Trading Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "supplier_id",
+          "legal_name",
+          "trading_name",
+          "group",
+          "nib",
+          "npwp",
+          "concession_area_ha",
+          "province",
+          "kabupaten"
+        ],
+        "title": "LegalityRecord",
         "type": "object"
       },
       "OperatorRecord": {
@@ -1829,6 +2233,16 @@
             ],
             "title": "Finished At"
           },
+          "input_brief": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InputBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "kind": {
             "title": "Kind",
             "type": "string"
@@ -2004,6 +2418,113 @@
         "title": "RunDetail",
         "type": "object"
       },
+      "RunInput": {
+        "description": "Exactly what one run was given: the record, the EU operator, and the launch options.",
+        "properties": {
+          "assessment_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Date"
+          },
+          "erp_mode": {
+            "default": "auto",
+            "enum": [
+              "off",
+              "confirm",
+              "auto"
+            ],
+            "title": "Erp Mode",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperatorRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "options": {
+            "$ref": "#/components/schemas/RunOptions"
+          },
+          "record": {
+            "$ref": "#/components/schemas/BatchRecord"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "kind",
+          "model",
+          "record"
+        ],
+        "title": "RunInput",
+        "type": "object"
+      },
+      "RunOptions": {
+        "description": "How a run was launched; every field is ``None`` on runs recorded before this was stored.",
+        "properties": {
+          "batch_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "screening",
+                  "agent"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Mode"
+          },
+          "refresh": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh"
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario"
+          }
+        },
+        "title": "RunOptions",
+        "type": "object"
+      },
       "RunState": {
         "description": "Lifecycle of an assessment run (architecture run-state machine).",
         "enum": [
@@ -2091,6 +2612,16 @@
               }
             ],
             "title": "Finished At"
+          },
+          "input_brief": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InputBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "kind": {
             "title": "Kind",
@@ -2341,6 +2872,181 @@
           "purchasing_block"
         ],
         "title": "SapVendorOut",
+        "type": "object"
+      },
+      "ScenarioOut": {
+        "description": "One demo scenario with the full record it submits.",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "fault_injection": {
+            "default": false,
+            "title": "Fault Injection",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "scripted",
+                    "sap"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "record": {
+            "$ref": "#/components/schemas/BatchRecord"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "description",
+          "record"
+        ],
+        "title": "ScenarioOut",
+        "type": "object"
+      },
+      "SeedPolygon": {
+        "properties": {
+          "archetype": {
+            "anyOf": [
+              {
+                "enum": [
+                  "compliant",
+                  "high_risk",
+                  "ambiguous"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archetype"
+          },
+          "area_ha": {
+            "title": "Area Ha",
+            "type": "number"
+          },
+          "centroid_lat": {
+            "title": "Centroid Lat",
+            "type": "number"
+          },
+          "centroid_lon": {
+            "title": "Centroid Lon",
+            "type": "number"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "geometry": {
+            "additionalProperties": true,
+            "title": "Geometry",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_geometry": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Geometry"
+          },
+          "is_demo": {
+            "default": false,
+            "title": "Is Demo",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "provenance": {
+            "default": "synthetic",
+            "enum": [
+              "synthetic",
+              "supplier_declared",
+              "document_extracted",
+              "sap_import",
+              "real_source",
+              "operator_configured",
+              "derived",
+              "legacy_unknown"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          },
+          "province": {
+            "title": "Province",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "enum": [
+                  "compliant_live",
+                  "high_risk_live",
+                  "fire_live"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "region",
+          "province",
+          "area_ha",
+          "centroid_lat",
+          "centroid_lon",
+          "geometry"
+        ],
+        "title": "SeedPolygon",
         "type": "object"
       },
       "SupplierDetail": {
@@ -4106,6 +4812,40 @@
       }
     },
     "/runs/{run_id}": {
+      "delete": {
+        "description": "Delete one scenario run or one batch record. Batch parents and in-flight runs are refused.\n\nThe DDS XML and trace files on disk are kept, so the audit trail outlives the row.",
+        "operationId": "delete_run_runs__run_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Run",
+        "tags": [
+          "runs"
+        ]
+      },
       "get": {
         "operationId": "get_run_runs__run_id__get",
         "parameters": [
@@ -4332,6 +5072,49 @@
         ]
       }
     },
+    "/runs/{run_id}/input": {
+      "get": {
+        "description": "The record, operator and launch options this run was given.",
+        "operationId": "get_run_input_runs__run_id__input_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunInput"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Run Input",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
     "/runs/{run_id}/stream": {
       "get": {
         "description": "SSE stream of ``snapshot``, ``step``, ``state``, and ``done`` events.",
@@ -4370,6 +5153,65 @@
         "summary": "Stream Run",
         "tags": [
           "runs"
+        ]
+      }
+    },
+    "/scenarios": {
+      "get": {
+        "operationId": "list_scenarios_scenarios_get",
+        "parameters": [
+          {
+            "description": "Only scenarios this model can run",
+            "in": "query",
+            "name": "model",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "scripted",
+                    "sap"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only scenarios this model can run",
+              "title": "Model"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ScenarioOut"
+                  },
+                  "title": "Response List Scenarios Scenarios Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Scenarios",
+        "tags": [
+          "scenarios"
         ]
       }
     },

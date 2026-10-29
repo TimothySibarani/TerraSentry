@@ -247,7 +247,9 @@ export function datasetCards(run: AgentRun): DatasetCard[] {
 				...base,
 				key: name,
 				title,
-				source: overlap.declared_holder ?? "Concession layers",
+				source: overlap.declared_holder
+					? `vs declared holder ${overlap.declared_holder}`
+					: "Concession layers",
 				metric: errored
 					? (overlap.error ?? "unavailable")
 					: overlap.overlap_found
@@ -258,4 +260,15 @@ export function datasetCards(run: AgentRun): DatasetCard[] {
 		}
 	}
 	return [...cards.values()];
+}
+
+/** Tools that read what the supplier declared, as opposed to what the agents checked it against. */
+const DECLARED_TOOLS = new Set(["get_legality_record", "get_consignment"]);
+
+/** Split cards into "what we were told" and "what we checked it against". */
+export function splitCards(cards: ReadonlyArray<DatasetCard>) {
+	return {
+		declared: cards.filter((card) => DECLARED_TOOLS.has(card.key)),
+		checked: cards.filter((card) => !DECLARED_TOOLS.has(card.key)),
+	};
 }

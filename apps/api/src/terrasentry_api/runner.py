@@ -175,6 +175,11 @@ class RunManager:
         task.cancel()
         await asyncio.gather(task, return_exceptions=True)
 
+    def is_executing(self, run_id: str) -> bool:
+        """True while this process is still driving the run's task."""
+        task = self._run_tasks.get(run_id)
+        return task is not None and not task.done()
+
     async def _guard(self, run_id: str, coro: Awaitable[None]) -> None:
         """Last-resort net: an unexpected task failure marks the run failed."""
         try:
@@ -209,12 +214,15 @@ class RunManager:
         erp_mode: ErpMode = "auto",
     ) -> str:
         skip_deep_dives = False
+        options = {"scenario": scenario, "refresh": refresh}
         if scenario in FAULT_SCENARIOS:
             scenario, skip_deep_dives = FAULT_SCENARIOS[scenario]
         record = self._resolve_record(record_id=record_id, scenario=scenario)
         self._require_country(record)
         run_id = f"run-{uuid4().hex[:12]}"
-        await self._create_run(run_id, "scenario", record=record, model=model, erp_mode=erp_mode)
+        await self._create_run(
+            run_id, "scenario", record=record, model=model, erp_mode=erp_mode, options=options
+        )
         self._spawn(
             run_id,
             self._execute_scenario(run_id, record, model, refresh, skip_deep_dives=skip_deep_dives),
@@ -243,11 +251,13 @@ class RunManager:
         for record in records:
             self._require_country(record)
         assessment_date = self._settings.rehearsal_date or self._clock().astimezone(UTC).date()
+        options = {"refresh": refresh, "batch_mode": mode}
         async with self._session_factory() as session:
             store = RunStore(session)
             operator = await store.operator_profile(self._datasets.operator)
             await store.create_run(
                 run_id=batch_run_id,
+                options=options,
                 kind="batch",
                 model=run_model,
                 assessment_date=assessment_date,
@@ -266,6 +276,7 @@ class RunManager:
                     kind="record",
                     record=record,
                     parent_run_id=batch_run_id,
+                    options=options,
                     model=run_model,
                     assessment_date=assessment_date,
                     operator=operator,
@@ -624,7 +635,14 @@ class RunManager:
     # -- persistence helpers ---------------------------------------------------------
 
     async def _create_run(
-        self, run_id: str, kind: str, *, record: BatchRecord, model: str, erp_mode: ErpMode = "auto"
+        self,
+        run_id: str,
+        kind: str,
+        *,
+        record: BatchRecord,
+        model: str,
+        erp_mode: ErpMode = "auto",
+        options: dict[str, Any] | None = None,
     ) -> None:
         async with self._session_factory() as session:
             store = RunStore(session)
@@ -638,6 +656,7 @@ class RunManager:
                 assessment_date=assessment_date,
                 operator=operator,
                 erp_mode=erp_mode,
+                options=options,
             )
             await session.commit()
 

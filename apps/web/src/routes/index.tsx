@@ -31,6 +31,7 @@ import {
 import { Separator } from "#/components/ui/separator";
 import { VerdictBreakdown } from "#/components/verdict-breakdown";
 import { healthQuery } from "#/features/health/queries";
+import { HowItWorks } from "#/features/runs/how-it-works";
 import { RunLauncher } from "#/features/runs/launcher";
 import {
 	batchRunsQuery,
@@ -199,6 +200,20 @@ function Dashboard() {
 					</CardContent>
 				</Card>
 			</div>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>How it works</CardTitle>
+					<CardDescription>
+						What the app accepts, which tool reads each part, and the external
+						datasets it is checked against. Agents pass only ids; every number
+						comes from a recorded source call.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<HowItWorks />
+				</CardContent>
+			</Card>
 
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				<MetricCard

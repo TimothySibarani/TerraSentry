@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import { Badge } from "#/components/ui/badge";
 import { prettyJson } from "#/lib/format";
+import { toolSpec } from "./pipeline";
 import {
 	ConcessionResult,
 	ConsignmentResult,
@@ -49,6 +50,45 @@ const ha = (value: number | null | undefined) =>
 	value === null || value === undefined
 		? "—"
 		: `${value.toLocaleString("en-GB", { maximumFractionDigits: 2 })} ha`;
+
+/**
+ * A tool call's arguments, plus what those ids resolve to and which datasets the tool reads.
+ * Agents only pass ids; the geometry and declarations come from the run input.
+ */
+export function ToolInputView({
+	name,
+	input,
+}: {
+	name: string;
+	input: unknown;
+}) {
+	const spec = toolSpec(name);
+	const args =
+		input && typeof input === "object" && !Array.isArray(input)
+			? Object.entries(input as Record<string, unknown>)
+			: [];
+	const flat = args.every(
+		([, value]) =>
+			value === null || ["string", "number", "boolean"].includes(typeof value),
+	);
+	if (!spec || !flat) return <JsonBlock value={input} />;
+	return (
+		<div className="flex flex-col gap-2">
+			<Facts
+				rows={[
+					...args.map(([key, value]): [string, string] => [key, String(value)]),
+					["Resolves to", `${spec.reads} from the run input`],
+					[
+						"Queries",
+						spec.datasets.length > 0
+							? spec.datasets.join(", ")
+							: "No external source: reads the declared record",
+					],
+				]}
+			/>
+		</div>
+	);
+}
 
 /** A readable view of a source tool's result; falls back to JSON for anything unrecognised. */
 export function ToolResultView({

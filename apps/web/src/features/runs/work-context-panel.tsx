@@ -10,7 +10,7 @@ import {
 import { Badge } from "#/components/ui/badge";
 import { cn } from "#/lib/utils";
 import type { AgentRun } from "./agent-run";
-import { type DatasetCard, datasetCards } from "./work-context";
+import { type DatasetCard, datasetCards, splitCards } from "./work-context";
 
 const ICON: Record<string, typeof DatabaseIcon> = {
 	get_tree_cover_loss: TreesIcon,
@@ -38,6 +38,7 @@ export function WorkContext({
 }) {
 	const record = run.config.record;
 	const cards = datasetCards(run);
+	const { declared, checked } = splitCards(cards);
 	const facts: [string, string | undefined][] = [
 		["Record", record.record_id ?? fallback.record_id ?? undefined],
 		["Supplier", record.supplier_id ?? fallback.supplier_id ?? undefined],
@@ -82,17 +83,34 @@ export function WorkContext({
 					call returns.
 				</p>
 			) : (
-				<ul
-					aria-label="Datasets read"
-					aria-live="polite"
-					className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
-				>
-					{cards.map((card) => (
-						<li key={card.key}>
-							<DatasetTile card={card} onSelect={onSelect} />
-						</li>
-					))}
-				</ul>
+				<div className="flex flex-col gap-3">
+					{(
+						[
+							["Declared by the supplier", declared],
+							["Checked against", checked],
+						] as const
+					).map(
+						([heading, group]) =>
+							group.length > 0 && (
+								<div key={heading} className="flex flex-col gap-2">
+									<h4 className="text-caption-mono-sm text-muted-foreground">
+										{heading}
+									</h4>
+									<ul
+										aria-label={heading}
+										aria-live="polite"
+										className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
+									>
+										{group.map((card) => (
+											<li key={card.key}>
+												<DatasetTile card={card} onSelect={onSelect} />
+											</li>
+										))}
+									</ul>
+								</div>
+							),
+					)}
+				</div>
 			)}
 		</section>
 	);

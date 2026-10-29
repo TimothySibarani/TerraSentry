@@ -14,6 +14,30 @@ vi.mock("#/features/health/queries", () => ({
 	healthQuery: () => ({ queryKey: ["health"], queryFn: health }),
 }));
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
+vi.mock("#/features/runs/queries", async () => {
+	const { highRiskRecord } = await import("./run-input.fixture");
+	const all = [
+		{ id: "compliant_live", label: "Compliant scenario", fault: false },
+		{ id: "high_risk_live", label: "High-risk scenario", fault: false },
+		{ id: "coverage_catch", label: "Verifier catch", fault: true },
+	];
+	return {
+		scenariosQuery: (model: string) => ({
+			queryKey: ["scenarios", model],
+			queryFn: async () =>
+				all
+					.filter((item) => !item.fault || model === "scripted")
+					.map((item) => ({
+						id: item.id,
+						label: item.label,
+						description: `${item.label} description`,
+						fault_injection: item.fault,
+						models: item.fault ? ["scripted"] : null,
+						record: highRiskRecord,
+					})),
+		}),
+	};
+});
 const createBatch = vi.hoisted(() => vi.fn());
 vi.mock("#/features/runs/mutations", () => ({
 	useCreateRun: () => ({ mutate: vi.fn(), isPending: false, error: null }),
@@ -43,8 +67,13 @@ it("offers the labelled fault-injection scenario on the scripted model", async (
 	});
 	const client = renderLauncher();
 	await waitFor(() => expect(client.getQueryData(["health"])).toBeDefined());
-	expect(screen.getByRole("button", { name: /Verifier catch/ })).toBeDefined();
+	expect(
+		await screen.findByRole("button", { name: /Verifier catch/ }),
+	).toBeDefined();
 	expect(screen.getAllByText("Fault injection").length).toBeGreaterThan(0);
+	// Each scenario previews what it submits before it runs.
+	expect(screen.getAllByText(/PLY-001 · Riau peat forests/).length).toBe(3);
+	expect(screen.getAllByText("Expected: high risk · legal").length).toBe(3);
 });
 
 it("hides the fault-injection scenario when SAP AI Core is selected", async () => {
@@ -58,7 +87,7 @@ it("hides the fault-injection scenario when SAP AI Core is selected", async () =
 		expect(screen.queryByRole("button", { name: /Verifier catch/ })).toBeNull(),
 	);
 	expect(
-		screen.getByRole("button", { name: /High-risk scenario/ }),
+		await screen.findByRole("button", { name: /High-risk scenario/ }),
 	).toBeDefined();
 });
 

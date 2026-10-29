@@ -57,6 +57,7 @@ def test_batch_completes_with_the_design_breakdown(client: TestClient, source_ro
     assert {row["state"] for row in rows} == {"complete", "awaiting_review"}
     assert all(row["elapsed_seconds"] is not None for row in rows)
     assert all(row["elapsed_seconds"] >= 0 for row in rows)
+    assert all(row["input_brief"]["region"] and row["input_brief"]["area_ha"] > 0 for row in rows)
 
 
 def test_batch_validation(client: TestClient) -> None:

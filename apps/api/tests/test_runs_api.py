@@ -218,3 +218,66 @@ def test_adverse_media_step_is_persisted_and_does_not_change_the_verdict(
     assert len(steps) == 1 and steps[0]["payload"]["report"]["synthetic"] is True
     assert not [step for step in plain["steps"] if step["name"] == "search_adverse_media"]
     assert with_media["pending_assessment"] == plain["pending_assessment"]
+
+
+def test_run_input_returns_the_record_and_launch_options(client: TestClient, source_router: object) -> None:
+    run_id = _create(client, {"scenario": "high_risk_live", "refresh": True})
+    api_helpers.wait_for_state(client, run_id, {"awaiting_review"})
+
+    body = client.get(f"/runs/{run_id}/input").json()
+    catalog = {item["id"]: item for item in client.get("/scenarios").json()}
+    assert body["record"] == catalog["high_risk_live"]["record"]
+    assert body["record"]["expected_archetype"] == "high_risk"
+    assert body["options"] == {"scenario": "high_risk_live", "refresh": True, "batch_mode": None}
+    assert body["operator"] is not None
+
+    assert client.get("/runs/run-missing/input").status_code == 404
+
+
+def test_batch_parent_has_no_single_input(client: TestClient, source_router: object) -> None:
+    batch = client.post("/batch-runs", json={"size": 1}).json()["run_id"]
+    response = client.get(f"/runs/{batch}/input")
+    assert response.status_code == 404
+    assert "batch parent" in response.json()["detail"]
+
+
+def test_scenario_catalog_carries_records_and_gates_fault_injection(client: TestClient) -> None:
+    every = {item["id"]: item for item in client.get("/scenarios").json()}
+    assert set(every) == {"compliant_live", "high_risk_live", "coverage_catch"}
+    assert every["high_risk_live"]["record"]["expected_archetype"] == "high_risk"
+    assert every["coverage_catch"]["fault_injection"] is True
+    assert every["coverage_catch"]["record"] == every["high_risk_live"]["record"]
+
+    on_sap = {item["id"] for item in client.get("/scenarios", params={"model": "sap"}).json()}
+    assert on_sap == {"compliant_live", "high_risk_live"}
+
+
+def test_deleting_a_finished_run_removes_its_children(client: TestClient, source_router: object) -> None:
+    run_id = _create(client, {"record_id": "REC-001"})
+    api_helpers.wait_for_state(client, run_id, {"complete"})
+    assert client.get(f"/runs/{run_id}/evidence").json()
+
+    assert client.delete(f"/runs/{run_id}").status_code == 204
+    assert client.get(f"/runs/{run_id}").status_code == 404
+    assert client.get(f"/runs/{run_id}/evidence").status_code == 404
+    assert client.delete(f"/runs/{run_id}").status_code == 404
+    assert client.get(f"/dds/{run_id}").status_code == 404
+
+
+def test_batch_parent_is_refused_but_one_record_deletes(
+    client: TestClient, source_router: object
+) -> None:
+    batch = client.post("/batch-runs", json={"size": 2})
+    assert batch.status_code == 202, batch.text
+    batch_id = str(batch.json()["run_id"])
+    api_helpers.wait_for_state(client, batch_id, {"complete"}, path="/batch-runs")
+
+    assert client.delete(f"/runs/{batch_id}").status_code == 409
+    assert client.get(f"/runs/{batch_id}").status_code == 200
+
+    children = client.get("/runs", params={"parent_run_id": batch_id}).json()
+    assert len(children) == 2
+    child_id = children[0]["run_id"]
+    assert client.delete(f"/runs/{child_id}").status_code == 204
+    remaining = client.get("/runs", params={"parent_run_id": batch_id}).json()
+    assert [row["run_id"] for row in remaining] == [children[1]["run_id"]]

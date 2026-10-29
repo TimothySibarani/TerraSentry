@@ -278,6 +278,17 @@ export type SupplierSapOut = typeof SupplierSapOut.Type;
 export const ErpMode = Schema.Literals(["off", "confirm", "auto"]);
 export type ErpMode = typeof ErpMode.Type;
 
+/** The few input fields the batch table shows per record (batch listing only). */
+export const InputBrief = Schema.Struct({
+  region: Schema.String,
+  area_ha: Schema.Number,
+  permit_status: Schema.String,
+  commodity: Schema.String,
+  expected_signal: Schema.NullOr(Schema.String),
+  expected_ambiguity: Schema.NullOr(Schema.String),
+});
+export type InputBrief = typeof InputBrief.Type;
+
 const runSummaryFields = {
   run_id: Schema.String,
   kind: Schema.String,
@@ -301,6 +312,7 @@ const runSummaryFields = {
   elapsed_seconds: Schema.NullOr(Schema.Number),
   created_at: Schema.DateTimeUtcFromString,
   metrics: Schema.Record(Schema.String, Schema.Unknown),
+  input_brief: Schema.optional(Schema.NullOr(InputBrief)),
 } as const;
 
 export const RunSummary = Schema.Struct(runSummaryFields);
@@ -657,3 +669,97 @@ export const ValidationErrorBody = Schema.Struct({
   ),
 });
 export type ValidationErrorBody = typeof ValidationErrorBody.Type;
+
+const optStr = Schema.optional(Schema.NullOr(Schema.String));
+const optNum = Schema.optional(Schema.NullOr(Schema.Number));
+
+/** The seed/submitted record a run screens: plot, legality and consignment. */
+export const BatchRecord = Schema.Struct({
+  record_id: Schema.String,
+  supplier_id: Schema.String,
+  polygon: Schema.Struct({
+    id: Schema.String,
+    country: optStr,
+    provenance: Schema.optional(Provenance),
+    label: Schema.String,
+    region: Schema.String,
+    province: Schema.String,
+    area_ha: Schema.Number,
+    centroid_lat: Schema.Number,
+    centroid_lon: Schema.Number,
+    geometry: GeoJsonObject,
+    input_geometry: Schema.optional(Schema.NullOr(GeoJsonObject)),
+    archetype: optStr,
+    scenario: optStr,
+  }),
+  legality: Schema.Struct({
+    supplier_id: Schema.String,
+    legal_name: Schema.String,
+    trading_name: Schema.String,
+    group: Schema.String,
+    nib: Schema.String,
+    npwp: Schema.String,
+    hgu_number: optStr,
+    pbp_number: optStr,
+    permit_status: Schema.String,
+    permit_expiry: optStr,
+    declared_holder: optStr,
+    concession_area_ha: optNum,
+    province: Schema.String,
+    kabupaten: Schema.String,
+    beneficial_owners: Schema.Array(Schema.String),
+    certifications: Schema.Array(Schema.String),
+    sanctions: Schema.Array(Schema.String),
+    synthetic: Schema.Boolean,
+    provenance: Schema.optional(Provenance),
+    disclosure: Schema.optional(Schema.String),
+  }),
+  consignment: Schema.Struct({
+    commodity: Schema.String,
+    description: Schema.String,
+    hs_heading: Schema.String,
+    species_scientific: optStr,
+    species_common: optStr,
+    net_weight_kg: Schema.Number,
+    production_place: Schema.String,
+    harvest_year: Schema.Int,
+    synthetic: Schema.Boolean,
+    provenance: Schema.optional(Provenance),
+    disclosure: Schema.optional(Schema.String),
+  }),
+  expected_archetype: optStr,
+  expected_signal: optStr,
+  expected_ambiguity: optStr,
+});
+export type BatchRecord = typeof BatchRecord.Type;
+
+export const RunOptions = Schema.Struct({
+  scenario: optStr,
+  refresh: Schema.optional(Schema.NullOr(Schema.Boolean)),
+  batch_mode: Schema.optional(Schema.NullOr(BatchMode)),
+});
+export type RunOptions = typeof RunOptions.Type;
+
+/** Exactly what one run was given (`GET /runs/{id}/input`). */
+export const RunInput = Schema.Struct({
+  run_id: Schema.String,
+  kind: Schema.String,
+  model: Schema.String,
+  erp_mode: ErpMode,
+  assessment_date: optStr,
+  record: BatchRecord,
+  operator: Schema.optional(Schema.NullOr(OperatorRecord)),
+  options: RunOptions,
+});
+export type RunInput = typeof RunInput.Type;
+
+/** One demo scenario with the record it submits (`GET /scenarios`). */
+export const ScenarioOut = Schema.Struct({
+  id: Schema.String,
+  label: Schema.String,
+  description: Schema.String,
+  models: Schema.optional(Schema.NullOr(Schema.Array(ModelMode))),
+  fault_injection: Schema.Boolean,
+  record: BatchRecord,
+});
+export type ScenarioOut = typeof ScenarioOut.Type;

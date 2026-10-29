@@ -165,6 +165,74 @@ class DdsMeta(BaseModel):
         )
 
 
+class RunOptions(BaseModel):
+    """How a run was launched; every field is ``None`` on runs recorded before this was stored."""
+
+    scenario: str | None = None
+    refresh: bool | None = None
+    batch_mode: BatchMode | None = None
+
+
+class InputBrief(BaseModel):
+    """The few input fields a batch table shows per record."""
+
+    region: str
+    area_ha: float
+    permit_status: str
+    commodity: str
+    expected_signal: str | None = None
+    expected_ambiguity: str | None = None
+
+    @classmethod
+    def from_record(cls, record: BatchRecord) -> InputBrief:
+        return cls(
+            region=record.polygon.region,
+            area_ha=record.polygon.area_ha,
+            permit_status=record.legality.permit_status,
+            commodity=record.consignment.commodity,
+            expected_signal=record.expected_signal,
+            expected_ambiguity=record.expected_ambiguity,
+        )
+
+
+class RunInput(BaseModel):
+    """Exactly what one run was given: the record, the EU operator, and the launch options."""
+
+    run_id: str
+    kind: str
+    model: str
+    erp_mode: ErpMode = "auto"
+    assessment_date: date | None = None
+    record: BatchRecord
+    operator: OperatorRecord | None = None
+    options: RunOptions = Field(default_factory=RunOptions)
+
+    @classmethod
+    def from_parts(cls, run: Run, record: BatchRecord) -> RunInput:
+        return cls(
+            run_id=run.id,
+            kind=run.kind,
+            model=run.model,
+            erp_mode=cast(ErpMode, run.erp_mode),
+            assessment_date=run.assessment_date,
+            record=record,
+            operator=OperatorRecord.model_validate(run.operator_profile) if run.operator_profile else None,
+            options=RunOptions.model_validate(run.options or {}),
+        )
+
+
+class ScenarioOut(BaseModel):
+    """One demo scenario with the full record it submits."""
+
+    id: str
+    label: str
+    description: str
+    #: Models this scenario can run on; ``None`` means every model.
+    models: list[ModelMode] | None = None
+    fault_injection: bool = False
+    record: BatchRecord
+
+
 class RunSummary(BaseModel):
     """One run row as it appears in list views and the cockpit table."""
 
@@ -190,6 +258,8 @@ class RunSummary(BaseModel):
     elapsed_seconds: float | None = None
     created_at: datetime
     metrics: dict[str, Any] = Field(default_factory=dict)
+    #: Filled only by the batch records listing.
+    input_brief: InputBrief | None = None
 
     @classmethod
     def from_row(

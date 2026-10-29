@@ -18,7 +18,7 @@ import {
 	tracePayload,
 } from "./agent-run";
 import { AgentStatusMark, STATUS_TEXT, STATUS_WORD } from "./run-overview";
-import { JsonBlock, ToolResultView } from "./tool-result-view";
+import { JsonBlock, ToolInputView, ToolResultView } from "./tool-result-view";
 
 const Truncated = Schema.Struct({ truncated: Schema.Boolean });
 
@@ -328,7 +328,7 @@ function ToolCallDetail({ call }: { call: AgentToolCall | undefined }) {
 			</header>
 			<div className="flex flex-col gap-1">
 				<p className="eyebrow-sm text-muted-foreground">Input</p>
-				<JsonBlock value={call.input} />
+				<ToolInputView name={call.step.name} input={call.input} />
 			</div>
 			<div className="flex flex-col gap-1">
 				<p className="eyebrow-sm text-muted-foreground">Result</p>

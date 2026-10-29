@@ -162,7 +162,14 @@ it("selects a tool row and shows its input, result and truncation", () => {
 	const inspector = screen.getByRole("region", {
 		name: "legality_analyst inspector",
 	});
-	expect(within(inspector).getByText(/"polygon_id": "PLY-001"/)).toBeDefined();
+	// The input reads as facts: the id, what it resolves to, and the dataset queried.
+	expect(within(inspector).getByText("PLY-001")).toBeDefined();
+	expect(
+		within(inspector).getByText(
+			"Plot geometry + declared holder from the run input",
+		),
+	).toBeDefined();
+	expect(within(inspector).getByText("GFW concession layers")).toBeDefined();
 	expect(
 		within(inspector).getAllByText(/many features/).length,
 	).toBeGreaterThan(0);
@@ -257,7 +264,7 @@ it("shows an in-flight tool as running, then its dataset card when it returns", 
 	expect(
 		within(inspector).getByText(/calling get_tree_cover_loss/),
 	).toBeDefined();
-	const datasets = screen.getByRole("list", { name: "Datasets read" });
+	const datasets = screen.getByRole("list", { name: "Checked against" });
 	expect(within(datasets).getByText("In progress")).toBeDefined();
 	unmount();
 	mount(
@@ -284,7 +291,7 @@ it("shows an in-flight tool as running, then its dataset card when it returns", 
 		undefined,
 		"running",
 	);
-	const card = within(screen.getByRole("list", { name: "Datasets read" }));
+	const card = within(screen.getByRole("list", { name: "Checked against" }));
 	expect(card.getByText("1.08 ha lost")).toBeDefined();
 	expect(card.getByText(/umd_tree_cover_loss v1.13 · 2021-2025/)).toBeDefined();
 	expect(card.getByText("live")).toBeDefined();

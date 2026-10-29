@@ -55,6 +55,27 @@ export function VerdictBadge({
 	return <Badge variant={spec.variant}>{spec.label}</Badge>;
 }
 
+/**
+ * The seed's design target next to the actual verdict. A difference is shown neutrally:
+ * the design label is a target, not a verdict (data/seed/README.md), so the rubric wins.
+ */
+export function ExpectedBadge({
+	expected,
+	verdict,
+}: {
+	expected: string | null | undefined;
+	verdict: string | null | undefined;
+}) {
+	if (!expected) return null;
+	const label = VERDICT[expected]?.label ?? expected;
+	if (!verdict) return <Badge variant="outline">Expected: {label}</Badge>;
+	return verdict === expected ? (
+		<Badge variant="compliant">✓ Matches design ({label})</Badge>
+	) : (
+		<Badge variant="outline">Differs from design ({label})</Badge>
+	);
+}
+
 export function RiskLevelBadge({
 	level,
 }: {

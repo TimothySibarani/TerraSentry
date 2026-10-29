@@ -74,6 +74,19 @@ export function useCancelRun(runId: string) {
 	});
 }
 
+export function useDeleteRun() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (runId: string) => runApi((api) => api.deleteRun(runId)),
+		onSuccess: (_result, runId) => {
+			void queryClient.removeQueries({ queryKey: ["runs", runId] });
+			void queryClient.invalidateQueries({ queryKey: ["runs"] });
+			void queryClient.invalidateQueries({ queryKey: ["batch"] });
+			void queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+		},
+	});
+}
+
 export function useConfirmErpAction(runId: string) {
 	const queryClient = useQueryClient();
 	return useMutation({

@@ -81,6 +81,12 @@ hit. The API primes fixtures at startup and reports `{ offline: true, fixtures_l
 the dashboard as usual. A cache miss under `CACHE_OFFLINE=true` fails fast instead of calling a
 source, which surfaces a stale fixture set immediately.
 
+Use this mode when a demo must give the same result every time. The live scenarios read today's
+FIRMS data, so a new fire inside `PLY-002` would turn the compliant scenario non-compliant. That
+is real drift, not a bug. To record a day that gives the designed results, run both scenarios
+live first, then `uv run python -m terrasentry_integrations.fixtures export --dir data/fixtures`
+and start with `REHEARSAL_AS_OF` set to that day.
+
 ## Without credentials
 
 The full-50 path is test-verified offline: `apps/api/tests/test_batch_full.py` injects the design

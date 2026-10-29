@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated, cast
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 from terrasentry_core.agents.factory import FAULT_SCENARIOS
@@ -14,7 +14,14 @@ from terrasentry_core.errors import InvalidReviewDecisionError, SeedLookupError
 from terrasentry_core.evidence import EvidenceEntry
 from terrasentry_core.tools.trace import TraceKind, TraceStep
 
-from terrasentry_api.schemas import DecisionCreate, RunCreate, RunDetail, RunSummary, SapActionOut
+from terrasentry_api.schemas import (
+    DecisionCreate,
+    RunCreate,
+    RunDetail,
+    RunInput,
+    RunSummary,
+    SapActionOut,
+)
 from terrasentry_api.services import AppServices, get_services, get_session
 from terrasentry_api.sse import event_source_response
 from terrasentry_api.store import RunStore
@@ -103,6 +110,24 @@ async def get_run(run_id: str, session: SessionDep) -> RunDetail:
     )
 
 
+@router.get("/{run_id}/input", response_model=RunInput)
+async def get_run_input(run_id: str, services: ServicesDep, session: SessionDep) -> RunInput:
+    """The record, operator and launch options this run was given."""
+    run = await RunStore(session).get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"no run {run_id!r}")
+    if run.record_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"run {run_id!r} is a batch parent; open one of its records for the input",
+        )
+    try:
+        record = services.datasets.get_record(run.record_id)
+    except SeedLookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return RunInput.from_parts(run, record)
+
+
 @router.get("/{run_id}/evidence", response_model=list[EvidenceEntry])
 async def get_evidence(run_id: str, session: SessionDep) -> list[EvidenceEntry]:
     store = RunStore(session)
@@ -141,6 +166,30 @@ async def stream_run(run_id: str, services: ServicesDep, session: SessionDep) ->
         run_id,
         ping=services.settings.sse_ping_seconds,
     )
+
+
+@router.delete("/{run_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_run(run_id: str, services: ServicesDep, session: SessionDep) -> Response:
+    """Delete one scenario run or one batch record. Batch parents and in-flight runs are refused.
+
+    The DDS XML and trace files on disk are kept, so the audit trail outlives the row.
+    """
+    store = RunStore(session)
+    run = await store.get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"no run {run_id!r}")
+    if run.kind == "batch":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="a batch parent cannot be deleted; delete its records one at a time",
+        )
+    if run.state in (RunState.QUEUED, RunState.RUNNING) or services.run_manager.is_executing(run_id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"run {run_id!r} is {run.state}; delete it after it finishes",
+        )
+    await store.delete_run(run_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{run_id}/decision", response_model=RunSummary)

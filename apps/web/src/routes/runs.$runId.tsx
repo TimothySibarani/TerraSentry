@@ -8,7 +8,11 @@ import { useMemo } from "react";
 import { ErrorState } from "#/components/error-state";
 import { PageHeader } from "#/components/page-header";
 import { SapActionCard } from "#/components/sap-panel";
-import { RunStateBadge, VerdictBadge } from "#/components/status-badge";
+import {
+	ExpectedBadge,
+	RunStateBadge,
+	VerdictBadge,
+} from "#/components/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
@@ -26,9 +30,11 @@ import { useCancelRun, useCreateRun } from "#/features/runs/mutations";
 import {
 	runDdsQuery,
 	runEvidenceQuery,
+	runInputQuery,
 	runQuery,
 } from "#/features/runs/queries";
 import { ReviewDialog } from "#/features/runs/review-dialog";
+import { RunInputBlock } from "#/features/runs/run-input";
 import { RunMapPanel } from "#/features/runs/run-map";
 import { RunOverview, useRunClock } from "#/features/runs/run-overview";
 import { useRunStream } from "#/features/runs/use-run-stream";
@@ -59,11 +65,27 @@ function RunDetailPage() {
 	return <RunDetailScreen key={runId} runId={runId} />;
 }
 
+// The tabs sit below the overview and input blocks; a link that only switches
+// the tab would change nothing the user can see, so bring the tabs into view.
+const scrollToTabs = () =>
+	requestAnimationFrame(() =>
+		document
+			.getElementById("run-tabs")
+			?.scrollIntoView({ behavior: "smooth", block: "start" }),
+	);
+
 function RunDetailScreen({ runId }: { runId: string }) {
 	const { tab = "trace", agent, step } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 	const run = useQuery(runQuery(runId));
 	const evidence = useQuery(runEvidenceQuery(runId));
+	// Failed runs have no verdict row, so the design target comes from the stored input.
+	const input = useQuery(
+		runInputQuery(
+			runId,
+			run.data?.kind !== "batch" && Boolean(run.data?.record_id),
+		),
+	);
 	const cancel = useCancelRun(runId);
 	const rerun = useCreateRun();
 
@@ -157,6 +179,13 @@ function RunDetailScreen({ runId }: { runId: string }) {
 					<>
 						<RunStateBadge state={state} />
 						<VerdictBadge verdict={verdict} />
+						<ExpectedBadge
+							expected={
+								record.expected_archetype ??
+								input.data?.record.expected_archetype
+							}
+							verdict={verdict}
+						/>
 						<Button
 							variant="outline"
 							size="sm"
@@ -258,6 +287,8 @@ function RunDetailScreen({ runId }: { runId: string }) {
 									to="/runs/$runId"
 									params={{ runId }}
 									search={{ tab: "trace", agent: "verifier" }}
+									hash="run-tabs"
+									onClick={scrollToTabs}
 									className="underline underline-offset-4"
 								>
 									Inspect the verifier
@@ -266,6 +297,8 @@ function RunDetailScreen({ runId }: { runId: string }) {
 									to="/runs/$runId"
 									params={{ runId }}
 									search={{ tab: "assessment" }}
+									hash="run-tabs"
+									onClick={scrollToTabs}
 									className="underline underline-offset-4"
 								>
 									View verification
@@ -303,7 +336,15 @@ function RunDetailScreen({ runId }: { runId: string }) {
 				<SapActionCard action={record.sap_action} />
 			) : null}
 
+			<RunInputBlock
+				runId={record.run_id}
+				enabled={record.kind !== "batch" && record.record_id !== null}
+				tone={tone}
+			/>
+
 			<Tabs
+				id="run-tabs"
+				className="scroll-mt-4"
 				value={tab}
 				onValueChange={(value) =>
 					void navigate({

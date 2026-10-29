@@ -182,6 +182,8 @@ class Run(Base):
     #: ERP side effect: ``auto`` applies on release/decision, ``confirm`` waits for an explicit
     #: confirmation, ``off`` never touches the ERP.
     erp_mode: Mapped[str] = mapped_column(String(16), default="auto", server_default="auto")
+    #: How the run was launched: ``{"scenario", "refresh", "batch_mode"}``; NULL on older rows.
+    options: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
     summary: Mapped[str] = mapped_column(Text, default="")
     error: Mapped[str | None] = mapped_column(Text, default=None)
     disclosures: Mapped[list[str]] = mapped_column(JSON, default=list)
