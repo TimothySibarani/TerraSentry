@@ -30,6 +30,9 @@ DEFAULT_RNG_SEED = 20260911
 BATCH_DISTRIBUTION: dict[str, int] = {"compliant": 30, "high_risk": 12, "ambiguous": 8}
 DEMO_QUOTA: dict[str, int] = {"compliant": 3, "high_risk": 3, "ambiguous": 2}
 _HA_PER_SQ_DEGREE = 1_230_000.0
+# Densest FIRMS 30-day cluster inside South Sumatra on 2026-10-29: 260 detections, 1698 MW FRP.
+FIRE_SITE: tuple[float, float] = (104.2849, -2.3589)
+FIRE_RNG_SEED = 2026
 _EXPECTED_SIGNALS: tuple[ExpectedSignal, ...] = ("deforestation", "fire", "legal")
 _EXPECTED_AMBIGUITIES: tuple[AmbiguityReason, ...] = (
     "borderline_area",
@@ -90,11 +93,22 @@ def _to_seed_polygon(
 ) -> SeedPolygon:
     target_ha = rng.uniform(*_AREA_RANGES[archetype])
     polygon = _polygon_for(rng, region, target_ha, demo=demo)
+    if scenario == "fire_live":
+        # Own RNG: the shared stream above is consumed exactly as before, so other records do not move.
+        polygon = _vertices_polygon(random.Random(FIRE_RNG_SEED), *FIRE_SITE, target_ha)
+        actual = geodesic_area_ha(polygon)
+        if actual > 0:
+            factor = math.sqrt(target_ha / actual)
+            polygon = scale(polygon, xfact=factor, yfact=factor, origin=FIRE_SITE)
+        if not polygon.is_valid:
+            polygon = polygon.buffer(0)
     centroid = polygon.centroid
     if scenario == "compliant_live":
         label = f"Live scenario A — compliant ({region.name})"
     elif scenario == "high_risk_live":
         label = f"Live scenario B — high risk ({region.name})"
+    elif scenario == "fire_live":
+        label = f"Live scenario C — forest fire ({region.name})"
     elif demo:
         label = f"Demo {archetype} — {region.name}"
     else:
@@ -145,6 +159,8 @@ def generate_batch(*, rng_seed: int = DEFAULT_RNG_SEED, batch_size: int | None =
                 scenario = "compliant_live"
             elif archetype == "high_risk" and "high_risk_live" not in assigned:
                 scenario = "high_risk_live"
+            elif archetype == "high_risk" and "fire_live" not in assigned:
+                scenario = "fire_live"
             if scenario is not None:
                 assigned.add(scenario)
         polygon = _to_seed_polygon(

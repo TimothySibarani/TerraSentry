@@ -12,7 +12,7 @@ from terrasentry_core.agents.verification import VerificationChallenge, Verifica
 from terrasentry_core.domain.enums import RunState
 
 
-def _rejected_review() -> VerificationReport:
+def _rejected_review(evidence_ids: list[str] | None = None) -> VerificationReport:
     return VerificationReport(
         accepted=False,
         checked_claims=["llm.scripted"],
@@ -21,7 +21,7 @@ def _rejected_review() -> VerificationReport:
                 kind="llm_review",
                 severity="error",
                 detail="summary claims 'no fire activity' but detections exist",
-                source="llm",
+                evidence_ids=evidence_ids or [],
             )
         ],
     )
@@ -50,18 +50,66 @@ async def test_accepted_verification_releases_the_dds(source_clients) -> None:
     assert result.trace[-1].kind == "state"
 
 
+async def _hotspot_evidence_id(source_clients: Any, data: Any, record: Any) -> str:
+    """Ledger ids are content hashes; run once to learn the real FIRMS count id."""
+    baseline = await _orchestrator(source_clients, data, record).run(record.record_id)
+    held = baseline.assessment or baseline.pending_assessment
+    assert held is not None
+    return next(entry.evidence_id for entry in held.evidence if entry.claim == "hotspots.detection_count")
+
+
 async def test_rejected_verification_blocks_the_writer(source_router, source_clients) -> None:
     data = agent_helpers.datasets()
     record = data.get_record("REC-001")
-    orchestrator = _orchestrator(source_clients, data, record, review=_rejected_review())
+    cited = await _hotspot_evidence_id(source_clients, data, record)
+    orchestrator = _orchestrator(source_clients, data, record, review=_rejected_review([cited]))
     result = await orchestrator.run(record.record_id)
 
     assert result.state is RunState.FAILED
+    assert result.verification is not None
+    llm = [challenge for challenge in result.verification.challenges if challenge.kind == "llm_review"]
+    assert [(challenge.source, challenge.severity, challenge.evidence_ids) for challenge in llm] == [
+        ("llm", "error", [cited])
+    ]
     assert result.assessment is None
     assert result.pending_assessment is None
     assert result.verification is not None and not result.verification.accepted
     assert result.verification.errors
     assert "dds_writer" not in [step.name for step in result.trace]
+
+
+async def test_uncited_llm_error_is_a_warning_not_a_veto(source_router, source_clients) -> None:
+    data = agent_helpers.datasets()
+    record = data.get_record("REC-001")
+    orchestrator = _orchestrator(source_clients, data, record, review=_rejected_review())
+    result = await orchestrator.run(record.record_id)
+
+    assert result.state is not RunState.FAILED
+    assert result.verification is not None and result.verification.accepted
+    (llm,) = [challenge for challenge in result.verification.challenges if challenge.kind == "llm_review"]
+    assert (llm.source, llm.severity) == ("llm", "warning")
+    assert "downgraded from error: it cites no evidence id in the ledger" in llm.detail
+    assert any("no veto applied" in note for note in result.verification.notes)
+
+
+async def test_unknown_or_deterministic_kind_llm_errors_do_not_veto(source_router, source_clients) -> None:
+    data = agent_helpers.datasets()
+    record = data.get_record("REC-001")
+    review = VerificationReport(
+        accepted=False,
+        challenges=[
+            VerificationChallenge(kind="metric_mismatch", severity="error", detail="see EV-firms-deadbeef00"),
+            VerificationChallenge(
+                kind="design_mismatch", severity="error", detail="rubric should not be clear"
+            ),
+        ],
+    )
+    result = await _orchestrator(source_clients, data, record, review=review).run(record.record_id)
+
+    assert result.verification is not None and result.verification.accepted
+    details = [c.detail for c in result.verification.challenges if c.source == "llm"]
+    assert any("cites unknown evidence EV-firms-deadbeef00" in detail for detail in details)
+    assert any("the deterministic gate owns this check" in detail for detail in details)
 
 
 # -- adaptive investigation -------------------------------------------------------------

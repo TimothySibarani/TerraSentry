@@ -41,7 +41,7 @@ def test_demo_subset_contains_both_live_scenarios() -> None:
     assert len(demo.polygons) == 8
     assert all(polygon.is_demo for polygon in demo.polygons)
     scenarios = {polygon.scenario for polygon in demo.polygons if polygon.scenario}
-    assert scenarios == {"compliant_live", "high_risk_live"}
+    assert scenarios == {"compliant_live", "high_risk_live", "fire_live"}
 
 
 def test_polygons_are_valid_and_on_land() -> None:

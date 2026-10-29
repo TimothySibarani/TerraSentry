@@ -186,7 +186,7 @@ def _evaluate_loss(
     else:
         level, points = FindingLevel.CLEAR, 0
     detail = (
-        f"post-{config.cutoff_year} tree cover loss {post_cutoff:.2f} ha "
+        f"tree cover loss since {config.cutoff_year}: {post_cutoff:.2f} ha "
         f"({ratio:.2%} of plot) in {loss.date_window}"
     )
     metrics: dict[str, float | int | str] = {"post_cutoff_loss_ha": post_cutoff, "loss_ratio": ratio}
@@ -281,7 +281,10 @@ def _evaluate_legal(input: AssessmentInput, ledger: EvidenceLedger, config: Rubr
         detail = "declared legality record lists neither an HGU nor a PBPH permit"
     else:
         level, points = FindingLevel.CLEAR, 0
-        detail = f"permit status {supplier.permit_status!r}, HGU/PBPH present, no sanctions"
+        permits = " and ".join(
+            name for name, number in (("HGU", supplier.hgu_number), ("PBPH", supplier.pbp_number)) if number
+        )
+        detail = f"permit status {supplier.permit_status!r}, {permits} on record, no sanctions"
     return _metric_finding(
         ledger,
         code=FindingCode.LEGAL_PERMIT,
@@ -369,6 +372,8 @@ def _evaluate_context(
             for feature in layer.features[:3]
         ]
         feature_detail = f"features: {', '.join(feature_names)}; " if feature_names else ""
+        if layer.raw_overlap_ha is not None:
+            feature_detail += f"capped at plot area from raw {layer.raw_overlap_ha:.4f} ha; "
         findings.append(
             _metric_finding(
                 ledger,

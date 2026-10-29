@@ -394,13 +394,18 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
         """Read the declared consignment declared in the DDS for a record.
 
         Args:
-            record_id: Seed batch record identifier, for example REC-001.
+            record_id: Seed batch record identifier, for example REC-001 (not a PLY- polygon id).
         """
         started = (monotonic(), datetime.now(UTC))
         detail = ""
-        record = context.datasets.get_record(record_id)
+        # Agents sometimes pass the polygon id they were handed; resolve it instead of failing.
+        record = (
+            context.datasets.record_for_polygon(record_id)
+            if record_id.startswith("PLY-")
+            else context.datasets.get_record(record_id)
+        )
         consignment = record.consignment
-        detail = f"{record_id}: HS {consignment.hs_heading}"
+        detail = f"{record.record_id}: HS {consignment.hs_heading}"
         return _record_tool(
             context,
             tool_context,
@@ -410,7 +415,7 @@ def build_source_tools(context: ToolContext) -> list[AgentTool]:
             detail,
             {"record_id": record_id},
             {
-                "record_id": record_id,
+                "record_id": record.record_id,
                 "commodity": consignment.commodity,
                 "description": consignment.description,
                 "hs_heading": consignment.hs_heading,

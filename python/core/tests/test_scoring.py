@@ -161,3 +161,10 @@ def test_holder_matching_ignores_case_punctuation_and_reports_unknown_holders() 
     assert holder_matches(None, "PT Sawit Makmur") is None
     assert concession_commodity("oil_palm_concessions") == "oil_palm"
     assert concession_commodity("wood_fiber_concessions") == "wood"
+
+
+def test_clear_permit_names_only_the_permits_on_record() -> None:
+    hgu_only, _ = score(make_input())
+    both, _ = score(make_input(supplier=make_supplier(pbp_number="PBPH 7/2020")))
+    assert "HGU on record" in find(hgu_only, FindingCode.LEGAL_PERMIT).detail
+    assert "HGU and PBPH on record" in find(both, FindingCode.LEGAL_PERMIT).detail

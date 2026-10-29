@@ -182,7 +182,9 @@ class VerifierNode(MultiAgentBase):
                     ],
                 }
             )
-        return merge_reports(deterministic, review, model_id=self._model_id())
+        candidate = self._context.candidate
+        ledger_ids = {entry.evidence_id for entry in candidate.evidence} if candidate else set()
+        return merge_reports(deterministic, review, ledger_ids=ledger_ids, model_id=self._model_id())
 
     def _model_id(self) -> str | None:
         config = self._agent.model.get_config() if self._agent.model else None
