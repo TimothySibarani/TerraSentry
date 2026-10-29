@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import type { ModelMode } from "@terrasentry/api-client";
 
 import { isTerminalState } from "#/features/runs/stream";
 import { runApi } from "#/lib/api";
@@ -7,6 +8,16 @@ export function runsQuery() {
 	return queryOptions({
 		queryKey: ["runs"],
 		queryFn: () => runApi((api) => api.listRuns()),
+		staleTime: 5_000,
+	});
+}
+
+/** Runs a person still has to decide on: ambiguous and high-risk verdicts. */
+export function reviewQueueQuery() {
+	return queryOptions({
+		queryKey: ["runs", "queue"],
+		queryFn: () =>
+			runApi((api) => api.listRuns({ state: "awaiting_review", limit: 200 })),
 		staleTime: 5_000,
 	});
 }
@@ -74,5 +85,23 @@ export function batchRecordsQuery(batchRunId: string) {
 				? 2_000
 				: false;
 		},
+	});
+}
+
+export function runInputQuery(runId: string, enabled = true) {
+	return queryOptions({
+		queryKey: ["runs", runId, "input"],
+		queryFn: () => runApi((api) => api.getRunInput(runId)),
+		enabled,
+		staleTime: Number.POSITIVE_INFINITY,
+		retry: false,
+	});
+}
+
+export function scenariosQuery(model: ModelMode) {
+	return queryOptions({
+		queryKey: ["scenarios", model],
+		queryFn: () => runApi((api) => api.listScenarios(model)),
+		staleTime: Number.POSITIVE_INFINITY,
 	});
 }

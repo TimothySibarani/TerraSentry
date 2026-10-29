@@ -1,0 +1,8 @@
+description: >-
+  Screens a supplier for EU deforestation-regulation (EUDR) risk. Use it when the
+  user asks to screen, check, assess or evaluate a supplier, by name, supplier id
+  (SUP-001) or record id (REC-001). Returns the deterministic verdict, the top
+  findings and a link to the full assessment.
+target:
+  name: ask_function
+  type: function

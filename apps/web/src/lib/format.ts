@@ -66,15 +66,15 @@ export function truncate(value: string, length = 80): string {
 	return `${value.slice(0, length - 1)}…`;
 }
 
-export function formatValue(value: unknown): string {
+export function formatValue(value: unknown, maxLength = 120): string {
 	if (value === null || value === undefined) {
 		return "—";
 	}
 	if (typeof value === "string") {
-		return value;
+		return truncate(value, maxLength);
 	}
 	if (typeof value === "number" || typeof value === "boolean") {
 		return String(value);
 	}
-	return truncate(JSON.stringify(value), 120);
+	return truncate(JSON.stringify(value), maxLength);
 }

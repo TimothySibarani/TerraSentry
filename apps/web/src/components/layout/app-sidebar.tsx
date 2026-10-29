@@ -1,7 +1,9 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
 	ActivityIcon,
 	Building2Icon,
+	InboxIcon,
 	LayersIcon,
 	LayoutDashboardIcon,
 	RadarIcon,
@@ -19,15 +21,18 @@ import {
 	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarMenu,
+	SidebarMenuBadge,
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarRail,
 } from "#/components/ui/sidebar";
+import { reviewQueueQuery } from "#/features/runs/queries";
 
 const NAV_ITEMS = [
 	{ to: "/settings", label: "Settings", icon: SettingsIcon },
 	{ to: "/", label: "Overview", icon: LayoutDashboardIcon },
 	{ to: "/screen", label: "Screen a plot", icon: RadarIcon },
+	{ to: "/review", label: "Needs review", icon: InboxIcon },
 	{ to: "/runs", label: "Runs", icon: ActivityIcon },
 	{ to: "/batch", label: "Batch", icon: LayersIcon },
 	{ to: "/suppliers", label: "Suppliers", icon: Building2Icon },
@@ -37,6 +42,10 @@ export function AppSidebar() {
 	const pathname = useRouterState({
 		select: (state) => state.location.pathname,
 	});
+	const queue = useQuery({ ...reviewQueueQuery(), refetchInterval: 15_000 });
+	const waiting = (queue.data ?? []).filter(
+		(run) => run.kind !== "batch",
+	).length;
 
 	return (
 		<Sidebar collapsible="icon">
@@ -80,6 +89,11 @@ export function AppSidebar() {
 											<item.icon aria-hidden="true" />
 											<span>{item.label}</span>
 										</SidebarMenuButton>
+										{item.to === "/review" && waiting > 0 && (
+											<SidebarMenuBadge aria-label={`${waiting} waiting`}>
+												{waiting}
+											</SidebarMenuBadge>
+										)}
 									</SidebarMenuItem>
 								);
 							})}

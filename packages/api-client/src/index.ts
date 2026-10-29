@@ -1,3 +1,4 @@
+export type { RunFilter } from "./client";
 export { ApiClient, decodeRunEventStream, fieldIssues } from "./client";
 export { ApiClientError, FieldIssue } from "./errors";
 export type { ApiRuntime } from "./runtime";

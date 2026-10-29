@@ -74,11 +74,11 @@ class AgentRunError(CoreError):
 
 
 class MissingModelError(CoreError):
-    """A live agent role was requested without a configured Bedrock model id."""
+    """A live agent role was requested without a configured model id (SAP AI Core)."""
 
     def __init__(self, variable: str) -> None:
         super().__init__(
-            f"{variable} is not set; choose the Bedrock model for this role in .env "
+            f"{variable} is not set; choose the model for this role in .env "
             "before running the live agent path"
         )
         self.variable = variable
@@ -92,8 +92,24 @@ class InvalidReviewDecisionError(CoreError):
         self.state = state
 
 
+class ErpActionError(CoreError):
+    """An ERP action was requested for a run that has nothing to apply."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+class RunNotCancellableError(CoreError):
+    """A cancel was requested for a run that is not executing in this process."""
+
+    def __init__(self, run_id: str) -> None:
+        super().__init__(f"run {run_id!r} is not running and cannot be cancelled")
+        self.run_id = run_id
+
+
 class ModelConfigurationError(CoreError):
-    """The Bedrock model could not be configured (unknown profile, bad client settings)."""
+    """A live model could not be configured (unknown profile, missing credentials, bad client settings)."""
 
     def __init__(self, detail: str) -> None:
         super().__init__(detail)

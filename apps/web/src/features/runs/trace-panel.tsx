@@ -1,15 +1,16 @@
 import type { TraceStep } from "@terrasentry/api-client";
+import { DateTime } from "effect";
 import {
 	ActivityIcon,
 	BotIcon,
 	FileOutputIcon,
+	FileTextIcon,
 	LandmarkIcon,
 	RouteIcon,
 	ShieldCheckIcon,
 	UserCheckIcon,
 	WrenchIcon,
 } from "lucide-react";
-
 import { ErrorState } from "#/components/error-state";
 import { Badge } from "#/components/ui/badge";
 import {
@@ -22,13 +23,14 @@ import {
 import { Skeleton } from "#/components/ui/skeleton";
 import { Spinner } from "#/components/ui/spinner";
 import type { RunStreamStatus } from "#/features/runs/use-run-stream";
-import { formatDateTime } from "#/lib/format";
 import { cn } from "#/lib/utils";
 
 const KIND_ICON: Record<string, typeof ActivityIcon> = {
 	run: ActivityIcon,
 	agent: BotIcon,
 	retask: RouteIcon,
+	thought: FileTextIcon,
+	report: FileTextIcon,
 	tool: WrenchIcon,
 	verifier: ShieldCheckIcon,
 	writer: FileOutputIcon,
@@ -146,7 +148,13 @@ export function TracePanel({
 										#{String(index + 1).padStart(2, "0")}
 									</span>
 									<span className="ml-auto text-caption-mono-sm text-muted-foreground">
-										{formatDateTime(step.at)}
+										{DateTime.formatIso(step.at).slice(11, 23)} UTC +
+										{(
+											(DateTime.toEpochMillis(step.at) -
+												DateTime.toEpochMillis(steps[0]?.at ?? step.at)) /
+											1000
+										).toFixed(3)}
+										s
 									</span>
 								</div>
 								{step.detail && (
@@ -162,7 +170,18 @@ export function TracePanel({
 										{step.detail}
 									</p>
 								)}
-								{payloadKeys.length > 0 && (
+								{step.kind === "report" &&
+									typeof step.payload?.report === "string" && (
+										<details className="text-body-sm text-muted-foreground">
+											<summary className="cursor-pointer select-none text-caption-mono-sm hover:text-foreground">
+												Read the {step.name.replaceAll("_", " ")}'s report
+											</summary>
+											<p className="mt-1 whitespace-pre-wrap rounded-md bg-canvas-soft p-2">
+												{step.payload.report}
+											</p>
+										</details>
+									)}
+								{step.kind !== "report" && payloadKeys.length > 0 && (
 									<details className="text-caption-mono-sm text-muted-foreground">
 										<summary className="cursor-pointer select-none hover:text-foreground">
 											Payload ({payloadKeys.length} fields)

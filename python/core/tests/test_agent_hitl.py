@@ -1,4 +1,4 @@
-"""HITL: an ambiguous run pauses before DDS release and resumes with a decision."""
+"""HITL: ambiguous and high-risk runs pause before DDS release and resume with a decision."""
 
 from __future__ import annotations
 
@@ -98,3 +98,39 @@ async def test_resume_override_also_completes(factories, source_clients) -> None
     assert resumed.assessment is not None
     assert resumed.review is not None
     assert resumed.review.decision is Decision.OVERRIDE
+
+
+async def test_high_risk_run_is_held_until_a_person_decides(source_clients) -> None:
+    """A high-risk verdict never reaches the writer on its own; a human decision releases the DDS."""
+    with respx.mock(assert_all_called=False) as router:
+        agent_helpers.mock_context_layers(router, overlaps={"protected_areas": {"name": "Reserve"}})
+        router.post(agent_helpers.GFW_URL).mock(
+            return_value=httpx.Response(200, json={"status": "success", "data": []})
+        )
+        router.get(url__regex=re.compile(agent_helpers.FIRMS_REGEX)).mock(
+            return_value=httpx.Response(200, text="")
+        )
+        data = agent_helpers.datasets()
+        record = data.record_for_scenario("high_risk_live")
+        orchestrator = RunOrchestrator(
+            gfw=source_clients.gfw,
+            firms=source_clients.firms,
+            datasets=data,
+            models=agent_helpers.scripted_models(record),
+            clock=lambda: agent_helpers.FIXED_TIME,
+        )
+        held = await orchestrator.run(record.record_id)
+
+    assert held.state is RunState.AWAITING_REVIEW
+    assert held.assessment is None
+    assert held.pending_assessment is not None
+    assert held.pending_assessment.assessment.verdict.value == "high_risk"
+    writer_detail = next(step.detail for step in held.trace if step.kind == "writer")
+    assert "withheld" in writer_detail
+
+    resumed = await orchestrator.resume(
+        held, ReviewDecision(decision=Decision.OVERRIDE, reviewer="carol", note="block the supplier")
+    )
+    assert resumed.state is RunState.COMPLETE
+    assert resumed.assessment is not None
+    assert resumed.assessment.assessment.verdict.value == "high_risk"

@@ -1,6 +1,7 @@
 import { InfoIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
+import { Button } from "#/components/ui/button";
 import {
 	Field,
 	FieldContent,
@@ -29,6 +30,7 @@ import {
 	type FieldErrors,
 	type IntakeForm,
 	PERMIT_TYPES,
+	WOOD_LOTS,
 } from "#/features/intake/form";
 
 interface StepProps {
@@ -288,6 +290,27 @@ export function ConsignmentStep({ form, update, errors }: StepProps) {
 						</ToggleGroupItem>
 					))}
 				</ToggleGroup>
+				{form.commodity === "wood" && (
+					<div className="flex flex-wrap items-center gap-2">
+						<span className="text-caption-mono-sm text-muted-foreground">
+							Typical lots
+						</span>
+						{WOOD_LOTS.map((lot) => (
+							<Button
+								key={lot.hs}
+								type="button"
+								size="xs"
+								variant={form.hsHeading === lot.hs ? "secondary" : "outline"}
+								aria-pressed={form.hsHeading === lot.hs}
+								onClick={() =>
+									update({ description: lot.description, hsHeading: lot.hs })
+								}
+							>
+								{lot.label} · HS {lot.hs}
+							</Button>
+						))}
+					</div>
+				)}
 			</FieldSet>
 			<div className="grid gap-4 md:grid-cols-2">
 				<TextField

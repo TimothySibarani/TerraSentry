@@ -2,7 +2,7 @@
 
 These names are shared by scoring, the evidence ledger, the DDS builder, and the
 future API/agent layers. They are deliberately ``StrEnum`` so they serialize to
-stable strings in JSON, XML, and Postgres.
+stable strings in JSON, XML, and SQLite.
 """
 
 from __future__ import annotations

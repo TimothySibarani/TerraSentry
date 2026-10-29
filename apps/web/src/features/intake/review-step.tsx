@@ -39,15 +39,20 @@ interface PipelineStage {
 	real: boolean;
 }
 
+const LLM_LABEL: Record<ModelMode, string> = {
+	scripted: "Scripted",
+	sap: "SAP AI Core",
+};
+
 function pipeline(model: ModelMode): ReadonlyArray<PipelineStage> {
-	const llm = model === "bedrock" ? "Bedrock" : "Scripted";
+	const llm = LLM_LABEL[model];
 	return [
 		{
 			icon: BotIcon,
 			name: "Supervisor",
 			detail: "Delegates the investigation to the specialists",
 			source: llm,
-			real: model === "bedrock",
+			real: model !== "scripted",
 		},
 		{
 			icon: TreesIcon,

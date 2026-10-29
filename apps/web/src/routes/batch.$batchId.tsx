@@ -9,7 +9,11 @@ import { DataTable, type TableFeatureSet } from "#/components/data-table";
 import { ErrorState } from "#/components/error-state";
 import { MetricCard } from "#/components/metric-card";
 import { PageHeader } from "#/components/page-header";
-import { RunStateBadge, VerdictBadge } from "#/components/status-badge";
+import {
+	ExpectedBadge,
+	RunStateBadge,
+	VerdictBadge,
+} from "#/components/status-badge";
 import { Button } from "#/components/ui/button";
 import {
 	Card,
@@ -61,6 +65,40 @@ const columns = helper.columns([
 			</Link>
 		),
 	}),
+	helper.accessor((row) => row.input_brief?.region, {
+		id: "region",
+		header: "Region",
+		cell: (info) => (
+			<span className="text-body-sm">{info.getValue() ?? "—"}</span>
+		),
+	}),
+	helper.accessor((row) => row.input_brief?.area_ha, {
+		id: "area",
+		header: "Area",
+		cell: (info) => (
+			<span className="tabular-nums text-body-sm">
+				{info.getValue() === undefined
+					? "—"
+					: `${formatNumber(info.getValue())} ha`}
+			</span>
+		),
+	}),
+	helper.accessor((row) => row.input_brief?.permit_status, {
+		id: "permit",
+		header: "Permit",
+		cell: (info) => (
+			<span className="text-body-sm">{info.getValue() ?? "—"}</span>
+		),
+	}),
+	helper.accessor((row) => row.input_brief?.commodity, {
+		id: "commodity",
+		header: "Commodity",
+		cell: (info) => (
+			<span className="text-body-sm">
+				{info.getValue()?.replaceAll("_", " ") ?? "—"}
+			</span>
+		),
+	}),
 	helper.accessor("state", {
 		header: "State",
 		cell: (info) => <RunStateBadge state={info.getValue()} />,
@@ -78,12 +116,26 @@ const columns = helper.columns([
 		),
 	}),
 	helper.accessor("expected_archetype", {
-		header: "Expected",
-		cell: (info) => (
-			<span className="text-body-sm text-muted-foreground">
-				{info.getValue() ?? "—"}
-			</span>
-		),
+		header: "Expected vs actual",
+		cell: (info) => {
+			const brief = info.row.original.input_brief;
+			const reason = brief?.expected_signal ?? brief?.expected_ambiguity;
+			return info.getValue() ? (
+				<span className="flex flex-col items-start gap-0.5">
+					<ExpectedBadge
+						expected={info.getValue()}
+						verdict={info.row.original.verdict}
+					/>
+					{reason && (
+						<span className="text-xs text-muted-foreground">
+							{reason.replaceAll("_", " ")}
+						</span>
+					)}
+				</span>
+			) : (
+				<span className="text-body-sm text-muted-foreground">—</span>
+			);
+		},
 	}),
 	helper.accessor("elapsed_seconds", {
 		header: "Elapsed",
@@ -227,7 +279,7 @@ function BatchDetailScreen({ batchId }: { batchId: string }) {
 							value={formatNumber(
 								progress?.awaitingReview ?? summary.states.awaiting_review ?? 0,
 							)}
-							hint="Ambiguous records held for HITL"
+							hint="Ambiguous and high-risk records held for a decision"
 						/>
 						<MetricCard
 							label="Failed"

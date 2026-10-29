@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from typing import Any, cast
 
-from sqlalchemy import Nullable, func, select
+from sqlalchemy import Nullable, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from terrasentry_core.agents.schemas import AgentRunResult, ReviewDecision
@@ -167,10 +167,8 @@ class RunStore:
         return OperatorRecord.model_validate(row.profile) if row else fallback.model_copy(deep=True)
 
     async def save_operator(self, profile: OperatorRecord) -> datetime:
-        from sqlalchemy.dialects.postgresql import insert as pg_insert
-        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+        from sqlalchemy.dialects.sqlite import insert
 
-        insert = pg_insert if self._session.get_bind().dialect.name == "postgresql" else sqlite_insert
         timestamp = utc_now()
         statement = insert(OperatorSetting).values(
             id=1, profile=profile.model_dump(mode="json"), updated_at=timestamp
@@ -212,6 +210,8 @@ class RunStore:
         assessment_date: date | None = None,
         operator: OperatorRecord | None = None,
         metrics: dict[str, Any] | None = None,
+        erp_mode: str = "auto",
+        options: dict[str, Any] | None = None,
     ) -> Run:
         row = Run(
             id=run_id,
@@ -224,7 +224,9 @@ class RunStore:
             polygon_id=record.polygon.id if record is not None else None,
             state=state,
             model=model,
+            erp_mode=erp_mode,
             metrics=metrics or {},
+            options=options,
         )
         self._session.add(row)
         await self._session.flush()
@@ -233,10 +235,16 @@ class RunStore:
     async def get_run(self, run_id: str) -> Run | None:
         return await self._session.get(Run, run_id)
 
+    async def delete_run(self, run_id: str) -> None:
+        """Delete one run. Steps, verdict, DDS, evidence and SAP rows go with it via the FK cascade."""
+        await self._session.execute(delete(Run).where(Run.id == run_id))
+        await self.commit()
+
     async def list_runs(
         self,
         *,
         kind: str | None = None,
+        state: RunState | None = None,
         parent_run_id: str | None = None,
         limit: int = 50,
         offset: int = 0,
@@ -244,10 +252,30 @@ class RunStore:
         statement = select(Run).order_by(Run.created_at.desc(), Run.id.desc())
         if kind is not None:
             statement = statement.where(Run.kind == kind)
+        if state is not None:
+            statement = statement.where(Run.state == state)
         if parent_run_id is not None:
             statement = statement.where(Run.parent_run_id == parent_run_id)
         result = await self._session.scalars(statement.limit(limit).offset(offset))
         return list(result)
+
+    async def fail_open_runs(self, detail: str, *, parent_run_id: str | None = None) -> list[str]:
+        """Mark queued/running runs failed; scoped to one batch's children when ``parent_run_id`` is set.
+
+        Used by the startup sweep (runs left open by a restart) and by cancelling a batch.
+        """
+        statement = select(Run).where(Run.state.in_([RunState.QUEUED, RunState.RUNNING]))
+        if parent_run_id is not None:
+            statement = statement.where(Run.parent_run_id == parent_run_id)
+        rows = list(await self._session.scalars(statement))
+        now = utc_now()
+        for row in rows:
+            row.state = RunState.FAILED
+            row.error = detail
+            row.summary = row.summary or detail
+            row.finished_at = now
+        await self._session.flush()
+        return [row.id for row in rows]
 
     async def set_state(
         self,

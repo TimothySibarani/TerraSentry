@@ -4,17 +4,24 @@ from __future__ import annotations
 
 from typing import Annotated, cast
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 from terrasentry_core.agents.factory import FAULT_SCENARIOS
 from terrasentry_core.agents.schemas import ReviewDecision
-from terrasentry_core.domain.enums import Decision
+from terrasentry_core.domain.enums import Decision, RunState, Verdict
 from terrasentry_core.errors import InvalidReviewDecisionError, SeedLookupError
 from terrasentry_core.evidence import EvidenceEntry
 from terrasentry_core.tools.trace import TraceKind, TraceStep
 
-from terrasentry_api.schemas import DecisionCreate, RunCreate, RunDetail, RunSummary
+from terrasentry_api.schemas import (
+    DecisionCreate,
+    RunCreate,
+    RunDetail,
+    RunInput,
+    RunSummary,
+    SapActionOut,
+)
 from terrasentry_api.services import AppServices, get_services, get_session
 from terrasentry_api.sse import event_source_response
 from terrasentry_api.store import RunStore
@@ -44,6 +51,7 @@ async def create_run(
             scenario=payload.scenario,
             model=model,
             refresh=payload.refresh,
+            erp_mode=payload.erp_mode,
         )
     except SeedLookupError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
@@ -58,12 +66,15 @@ async def create_run(
 async def list_runs(
     session: SessionDep,
     kind: Annotated[str | None, Query()] = None,
+    state: Annotated[RunState | None, Query(description="Only runs in this state")] = None,
     parent_run_id: Annotated[str | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[RunSummary]:
     store = RunStore(session)
-    runs = await store.list_runs(kind=kind, parent_run_id=parent_run_id, limit=limit, offset=offset)
+    runs = await store.list_runs(
+        kind=kind, state=state, parent_run_id=parent_run_id, limit=limit, offset=offset
+    )
     ids = [run.id for run in runs]
     verdicts = await store.verdicts_for(ids)
     counts = await store.step_counts(ids)
@@ -97,6 +108,24 @@ async def get_run(run_id: str, session: SessionDep) -> RunDetail:
         steps=steps,
         sap_action=await store.get_sap_action(run_id),
     )
+
+
+@router.get("/{run_id}/input", response_model=RunInput)
+async def get_run_input(run_id: str, services: ServicesDep, session: SessionDep) -> RunInput:
+    """The record, operator and launch options this run was given."""
+    run = await RunStore(session).get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"no run {run_id!r}")
+    if run.record_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"run {run_id!r} is a batch parent; open one of its records for the input",
+        )
+    try:
+        record = services.datasets.get_record(run.record_id)
+    except SeedLookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return RunInput.from_parts(run, record)
 
 
 @router.get("/{run_id}/evidence", response_model=list[EvidenceEntry])
@@ -139,6 +168,30 @@ async def stream_run(run_id: str, services: ServicesDep, session: SessionDep) ->
     )
 
 
+@router.delete("/{run_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_run(run_id: str, services: ServicesDep, session: SessionDep) -> Response:
+    """Delete one scenario run or one batch record. Batch parents and in-flight runs are refused.
+
+    The DDS XML and trace files on disk are kept, so the audit trail outlives the row.
+    """
+    store = RunStore(session)
+    run = await store.get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"no run {run_id!r}")
+    if run.kind == "batch":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="a batch parent cannot be deleted; delete its records one at a time",
+        )
+    if run.state in (RunState.QUEUED, RunState.RUNNING) or services.run_manager.is_executing(run_id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"run {run_id!r} is {run.state}; delete it after it finishes",
+        )
+    await store.delete_run(run_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.post("/{run_id}/decision", response_model=RunSummary)
 async def decide_run(
     run_id: str,
@@ -151,6 +204,17 @@ async def decide_run(
     run = await store.get_run(run_id)
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"no run {run_id!r}")
+    held = await store.get_verdict(run_id)
+    if (
+        payload.decision == "approve"
+        and held is not None
+        and held.verdict is Verdict.HIGH_RISK
+        and not payload.note.strip()
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="approving a high-risk supplier contradicts the rubric; a note explaining why is required",
+        )
     try:
         resumed = await services.run_manager.decide(
             run_id,
@@ -165,6 +229,38 @@ async def decide_run(
     await session.refresh(run)
     verdict = await store.get_verdict(run_id)
     return RunSummary.from_row(run, verdict=verdict, step_count=len(resumed.trace))
+
+
+@router.post("/{run_id}/cancel", status_code=status.HTTP_202_ACCEPTED, response_model=RunSummary)
+async def cancel_run(run_id: str, services: ServicesDep, session: SessionDep) -> RunSummary:
+    """Stop a run or batch that is executing and mark it failed; 409 when nothing is running."""
+    store = RunStore(session)
+    if await store.get_run(run_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"no run {run_id!r}")
+    await services.run_manager.cancel_run(run_id)
+    session.expire_all()
+    run = await store.get_run(run_id)
+    if run is None:  # pragma: no cover - the run exists
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"no run {run_id!r}")
+    return RunSummary.from_row(run)
+
+
+@router.post("/{run_id}/erp-action", response_model=SapActionOut)
+async def confirm_erp_action(run_id: str, services: ServicesDep) -> SapActionOut:
+    """Apply the ERP action a finished run is waiting on (``confirm`` mode, or a retry after a failure)."""
+    action = await services.run_manager.confirm_erp_action(run_id)
+    return SapActionOut(
+        run_id=action.run_id,
+        supplier_id=action.supplier_id,
+        vendor_id=action.vendor_id,
+        mode=action.mode,
+        status=action.status,
+        purchasing_block=action.purchasing_block,
+        real=action.real,
+        external_reference=action.external_reference,
+        error=action.error,
+        performed_at=action.performed_at,
+    )
 
 
 __all__ = ["router"]

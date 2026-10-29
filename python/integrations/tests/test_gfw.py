@@ -146,3 +146,25 @@ async def test_malformed_loss_is_not_cached_as_zero(rows: list[Any]) -> None:
         finally:
             await client.close()
     assert cache.stats().writes == 0
+
+
+def test_missing_loss_years_read_as_zero() -> None:
+    from terrasentry_integrations.sources.gfw import TreeCoverLossResult, TreeCoverLossYear
+
+    sample = TreeCoverLossResult(
+        dataset="umd_tree_cover_loss",
+        version="v1.13",
+        geometry_hash="x",
+        date_window="2021-2025",
+        start_year=2021,
+        end_year=2025,
+        total_loss_ha=1.0,
+        by_year=[TreeCoverLossYear(year=2022, loss_ha=1.0)],
+    )
+    assert [(item.year, item.loss_ha) for item in sample.by_year] == [
+        (2021, 0.0),
+        (2022, 1.0),
+        (2023, 0.0),
+        (2024, 0.0),
+        (2025, 0.0),
+    ]

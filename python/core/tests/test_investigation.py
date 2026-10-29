@@ -204,7 +204,7 @@ async def test_concession_overlap_compares_holder_and_commodity(source_clients: 
     # Conflicts sort ahead of matches so truncation can never hide one.
     assert concession["features"][-1]["holder_matches"] is True
     step = context.trace.of_kind("tool")[-1]
-    assert step.payload == {
+    assert {key: step.payload[key] for key in ("polygon_id", "supplier_id", "status")} == {
         "polygon_id": record.polygon.id,
         "supplier_id": record.legality.supplier_id,
         "status": "ok",
@@ -221,8 +221,9 @@ async def test_concession_overlap_rejects_a_supplier_that_does_not_own_the_polyg
         polygon_id=first.polygon.id, supplier_id=second.legality.supplier_id
     )
     assert "does not belong" in payload["error"]
+    assert context.trace.of_kind("tool")[-1].payload["result"] == payload
     step = context.trace.of_kind("tool")[-1]
-    assert step.payload == {
+    assert {key: step.payload[key] for key in ("polygon_id", "supplier_id", "status")} == {
         "polygon_id": first.polygon.id,
         "supplier_id": second.legality.supplier_id,
         "status": "error",

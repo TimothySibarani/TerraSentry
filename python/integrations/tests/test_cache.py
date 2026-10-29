@@ -1,9 +1,21 @@
+import asyncio
+import sqlite3
 from datetime import UTC, datetime
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-import fakeredis.aioredis
+import aiosqlite
 import pytest
-from terrasentry_integrations.cache import CacheEntry, MemoryCache, RedisCache, geometry_hash
-from terrasentry_integrations.errors import CacheMissError
+from terrasentry_integrations.cache import (
+    CacheEntry,
+    MemoryCache,
+    SQLiteCache,
+    _enable_wal,
+    build_cache,
+    geometry_hash,
+)
+from terrasentry_integrations.errors import CacheMissError, IntegrationError
+from terrasentry_integrations.settings import IntegrationSettings
 
 
 def test_geometry_identity_preserves_query_precision_and_versions_old_keys() -> None:
@@ -56,21 +68,155 @@ async def test_memory_cache_clear_source() -> None:
     assert await cache.get("gfw", "a" * 64, "2019-2024") is None
 
 
-async def test_redis_cache_roundtrip_with_fakeredis() -> None:
-    redis = fakeredis.aioredis.FakeRedis(decode_responses=True)
-    cache = RedisCache(redis, prefix="test:cache", ttl_seconds=60)
+async def test_sqlite_cache_survives_reopen_and_updates(tmp_path: Path) -> None:
+    path = tmp_path / "nested" / "cache.db"
+    cache = SQLiteCache(path)
     entry = _entry()
     await cache.set(entry)
-    cached = await cache.get(entry.source, entry.geometry_hash, entry.date_window)
-    assert cached is not None
-    assert cached.payload == {"rows": [1, 2, 3]}
-    assert cache.stats().writes == 1
+    await cache.set(entry.model_copy(update={"payload": "latitude,longitude\n1,2"}))
+    assert cache.stats().writes == 2
     await cache.close()
+    await cache.close()
+    reopened = SQLiteCache(path, offline=True)
+    try:
+        cached = await reopened.get(entry.source, entry.geometry_hash, entry.date_window)
+        assert cached is not None and cached.payload == "latitude,longitude\n1,2"
+        assert reopened.stats().hits == 1
+        assert not await reopened.delete("missing", entry.geometry_hash, entry.date_window)
+        assert await reopened.delete(entry.source, entry.geometry_hash, entry.date_window)
+        with pytest.raises(CacheMissError):
+            await reopened.get(entry.source, entry.geometry_hash, entry.date_window)
+        assert reopened.stats().misses == reopened.stats().offline_misses == 1
+    finally:
+        await reopened.close()
 
 
-async def test_redis_cache_offline_miss_raises() -> None:
-    redis = fakeredis.aioredis.FakeRedis(decode_responses=True)
-    cache = RedisCache(redis, prefix="test:cache", offline=True)
-    with pytest.raises(CacheMissError):
-        await cache.get("firms", "missing", "2026-01-01..2026-01-07")
+@pytest.mark.parametrize("ttl", [0, -1, 60])
+async def test_sqlite_ttl_and_offline_expiration(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, ttl: int
+) -> None:
+    now = 1000.0
+    monkeypatch.setattr("terrasentry_integrations.cache.time.time", lambda: now)
+    cache = SQLiteCache(tmp_path / "cache.db", ttl_seconds=ttl, offline=True)
+    entry = _entry()
+    try:
+        await cache.set(entry)
+        now = 1059
+        assert await cache.get(entry.source, entry.geometry_hash, entry.date_window) == entry
+        now = 1060
+        if ttl > 0:
+            assert not await cache.delete(entry.source, entry.geometry_hash, entry.date_window)
+            assert await cache.clear_source(entry.source) == 0
+            with pytest.raises(CacheMissError):
+                await cache.get(entry.source, entry.geometry_hash, entry.date_window)
+            assert cache.stats().misses == cache.stats().offline_misses == 1
+            assert await cache.iter_entries() == []
+        else:
+            assert await cache.get(entry.source, entry.geometry_hash, entry.date_window) == entry
+    finally:
+        await cache.close()
+
+
+async def test_sqlite_concurrent_use_and_namespace_isolation(tmp_path: Path) -> None:
+    path = tmp_path / "cache.db"
+    first = SQLiteCache(path, prefix="one")
+    second = SQLiteCache(path, prefix="two")
+    try:
+        await asyncio.gather(*(first.set(_entry()) for _ in range(20)), second.set(_entry()))
+        await first.set(_entry("firms"))
+        assert [entry.source for entry in await first.iter_entries()] == ["firms", "gfw"]
+        assert await first.clear_source("gfw") == 1
+        assert await first.clear_source("gfw") == 0
+        assert [entry.source for entry in await first.iter_entries()] == ["firms"]
+        assert await second.iter_entries() == [_entry()]
+        # Separate instances in the same namespace update the same row atomically.
+        third = SQLiteCache(path, prefix="two")
+        try:
+            await asyncio.gather(second.set(_entry("firms")), third.set(_entry("firms")))
+            assert len(await third.iter_entries()) == 2
+        finally:
+            await third.close()
+    finally:
+        await first.close()
+        await second.close()
+
+
+async def test_sqlite_failed_write_rolls_back_and_corruption_is_reported(tmp_path: Path) -> None:
+    path = tmp_path / "cache.db"
+    cache = SQLiteCache(path)
+    try:
+        await cache.ping()
+        with sqlite3.connect(path) as connection:
+            connection.execute(
+                "CREATE TRIGGER reject_cache BEFORE INSERT ON cache_entries "
+                "BEGIN SELECT RAISE(ABORT, 'injected failure'); END"
+            )
+        with pytest.raises(IntegrationError, match="permissions"):
+            await cache.set(_entry())
+        assert cache.stats().writes == 0
+        assert await cache.iter_entries() == []
+        with sqlite3.connect(path) as connection:
+            connection.execute("DROP TRIGGER reject_cache")
+        await cache.set(_entry())
+        with sqlite3.connect(path) as connection:
+            connection.execute("UPDATE cache_entries SET entry='broken json'")
+        with pytest.raises(IntegrationError, match="corrupt"):
+            await cache.get("gfw", "a" * 64, "2019-2024")
+        with pytest.raises(IntegrationError, match="corrupt"):
+            await cache.iter_entries()
+    finally:
+        await cache.close()
+
+
+async def test_sqlite_initialization_failure_and_close(tmp_path: Path) -> None:
+    blocker = tmp_path / "file"
+    blocker.write_text("not a directory")
+    cache = SQLiteCache(blocker / "cache.db")
+    with pytest.raises(IntegrationError, match="permissions"):
+        await cache.ping()
     await cache.close()
+    await cache.close()
+    with pytest.raises(IntegrationError, match="closed"):
+        await cache.ping()
+
+
+async def test_cache_factory_and_path_resolution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    settings = IntegrationSettings(cache_backend="sqlite")
+    assert settings.cache_sqlite_path.is_absolute()
+    assert settings.cache_sqlite_path.name == "cache.db"
+    assert not (tmp_path / "data").exists()
+    cache = build_cache(settings.model_copy(update={"cache_sqlite_path": tmp_path / "cache.db"}))
+    assert isinstance(cache, SQLiteCache)
+    await cache.close()
+    assert not (tmp_path / "cache.db").exists()
+
+
+async def test_wal_initialization_retries_only_sqlite_busy(tmp_path: Path) -> None:
+    connection = await aiosqlite.connect(tmp_path / "wal.db")
+    busy = sqlite3.OperationalError("database is locked")
+    busy.sqlite_errorcode = sqlite3.SQLITE_BUSY
+    io_error = sqlite3.OperationalError("disk I/O error")
+    io_error.sqlite_errorcode = sqlite3.SQLITE_IOERR
+    try:
+        with patch.object(connection, "execute") as execute:
+            execute.side_effect = [busy, busy, MagicMock()]
+            await _enable_wal(connection)
+            assert execute.call_count == 3
+        with patch.object(connection, "execute") as execute:
+            execute.side_effect = io_error
+            with pytest.raises(sqlite3.OperationalError, match="disk I/O"):
+                await _enable_wal(connection)
+            assert execute.call_count == 1
+    finally:
+        await connection.close()
+
+
+async def test_many_cache_instances_can_initialize_the_same_new_file(tmp_path: Path) -> None:
+    for index in range(12):
+        caches = [SQLiteCache(tmp_path / f"race-{index}.db", prefix=str(i)) for i in range(4)]
+        try:
+            await asyncio.gather(*(cache.set(_entry()) for cache in caches))
+            assert await asyncio.gather(*(cache.iter_entries() for cache in caches)) == [[_entry()]] * 4
+        finally:
+            await asyncio.gather(*(cache.close() for cache in caches))

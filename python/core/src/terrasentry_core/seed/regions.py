@@ -34,7 +34,11 @@ REGIONS: tuple[Region, ...] = (
         province="Jambi",
         kabupaten="Tebo",
         bbox=(101.5, -2.4, 103.2, -0.9),
-        demo_bbox=(102.0, -1.4, 102.9, -0.7),
+        # Pinned to one point: the compliant_live plot (PLY-002) generated here had 0 ha
+        # Hansen v1.13 loss 2021-2025, 0 FIRMS detections and no WDPA, moratorium, peat or
+        # concession overlap when checked live on 2026-10-29. The old box placed it where
+        # 2021+ loss (~1 ha) made the "compliant" scenario score ambiguous.
+        demo_bbox=(101.9, -2.31, 101.9, -2.31),
     ),
     Region(
         name="South Sumatra peat forest",

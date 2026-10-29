@@ -54,6 +54,9 @@ synthetic test data is synthetic; supplier declarations are unverified declarati
 When asked to check concession overlap, also call check_concession_overlap with the
 polygon id and supplier id, and report each concession's company, overlap, and whether
 the holder and commodity match the declarations.
+If you have a search_adverse_media tool, call it once for the supplier and report its findings as
+background context, each with its source URL. It is not evidence for the rubric: never let it change the
+verdict or score, and never add it to SCREENING_SIGNALS. Say so when no cited findings exist.
 Never invent entity or permit values.
 End your reply with the screening_signals you were given in the task, if any, verbatim, on one line:
 SCREENING_SIGNALS: <comma-separated codes, or none>
@@ -69,5 +72,22 @@ Your job is to challenge, not to agree:
 - You have no tools that write, score, or commit anything; do not claim to.
 - Return a VerificationReport. Set accepted=false with explicit challenges if any
   claim is unsupported or any source failed in a way the assessment ignores.
+- Severity: use "error" only when a value in the evidence ledger contradicts a claim in
+  the assessment or the supervisor summary, and put those evidence ids in evidence_ids.
+  An error without a ledger evidence id is kept as a warning. Use "warning" or "info"
+  for opinions about the rubric's design, missing data that no tool provides, or wording.
+- These are known, disclosed design limits. Do not raise them as errors:
+  - Seed legality, consignment, and certification records are synthetic and labelled so.
+  - area_mismatch compares declared concession area with plot area by number only;
+    spatial overlap is checked separately by check_concession_overlap on GFW layers.
+  - The FIRMS window is the configured recent window (30 days by default).
+  - Hansen loss years with no loss return no row; a missing year inside the window is 0 ha.
+  - Available context layers are WDPA protected areas, the IDN moratorium, GFW oil palm,
+    wood fibre and logging concessions, GFW peatlands, and the JRC 2020 forest baseline.
+    There is no primary forest or IFL layer; do not ask for one.
+  - A null permit expiry means the record lists no expiry date; the rubric only flags a
+    permit that is expired, suspended, or sanctioned.
+  - data_gaps lists sources that failed or returned nothing, not design limits.
+  - Adverse media is background context and never part of the score.
 - List what you checked in checked_claims so the run trace shows the cross-check.
 """

@@ -11,6 +11,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 from shapely.errors import ShapelyError
 from shapely.geometry import shape
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from terrasentry_integrations.cache import CacheBackend, CacheEntry, geometry_hash
@@ -46,6 +47,14 @@ LAYER_DEFINITIONS: dict[str, tuple[str, str, str, bool]] = {
 }
 
 
+def _cap_to_plot(layer: ContextLayer, plot: BaseGeometry) -> ContextLayer:
+    """Cap overlap at the plot area; raster sums count whole edge cells. The cache keeps the raw sum."""
+    plot_ha = geodesic_area_ha(plot)
+    if layer.overlap_ha <= plot_ha:
+        return layer
+    return layer.model_copy(update={"overlap_ha": plot_ha, "raw_overlap_ha": layer.overlap_ha})
+
+
 class LayerFeature(BaseModel):
     feature_id: str
     overlap_ha: float
@@ -61,6 +70,8 @@ class ContextLayer(BaseModel):
     geometry_hash: str
     status: Literal["success", "unavailable", "not_applicable"]
     overlap_ha: float = 0.0
+    # Uncapped raster sum, set only when it exceeded the plot area (edge cells count in full).
+    raw_overlap_ha: float | None = None
     features: list[LayerFeature] = Field(default_factory=list)
     fetched_at: datetime | None = None
     cached: bool = False
@@ -110,7 +121,8 @@ async def fetch_context_layer(
         if not refresh:
             entry = await cache.get("gfw_layers", geometry_digest, cache_window)
             if entry is not None:
-                return ContextLayer.model_validate(entry.payload).model_copy(update={"cached": True})
+                cached = ContextLayer.model_validate(entry.payload).model_copy(update={"cached": True})
+                return _cap_to_plot(cached, plot)
         require_credentials()
         path = f"/dataset/{dataset}/{version}/query/json"
         raster = name in {"peatlands", "forest_baseline"}
@@ -200,6 +212,6 @@ async def fetch_context_layer(
                 payload=result.model_dump(mode="json"),
             )
         )
-        return result
+        return _cap_to_plot(result, plot)
     except (IntegrationError, ValueError, TypeError, OverflowError, KeyError, ShapelyError) as exc:
         return base.model_copy(update={"error": str(exc)})

@@ -18,6 +18,7 @@ import {
   GeometryReport,
   HealthResponse,
   ImportResult,
+  type ModelMode,
   OperatorSettingOut,
   type OperatorUpdate,
   RecordOut,
@@ -25,10 +26,14 @@ import {
   type RunCreateRequest,
   RunDetail,
   RunEvent,
+  RunInput,
+  type RunState,
   RunSummary,
+  SapActionOut,
   type SapBlockRequest,
   type SapStatusRequest,
   SapVendorOut,
+  ScenarioOut,
   SupplierDetail,
   SupplierOut,
   ValidationErrorBody,
@@ -47,6 +52,13 @@ export const fieldIssues = (
 
 /** Upper bound for a non-streaming request, including retries. */
 const REQUEST_TIMEOUT = "10 seconds";
+
+/** Server-side filters for the run list (the API caps `limit` at 200). */
+export interface RunFilter {
+  readonly state?: RunState;
+  readonly kind?: string;
+  readonly limit?: number;
+}
 
 export const decodeRunEventStream = <E, R>(
   stream: Stream.Stream<Uint8Array, E, R>,
@@ -81,15 +93,26 @@ export class ApiClient extends Context.Service<
     createRun(
       payload: RunCreateRequest,
     ): Effect.Effect<RunSummary, ApiClientError>;
-    listRuns(): Effect.Effect<ReadonlyArray<RunSummary>, ApiClientError>;
+    listRuns(
+      filter?: RunFilter,
+    ): Effect.Effect<ReadonlyArray<RunSummary>, ApiClientError>;
     getRun(runId: string): Effect.Effect<RunDetail, ApiClientError>;
     getRunEvidence(
       runId: string,
     ): Effect.Effect<ReadonlyArray<EvidenceEntry>, ApiClientError>;
+    getRunInput(runId: string): Effect.Effect<RunInput, ApiClientError>;
+    listScenarios(
+      model?: ModelMode,
+    ): Effect.Effect<ReadonlyArray<ScenarioOut>, ApiClientError>;
     submitDecision(
       runId: string,
       payload: DecisionRequest,
     ): Effect.Effect<RunSummary, ApiClientError>;
+    cancelRun(runId: string): Effect.Effect<RunSummary, ApiClientError>;
+    deleteRun(runId: string): Effect.Effect<void, ApiClientError>;
+    confirmErpAction(
+      runId: string,
+    ): Effect.Effect<SapActionOut, ApiClientError>;
     getRunDds(runId: string): Effect.Effect<unknown, ApiClientError>;
     getRunDdsXml(runId: string): Effect.Effect<string, ApiClientError>;
     createBatchRun(
@@ -289,9 +312,58 @@ export class ApiClient extends Context.Service<
           );
         });
 
-        const listRuns = Effect.fn("ApiClient.listRuns")(function* () {
-          return yield* getJson("listRuns", Schema.Array(RunSummary), "/runs");
+        const listRuns = Effect.fn("ApiClient.listRuns")(function* (
+          filter?: RunFilter,
+        ) {
+          const query = new URLSearchParams();
+          if (filter?.state !== undefined) {
+            query.set("state", filter.state);
+          }
+          if (filter?.kind !== undefined) {
+            query.set("kind", filter.kind);
+          }
+          if (filter?.limit !== undefined) {
+            query.set("limit", String(filter.limit));
+          }
+          const suffix = query.size > 0 ? `?${query.toString()}` : "";
+          return yield* getJson(
+            "listRuns",
+            Schema.Array(RunSummary),
+            `/runs${suffix}`,
+          );
         });
+
+        const cancelRun = Effect.fn("ApiClient.cancelRun")(function* (
+          runId: string,
+        ) {
+          return yield* sendJson(
+            "cancelRun",
+            RunSummary,
+            HttpClientRequest.post(`/runs/${encodeURIComponent(runId)}/cancel`),
+          );
+        });
+
+        const deleteRun = Effect.fn("ApiClient.deleteRun")(function* (
+          runId: string,
+        ) {
+          yield* http
+            .execute(
+              HttpClientRequest.delete(`/runs/${encodeURIComponent(runId)}`),
+            )
+            .pipe(Effect.mapError(fail("deleteRun")), bounded("deleteRun"));
+        });
+
+        const confirmErpAction = Effect.fn("ApiClient.confirmErpAction")(
+          function* (runId: string) {
+            return yield* sendJson(
+              "confirmErpAction",
+              SapActionOut,
+              HttpClientRequest.post(
+                `/runs/${encodeURIComponent(runId)}/erp-action`,
+              ),
+            );
+          },
+        );
 
         const getRun = Effect.fn("ApiClient.getRun")(function* (runId: string) {
           return yield* getJson(
@@ -308,6 +380,27 @@ export class ApiClient extends Context.Service<
             "getRunEvidence",
             Schema.Array(EvidenceEntry),
             `/runs/${encodeURIComponent(runId)}/evidence`,
+          );
+        });
+
+        const getRunInput = Effect.fn("ApiClient.getRunInput")(function* (
+          runId: string,
+        ) {
+          return yield* getJson(
+            "getRunInput",
+            RunInput,
+            `/runs/${encodeURIComponent(runId)}/input`,
+          );
+        });
+
+        const listScenarios = Effect.fn("ApiClient.listScenarios")(function* (
+          model?: ModelMode,
+        ) {
+          const suffix = model ? `?model=${encodeURIComponent(model)}` : "";
+          return yield* getJson(
+            "listScenarios",
+            Schema.Array(ScenarioOut),
+            `/scenarios${suffix}`,
           );
         });
 
@@ -506,7 +599,12 @@ export class ApiClient extends Context.Service<
           listRuns,
           getRun,
           getRunEvidence,
+          getRunInput,
+          listScenarios,
           submitDecision,
+          cancelRun,
+          deleteRun,
+          confirmErpAction,
           getRunDds,
           getRunDdsXml,
           createBatchRun,

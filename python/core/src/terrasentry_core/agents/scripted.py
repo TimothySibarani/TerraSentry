@@ -1,7 +1,7 @@
 """Deterministic offline model for tests, rehearsals, and the offline demo.
 
 This is intentionally not a reasoning model. It replays queued turns or hands
-control to a responder callable, and it emits the Bedrock-shaped stream events
+control to a responder callable, and it emits the Converse-shaped stream events
 the Strands event loop consumes. That protocol is the only coupling to the SDK,
 so an SDK upgrade touches this file alone.
 """
@@ -116,6 +116,9 @@ def _tool_use_events(name: str, tool_use_id: str, payload: dict[str, Any]) -> li
 def _turn_events(turn: ScriptedTurn, context: ScriptedContext, prefix: str) -> list[StreamEvent]:
     events: list[StreamEvent] = [{"messageStart": {"role": "assistant"}}]
     stop_reason = "end_turn"
+    if turn.text is not None:
+        events.append({"contentBlockDelta": {"delta": {"text": turn.text}}})
+        events.append({"contentBlockStop": {}})
     if turn.structured_output is not None:
         spec = _structured_spec(context, turn.structured_output)
         if spec is None:
@@ -133,9 +136,6 @@ def _turn_events(turn: ScriptedTurn, context: ScriptedContext, prefix: str) -> l
             tool_use_id = f"{prefix}-tool-{context.call_index}-{index}"
             events.extend(_tool_use_events(call.name, tool_use_id, call.arguments))
         stop_reason = "tool_use"
-    elif turn.text is not None:
-        events.append({"contentBlockDelta": {"delta": {"text": turn.text}}})
-        events.append({"contentBlockStop": {}})
     events.append({"messageStop": {"stopReason": stop_reason}})
     events.append(
         {
@@ -394,6 +394,9 @@ class AdaptiveAutopilotResponder:
                         {**self._polygon(), "supplier_id": self._record.supplier_id},
                     )
                 )
+            elif "search_adverse_media" in names:
+                # Context lookup belongs to the standard pass, not the signal-driven deep dive.
+                wanted.append(("search_adverse_media", {"supplier_id": self._record.supplier_id}))
         else:
             return None
         completed = set(context.completed_tools())

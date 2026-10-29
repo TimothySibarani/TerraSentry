@@ -1,10 +1,9 @@
-"""CLI: run the M3 agent graph for one seed record.
+"""CLI: run the agent graph for one seed record.
 
 ``--model scripted`` (the default) runs the whole graph with no network and no
-Bedrock calls, using the deterministic verifier checks as the gate.
-``--model bedrock`` uses the orchestrator/extraction models configured in
-``BEDROCK_MODEL_ORCHESTRATOR`` / ``BEDROCK_MODEL_EXTRACTION`` instead; that
-path needs the Day-1 Bedrock model access from docs/milestones.md section 3.
+model calls, using the deterministic verifier checks as the gate.
+``--model sap`` runs the same graph on SAP AI Core models configured in
+``AICORE_*`` (see docs/sap-hackathon-resources.md).
 
 Exit codes: 0 complete, 2 awaiting human review, 1 failed.
 """
@@ -25,6 +24,7 @@ from terrasentry_integrations.sources.gfw import GfwClient
 
 from terrasentry_core.agents.artifacts import write_agent_run
 from terrasentry_core.agents.factory import MODEL_MODES, model_bundle_for
+from terrasentry_core.agents.media import build_media_client
 from terrasentry_core.agents.orchestrator import RunOrchestrator
 from terrasentry_core.agents.schemas import AgentRunResult, ReviewDecision
 from terrasentry_core.domain.enums import Decision, RunState
@@ -73,11 +73,13 @@ async def _run(args: argparse.Namespace) -> int:
     cache = build_cache(settings, offline=args.offline)
     gfw = GfwClient(settings, cache=cache)
     firms = FirmsClient(settings, cache=cache)
+    media = build_media_client(cache, integration=settings)
     try:
         orchestrator = RunOrchestrator(
             gfw=gfw,
             firms=firms,
             datasets=datasets,
+            media=media,
             models=model_bundle_for(args.model, record),
             window_days=args.window,
             years=args.years,

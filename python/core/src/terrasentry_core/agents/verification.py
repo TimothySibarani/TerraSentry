@@ -8,6 +8,7 @@ challenges the narrative. Both run before the writer node may release the DDS.
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime
 from typing import Literal
 
@@ -339,7 +340,8 @@ def coverage_checks(
     expected_ids = {"polygon_id": record.polygon.id, "supplier_id": record.legality.supplier_id}
     codes = triggering_codes(candidate.assessment.findings)
     deep_dives = required_deep_dives(candidate.assessment.findings)
-    tool_steps = [step for step in steps if step.kind == "tool"]
+    # ``tool_start`` steps are written before a call returns, so they prove nothing.
+    tool_steps = [step for step in steps if step.kind == "tool" and step.payload.get("event") != "tool_start"]
     challenges: list[VerificationChallenge] = []
     checked: list[str] = []
 
@@ -402,24 +404,63 @@ def merge_coverage(deterministic: VerificationReport, coverage: VerificationRepo
     )
 
 
+_EVIDENCE_ID = re.compile(r"EV-[A-Za-z0-9_]+-[0-9a-f]{6,}")
+# Kinds the deterministic gate owns; an LLM opinion on them is advisory.
+_DETERMINISTIC_KINDS: frozenset[ChallengeKind] = frozenset({"design_mismatch", "coverage"})
+
+
+def _review_challenge(challenge: VerificationChallenge, ledger_ids: set[str]) -> VerificationChallenge:
+    """Stamp an LLM challenge as such; it may only veto when it cites evidence in the ledger."""
+    challenge = challenge.model_copy(update={"source": "llm"})
+    if challenge.severity != "error":
+        return challenge
+    cited = {*challenge.evidence_ids, *_EVIDENCE_ID.findall(challenge.detail)}
+    if challenge.kind not in _DETERMINISTIC_KINDS and cited and cited <= ledger_ids:
+        return challenge.model_copy(update={"evidence_ids": sorted(cited)})
+    reason = (
+        "the deterministic gate owns this check"
+        if challenge.kind in _DETERMINISTIC_KINDS
+        else "it cites no evidence id in the ledger"
+        if not cited
+        else f"it cites unknown evidence {', '.join(sorted(cited - ledger_ids))}"
+    )
+    return challenge.model_copy(
+        update={"severity": "warning", "detail": f"{challenge.detail} [downgraded from error: {reason}]"}
+    )
+
+
 def merge_reports(
     deterministic: VerificationReport,
     review: VerificationReport,
     *,
+    ledger_ids: set[str],
     model_id: str | None = None,
 ) -> VerificationReport:
-    """Combine the deterministic gate with the LLM review; errors keep their veto."""
-    challenges = [*deterministic.challenges, *review.challenges]
-    accepted = (
-        deterministic.accepted
-        and review.accepted
-        and not any(challenge.severity == "error" for challenge in challenges)
+    """Combine the deterministic gate with the LLM review.
+
+    Only error-severity challenges veto. An LLM error counts only when it cites evidence ids
+    that exist in the ledger and is not about a check the deterministic gate already owns;
+    otherwise it is kept as a warning. The model's own ``accepted`` flag is not trusted on
+    its own, so a rejection always names the challenge that caused it.
+    """
+    reviewed = [_review_challenge(challenge, ledger_ids) for challenge in review.challenges]
+    challenges = [*deterministic.challenges, *reviewed]
+    accepted = deterministic.accepted and not any(challenge.severity == "error" for challenge in challenges)
+    downgraded = sum(
+        1
+        for before, after in zip(review.challenges, reviewed, strict=True)
+        if before.severity != after.severity
     )
+    notes = [*deterministic.notes, *review.notes]
+    if downgraded:
+        notes.append(f"llm review: {downgraded} uncited or out-of-scope error(s) kept as warnings")
+    if not review.accepted and accepted:
+        notes.append("llm review set accepted=false without a qualifying error; no veto applied")
     return VerificationReport(
         accepted=accepted,
         checked_claims=sorted({*deterministic.checked_claims, *review.checked_claims}),
         challenges=challenges,
-        notes=[*deterministic.notes, *review.notes],
+        notes=notes,
         llm_reviewed=True,
         model_id=model_id,
     )

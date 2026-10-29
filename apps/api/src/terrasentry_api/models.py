@@ -4,17 +4,13 @@ The relational shape mirrors the architecture's audit trail: suppliers and
 parcels from the synthetic seed, runs and their streamed steps, the evidence
 ledger, the deterministic verdict, and the released (or withheld) DDS.
 
-Portability rules:
-
-- JSON columns use ``JSONB`` on PostgreSQL and plain ``JSON`` elsewhere so the
-  SQLite unit-test backend can create the same metadata.
-- Enums are stored as validated strings (``native_enum=False``) to keep Alembic
-  migrations portable and readable.
+JSON uses SQLite text storage; enums are validated strings (``native_enum=False``).
+All timestamp columns store UTC and restore timezone information on reads.
 """
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import (
@@ -31,8 +27,9 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.engine import Dialect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.types import TypeDecorator
 from terrasentry_core.domain.enums import RiskLevel, RunState, Verdict
 from terrasentry_core.tools.trace import utc_now
 
@@ -44,7 +41,22 @@ NAMING_CONVENTION = {
     "pk": "pk_%(table_name)s",
 }
 
-JSONType = JSON().with_variant(JSONB(), "postgresql")
+
+class UTCDateTime(TypeDecorator[datetime]):
+    """SQLite stores naive instants; normalize writes and restore UTC on reads."""
+
+    impl = DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if value is None:
+            return None
+        if value.utcoffset() is None:
+            raise ValueError("timestamp must include a timezone")
+        return value.astimezone(UTC).replace(tzinfo=None)
+
+    def process_result_value(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        return value.replace(tzinfo=UTC) if value is not None else None
 
 
 def _enum_column(enum_type: type[Any], length: int = 24) -> Enum:
@@ -81,9 +93,9 @@ class Supplier(Base):
     concession_area_ha: Mapped[float] = mapped_column(Float)
     province: Mapped[str] = mapped_column(String(64))
     kabupaten: Mapped[str] = mapped_column(String(64))
-    beneficial_owners: Mapped[list[str]] = mapped_column(JSONType, default=list)
-    certifications: Mapped[list[str]] = mapped_column(JSONType, default=list)
-    sanctions: Mapped[list[str]] = mapped_column(JSONType, default=list)
+    beneficial_owners: Mapped[list[str]] = mapped_column(JSON, default=list)
+    certifications: Mapped[list[str]] = mapped_column(JSON, default=list)
+    sanctions: Mapped[list[str]] = mapped_column(JSON, default=list)
     synthetic: Mapped[bool] = mapped_column(Boolean, default=True)
     #: synthetic | supplier_declared | document_extracted | sap_import
     provenance: Mapped[str] = mapped_column(String(24), default="synthetic", server_default="synthetic")
@@ -111,7 +123,7 @@ class Parcel(Base):
     area_ha: Mapped[float] = mapped_column(Float)
     centroid_lat: Mapped[float] = mapped_column(Float)
     centroid_lon: Mapped[float] = mapped_column(Float)
-    geometry: Mapped[dict[str, Any]] = mapped_column(JSONType)
+    geometry: Mapped[dict[str, Any]] = mapped_column(JSON)
     #: Seed design label; NULL for submitted plots.
     archetype: Mapped[str | None] = mapped_column(String(16), default=None)
     scenario: Mapped[str | None] = mapped_column(String(32), default=None)
@@ -136,9 +148,9 @@ class SubmittedRecord(Base):
     )
     polygon_id: Mapped[str] = mapped_column(ForeignKey("parcels.polygon_id", ondelete="CASCADE"))
     source: Mapped[str] = mapped_column(String(24), default="submitted")
-    payload: Mapped[dict[str, Any]] = mapped_column(JSONType)
-    geometry: Mapped[dict[str, Any]] = mapped_column(JSONType)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON)
+    geometry: Mapped[dict[str, Any]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
 
 
 class OperatorSetting(Base):
@@ -146,8 +158,8 @@ class OperatorSetting(Base):
     __table_args__ = (CheckConstraint("id = 1", name="singleton"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    profile: Mapped[dict[str, Any]] = mapped_column(JSONType)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    profile: Mapped[dict[str, Any]] = mapped_column(JSON)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime())
 
 
 class Run(Base):
@@ -165,21 +177,26 @@ class Run(Base):
     polygon_id: Mapped[str | None] = mapped_column(ForeignKey("parcels.polygon_id"), default=None)
     state: Mapped[RunState] = mapped_column(_enum_column(RunState), default=RunState.QUEUED)
     assessment_date: Mapped[date | None] = mapped_column(Date, default=None)
-    operator_profile: Mapped[dict[str, Any] | None] = mapped_column(JSONType, default=None)
+    operator_profile: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
     model: Mapped[str] = mapped_column(String(32), default="scripted")
+    #: ERP side effect: ``auto`` applies on release/decision, ``confirm`` waits for an explicit
+    #: confirmation, ``off`` never touches the ERP.
+    erp_mode: Mapped[str] = mapped_column(String(16), default="auto", server_default="auto")
+    #: How the run was launched: ``{"scenario", "refresh", "batch_mode"}``; NULL on older rows.
+    options: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
     summary: Mapped[str] = mapped_column(Text, default="")
     error: Mapped[str | None] = mapped_column(Text, default=None)
-    disclosures: Mapped[list[str]] = mapped_column(JSONType, default=list)
-    metrics: Mapped[dict[str, Any]] = mapped_column(JSONType, default=dict)
-    verification: Mapped[dict[str, Any] | None] = mapped_column(JSONType, default=None)
-    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    disclosures: Mapped[list[str]] = mapped_column(JSON, default=list)
+    metrics: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    verification: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+    started_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), default=None)
+    finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), default=None)
     elapsed_seconds: Mapped[float | None] = mapped_column(Float, default=None)
     review_decision: Mapped[str | None] = mapped_column(String(16), default=None)
     review_reviewer: Mapped[str | None] = mapped_column(String(128), default=None)
     review_note: Mapped[str | None] = mapped_column(Text, default=None)
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    reviewed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), default=None)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
 
     steps: Mapped[list[RunStep]] = relationship(
         back_populates="run",
@@ -207,8 +224,8 @@ class RunStep(Base):
     kind: Mapped[str] = mapped_column(String(16))
     name: Mapped[str] = mapped_column(String(128))
     detail: Mapped[str] = mapped_column(Text, default="")
-    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    payload: Mapped[dict[str, Any]] = mapped_column(JSONType, default=dict)
+    at: Mapped[datetime] = mapped_column(UTCDateTime())
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
     run: Mapped[Run] = relationship(back_populates="steps")
 
@@ -224,11 +241,11 @@ class Evidence(Base):
     evidence_id: Mapped[str] = mapped_column(String(96))
     schema_version: Mapped[int] = mapped_column(default=1)
     claim: Mapped[str] = mapped_column(String(128))
-    value: Mapped[Any] = mapped_column(JSONType)
+    value: Mapped[Any] = mapped_column(JSON)
     unit: Mapped[str | None] = mapped_column(String(32), default=None)
     source: Mapped[str] = mapped_column(String(48))
-    artifact: Mapped[dict[str, Any]] = mapped_column(JSONType, default=dict)
-    retrieved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    artifact: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    retrieved_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), default=None)
     cached: Mapped[bool] = mapped_column(Boolean, default=False)
     synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
     provenance: Mapped[str | None] = mapped_column(String(24), default=None)
@@ -254,15 +271,15 @@ class RunVerdict(Base):
     verdict: Mapped[Verdict] = mapped_column(_enum_column(Verdict))
     risk_level: Mapped[RiskLevel] = mapped_column(_enum_column(RiskLevel))
     fingerprint: Mapped[str] = mapped_column(String(64))
-    findings: Mapped[list[dict[str, Any]]] = mapped_column(JSONType, default=list)
-    citations: Mapped[dict[str, list[str]]] = mapped_column(JSONType, default=dict)
-    disclosures: Mapped[list[str]] = mapped_column(JSONType, default=list)
-    data_gaps: Mapped[list[str]] = mapped_column(JSONType, default=list)
+    findings: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    citations: Mapped[dict[str, list[str]]] = mapped_column(JSON, default=dict)
+    disclosures: Mapped[list[str]] = mapped_column(JSON, default=list)
+    data_gaps: Mapped[list[str]] = mapped_column(JSON, default=list)
     expected_archetype: Mapped[str | None] = mapped_column(String(16), default=None)
     expected_signal: Mapped[str | None] = mapped_column(String(16), default=None)
     expected_ambiguity: Mapped[str | None] = mapped_column(String(32), default=None)
     pending: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
 
     run: Mapped[Run] = relationship(back_populates="verdict")
 
@@ -275,10 +292,10 @@ class DdsDocument(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     run_id: Mapped[str] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"), index=True)
-    document: Mapped[dict[str, Any]] = mapped_column(JSONType)
+    document: Mapped[dict[str, Any]] = mapped_column(JSON)
     xml: Mapped[str] = mapped_column(Text)
     released: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
 
     run: Mapped[Run] = relationship(back_populates="dds")
 
@@ -304,7 +321,7 @@ class SapAction(Base):
     real: Mapped[bool] = mapped_column(Boolean, default=False)
     external_reference: Mapped[str | None] = mapped_column(String(255), default=None)
     error: Mapped[str | None] = mapped_column(Text, default=None)
-    performed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    performed_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
 
     run: Mapped[Run] = relationship()
 
@@ -313,7 +330,6 @@ __all__ = [
     "Base",
     "DdsDocument",
     "Evidence",
-    "JSONType",
     "Parcel",
     "Run",
     "RunStep",

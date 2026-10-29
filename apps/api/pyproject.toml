@@ -7,7 +7,7 @@ dependencies = [
   "terrasentry-core",
   "fastapi[standard]>=0.115",
   "sqlalchemy[asyncio]>=2.0",
-  "asyncpg>=0.30",
+  "aiosqlite>=0.20",
   "alembic>=1.14",
   "pydantic-settings>=2.6",
   "sse-starlette>=2.1",

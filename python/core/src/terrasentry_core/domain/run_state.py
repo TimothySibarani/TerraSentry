@@ -58,7 +58,11 @@ def decision_event(decision: Decision) -> RunEvent:
 
 
 def state_for_verdict(verdict: Verdict) -> RunState:
-    """Terminal state a run reaches after scoring: ambiguous goes to human review."""
-    if verdict is Verdict.AMBIGUOUS:
-        return RunState.AWAITING_REVIEW
-    return RunState.COMPLETE
+    """State a run reaches after scoring: only a compliant verdict releases without a person.
+
+    Ambiguous and high-risk results both wait for a human decision, so no adverse action
+    (a vendor block in the ERP) is ever taken by the rubric alone.
+    """
+    if verdict is Verdict.COMPLIANT:
+        return RunState.COMPLETE
+    return RunState.AWAITING_REVIEW

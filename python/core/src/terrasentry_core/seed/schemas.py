@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from terrasentry_core.countries import normalize_country
 
 Archetype = Literal["compliant", "high_risk", "ambiguous"]
-Scenario = Literal["compliant_live", "high_risk_live"]
+Scenario = Literal["compliant_live", "high_risk_live", "fire_live"]
 ExpectedSignal = Literal["deforestation", "fire", "legal"]
 AmbiguityReason = Literal["borderline_area", "old_fire_scar", "permit_gap"]
 Commodity = Literal["oil_palm", "wood", "rubber", "cocoa", "coffee"]

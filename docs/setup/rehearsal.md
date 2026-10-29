@@ -8,14 +8,15 @@ calls — so demo-day throughput is decoupled from GFW/FIRMS rate limits.
 ## Prerequisites
 
 - `GFW_API_KEY` and `FIRMS_MAP_KEY` in `.env` (see [data-sources.md](./data-sources.md)).
-- Postgres and Redis up and migrated:
+- SQLite audit schema initialized (no database servers needed):
 
 ```bash
-pnpm db:up
 pnpm db:upgrade
 ```
 
-- `CACHE_BACKEND=redis` (the default) so the offline run primes the same cache the API uses.
+- `CACHE_BACKEND=sqlite` (the default), with `CACHE_SQLITE_PATH=data/sqlite/cache.db`.
+- Stop the API before `rehearsal:run` on the same audit file. Each run manager's startup recovery
+  assumes exclusive ownership of active runs. Restart the API after the CLI exits to view results.
 
 ## 1. Prefetch the cache (live, ~10 min at default limits)
 
@@ -46,7 +47,7 @@ uv run python -m terrasentry_api.rehearsal run --offline --fixtures-dir data/fix
 
 - `--offline` makes a cache miss fail fast instead of calling a source; with the fixtures primed,
   `cache_stats.offline_misses` must be `0` on the report.
-- The command runs the real `RunManager` against Postgres, so the batch is also visible in the
+- The command runs the real `RunManager` against SQLite, so the batch is also visible in the
   cockpit and via `GET /batch-runs`.
 - The JSON report contains the parent summary (`wall_clock_seconds`,
   `average/median/p95_seconds_per_record`, `throughput_records_per_second`, `verdict_breakdown`,
@@ -80,12 +81,18 @@ hit. The API primes fixtures at startup and reports `{ offline: true, fixtures_l
 the dashboard as usual. A cache miss under `CACHE_OFFLINE=true` fails fast instead of calling a
 source, which surfaces a stale fixture set immediately.
 
+Use this mode when a demo must give the same result every time. The live scenarios read today's
+FIRMS data, so a new fire inside `PLY-002` would turn the compliant scenario non-compliant. That
+is real drift, not a bug. To record a day that gives the designed results, run both scenarios
+live first, then `uv run python -m terrasentry_integrations.fixtures export --dir data/fixtures`
+and start with `REHEARSAL_AS_OF` set to that day.
+
 ## Without credentials
 
 The full-50 path is test-verified offline: `apps/api/tests/test_batch_full.py` injects the design
 signals and asserts the 30/12/8 breakdown, per-record persistence, and an offline fixture replay
 with zero external calls. The real-source prefetch and offline replay now have measured
-numbers in `docs/kpi.md`; live Bedrock agent-batch timing remains a separate S3 gate.
+numbers in `docs/kpi.md`; live SAP AI Core agent-batch timing remains a separate S3 gate.
 
 ## S2 fixture refresh
 
@@ -102,22 +109,22 @@ Legacy submissions without country require resubmission. Run `pnpm db:upgrade` f
 Unsupported unsplit dateline polygons and dateline/polar point buffers require supported
 split polygons. Annual loss beyond the verified release is an explicit data gap; the current
 release ends in 2025. A clean 2027 assessment cannot treat missing 2026 coverage as compliant.
-The measured live-source prefetch and PostgreSQL replay are recorded in `docs/kpi.md`;
-live Bedrock agent-batch throughput remains a separate S3 verification gate.
+The historical live-source prefetch and PostgreSQL replay are recorded in `docs/kpi.md`;
+live SAP AI Core agent-batch throughput remains a separate S3 verification gate.
 
 ## S3 agent-mode batches
 
 `run` takes `--mode screening|agent` (default `screening`) and, for agent mode,
-`--model scripted|bedrock` (default `AGENT_MODEL`). Agent mode runs the full graph per record
+`--model scripted|sap` (default `AGENT_MODEL`). Agent mode runs the full graph per record
 under `BATCH_AGENT_CONCURRENCY` (default 4, separate from `BATCH_CONCURRENCY`) and the report
 records mode, model, concurrency actually used, per-record timings and graph-level token usage.
 
 ```bash
-uv run python -m terrasentry_api.rehearsal run --size 10 --mode agent --model bedrock \
+uv run python -m terrasentry_api.rehearsal run --size 10 --mode agent --model sap \
   --as-of 2026-09-11 --report data/runs/agent-batch.json
 ```
 
 **Cost note:** every agent record is several model calls (three specialists, re-tasks on
-signals, then the verifier). Record a bounded 10-record Bedrock batch first; only run 50
-records on Bedrock after confirming the cost. Scripted agent batches make no model calls and
+signals, then the verifier). Record a bounded 10-record SAP AI Core batch first; only run 50
+records live after checking the timing (the shared hackathon deployments have no published quota). Scripted agent batches make no model calls and
 measure plumbing only.

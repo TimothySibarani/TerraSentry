@@ -13,7 +13,6 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "7c1e4b9d2a10"
@@ -21,7 +20,7 @@ down_revision: str | Sequence[str] | None = "fa63e54f2542"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-_JSON = sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql")
+_JSON = sa.JSON()
 
 
 def upgrade() -> None:

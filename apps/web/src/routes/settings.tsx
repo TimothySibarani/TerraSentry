@@ -143,11 +143,11 @@ function SettingsPage() {
 		<div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
 			<PageHeader
 				title="Settings"
-				description="Operator details used in future due diligence statements."
+				description="The company named as operator on each due diligence statement, for example the importer or exporter you screen suppliers for."
 			/>
 			<Card>
 				<CardHeader>
-					<CardTitle>Operator profile</CardTitle>
+					<CardTitle>Company on statements</CardTitle>
 				</CardHeader>
 				<CardContent>
 					{operator.isError ? (
@@ -175,8 +175,11 @@ function SettingsPage() {
 						{health.data?.firmsConfigured ? "configured" : "unconfigured"}
 					</Badge>
 					<Badge variant="outline">
-						Bedrock:{" "}
-						{health.data?.bedrockConfigured ? "configured" : "unconfigured"}
+						SAP AI Core:{" "}
+						{health.data?.aicoreConfigured ? "configured" : "unconfigured"}
+					</Badge>
+					<Badge variant="outline">
+						Adverse media: {health.data?.adverseMediaMode ?? "unknown"}
 					</Badge>
 					<Badge variant="outline">
 						Default model: {health.data?.defaultModel ?? "unknown"}
@@ -185,7 +188,7 @@ function SettingsPage() {
 						SAP: {health.data?.sapMode ?? "unknown"}
 					</Badge>
 					<p className="w-full text-body-sm text-muted-foreground">
-						Credentials are configured on the server. Rubric 1.1 evaluates the
+						Credentials are configured on the server. Rubric 1.2 evaluates the
 						evidence. External decision engine and TRACES submission are not
 						implemented.
 					</p>

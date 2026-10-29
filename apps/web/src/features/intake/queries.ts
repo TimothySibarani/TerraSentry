@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiClientError, type RecordOut } from "@terrasentry/api-client";
+import {
+	ApiClientError,
+	type ModelMode,
+	type RecordOut,
+} from "@terrasentry/api-client";
 import { useEffect, useRef, useState } from "react";
 import type { IntakeForm } from "#/features/intake/form";
 import { toSubmission } from "#/features/intake/form";
@@ -70,7 +74,7 @@ export function useScreenPlot() {
 			model,
 		}: {
 			form: IntakeForm;
-			model: "scripted" | "bedrock";
+			model: ModelMode;
 		}) => {
 			const submission = toSubmission(form);
 			const key = JSON.stringify(submission);
@@ -89,6 +93,19 @@ export function useScreenPlot() {
 		},
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ["runs"] });
+			void queryClient.invalidateQueries({ queryKey: ["records"] });
+			void queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+		},
+	});
+}
+
+/** Upload a supplier portfolio; valid rows become records, invalid rows come back with reasons. */
+export function useImportPortfolio() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (file: File) =>
+			runApi((api) => api.importRecords(file, file.name)),
+		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ["records"] });
 			void queryClient.invalidateQueries({ queryKey: ["suppliers"] });
 		},

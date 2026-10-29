@@ -29,8 +29,9 @@ def test_batch_completes_with_the_design_breakdown(client: TestClient, source_ro
 
     assert summary["record_count"] == 4
     assert summary["verdict_breakdown"] == {"compliant": 2, "high_risk": 1, "ambiguous": 1}
-    assert summary["states"]["complete"] == 3
-    assert summary["states"]["awaiting_review"] == 1
+    # Only compliant records release on their own; high-risk and ambiguous both wait for a person.
+    assert summary["states"]["complete"] == 2
+    assert summary["states"]["awaiting_review"] == 2
     assert summary["states"]["failed"] == 0
     assert summary["wall_clock_seconds"] >= 0
     assert summary["average_seconds_per_record"] >= 0
@@ -56,6 +57,7 @@ def test_batch_completes_with_the_design_breakdown(client: TestClient, source_ro
     assert {row["state"] for row in rows} == {"complete", "awaiting_review"}
     assert all(row["elapsed_seconds"] is not None for row in rows)
     assert all(row["elapsed_seconds"] >= 0 for row in rows)
+    assert all(row["input_brief"]["region"] and row["input_brief"]["area_ha"] > 0 for row in rows)
 
 
 def test_batch_validation(client: TestClient) -> None:
@@ -93,8 +95,8 @@ def test_batch_snapshot_replays_progress(client: TestClient, source_router: obje
     snapshot = events[0]["data"]
     assert snapshot["kind"] == "batch"
     assert snapshot["progress"]["total"] == 4
-    assert snapshot["progress"]["completed"] == 3
-    assert snapshot["progress"]["awaiting_review"] == 1
+    assert snapshot["progress"]["completed"] == 2
+    assert snapshot["progress"]["awaiting_review"] == 2
     assert snapshot["progress"]["failed"] == 0
     assert snapshot["progress"]["verdict_breakdown"] == {
         "compliant": 2,

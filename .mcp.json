@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "terrasentry": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "terrasentry_mcp"],
+      "env": {
+        "TERRASENTRY_API_URL": "http://localhost:8000",
+        "TERRASENTRY_API_TOKEN": "${TERRASENTRY_API_TOKEN:-}",
+        "COCKPIT_BASE_URL": "http://localhost:3000"
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.python-version
+tests/
+joule/
+.pytest_cache/
+.ruff_cache/

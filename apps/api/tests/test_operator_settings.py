@@ -38,6 +38,7 @@ def test_setting_survives_restart_and_running_batch_keeps_snapshot(
         saved = client.put("/settings/operator", json=profile())
         assert saved.status_code == 200, saved.text
         assert saved.json()["profile"]["country"] == "BE"
+        assert saved.json()["updated_at"].endswith("Z")
         assert saved.json()["profile"]["identifier_value"] == "NL12345"  # issuer may differ from address
         batch = client.post("/batch-runs", json={"size": 4}).json()
         assert client.put("/settings/operator", json=profile(legal_name="Later Importer")).status_code == 200
@@ -54,6 +55,7 @@ def test_setting_survives_restart_and_running_batch_keeps_snapshot(
     with TestClient(create_app(factory)) as client:
         saved = client.get("/settings/operator").json()
         assert saved["configured"] and saved["profile"]["legal_name"] == "Later Importer"
+        assert saved["updated_at"].endswith("Z")
 
 
 def test_pending_review_keeps_operator_and_date_after_restart(

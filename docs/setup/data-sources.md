@@ -1,13 +1,13 @@
 # Data Sources — Keys, Limits, and Verification
 
-M1 talks to two real APIs and caches everything in Redis. Keys are free; the work is
+M1 talks to two real APIs and caches responses in SQLite. Keys are free; the work is
 understanding each API's shape and staying inside its quota.
 
 | Source | What we use it for | Credential | Env vars |
 | --- | --- | --- | --- |
 | Global Forest Watch Data API (Hansen GFC) | Annual loss and seven context layers inside a polygon | API key (1-year expiry) | `GFW_API_KEY`, `GFW_API_ORIGIN` |
 | NASA FIRMS | Near-real-time fire hotspots inside a polygon | MAP_KEY (emailed) | `FIRMS_MAP_KEY`, `FIRMS_SOURCE` |
-| Redis | Response cache keyed by `(source, geometry_hash, date_window)` | none locally | `REDIS_URL`, `CACHE_BACKEND` |
+| SQLite | Response cache keyed by `(namespace, source, geometry_hash, date_window)` | none | `CACHE_SQLITE_PATH`, `CACHE_BACKEND` |
 
 ## 1. Global Forest Watch (GFW / Hansen GFC)
 
@@ -109,29 +109,48 @@ A header row (and possibly detection rows) means the key works.
   fresher; SP is science-quality but lags. Use NRT for the demo (`FIRMS_SOURCE`).
 - Attribution: include NASA FIRMS in the evidence footnote.
 
-## 3. Redis cache
+## 3. SQLite cache
 
-Local Redis runs in `compose.yaml` with append-only persistence:
+`CACHE_BACKEND=sqlite` is the default. `CACHE_SQLITE_PATH=data/sqlite/cache.db` stores responses
+separately from `DATABASE_URL=sqlite+aiosqlite:///data/sqlite/audit.db`, which holds the audit trail.
+Relative paths resolve from the repository root. The cache creates its parent directory and table
+on first use; it does not require API migrations, so the reference, preflight and fixture CLIs work
+independently. `CACHE_BACKEND=memory` remains an ephemeral option for tests.
+
+- Each row contains the full serialized `CacheEntry` and an optional expiration timestamp.
+- `CACHE_PREFIX` (default `ts:cache:v1`) isolates namespaces. Source/geometry/window identities stay unchanged.
+- TTL defaults to 90 days (`CACHE_TTL_SECONDS`) from the time an entry is written or a fixture is
+  primed. Zero/negative disables expiration. Expired entries are misses, including in offline mode.
+- `CACHE_OFFLINE=true` rejects cache misses without attempting external requests.
+- WAL and a 30-second busy timeout support bounded local concurrency. One API process owns
+  `audit.db`; stop the API before running the rehearsal CLI against it. Use a persistent local disk,
+  not a shared network filesystem or an ephemeral container layer.
+
+Export and restore responses across processes:
 
 ```bash
-docker compose up -d redis
-docker compose exec redis redis-cli ping        # PONG
+uv run python -m terrasentry_integrations.fixtures export --dir data/fixtures
+uv run python -m terrasentry_integrations.fixtures prime --dir data/fixtures
 ```
 
-- Key format: `{CACHE_PREFIX}:{source}:{geometry_hash}:{date_window}` (default prefix
-  `ts:cache:v1`).
-- TTL defaults to 90 days (`CACHE_TTL_SECONDS`).
-- `CACHE_BACKEND=memory` gives an ephemeral in-process cache for a smoke test when Docker
-  is unavailable — offline re-runs then only work within a single process.
-- Inspect and clear:
+Inspect with an optional local SQLite CLI (not a runtime dependency):
 
 ```bash
-docker compose exec redis redis-cli --scan --pattern 'ts:cache:gfw:*' | head
-docker compose exec redis redis-cli --scan --pattern 'ts:cache:firms:*' | xargs -r docker compose exec -T redis redis-cli del
+sqlite3 data/sqlite/cache.db 'SELECT namespace, source, count(*) FROM cache_entries GROUP BY namespace, source;'
 ```
 
-- Fixtures are intentionally **not committed**. Warm the cache with a live run, then use
-  `--offline` for rehearsals; persist the Redis volume (`redisdata`) between runs.
+To reset the disposable cache, stop its users and remove only `data/sqlite/cache.db` and its
+`-wal`/`-shm` sidecars, then prime exported fixtures or fetch responses again. Do not delete
+`audit.db` to clear cached responses. An audit reset is a separate, explicit demo reset and loses
+submitted records, settings and run history.
+
+Both files are ignored by Git and excluded from Docker image context. Compose mounts them in the
+`sqlite-data` volume; container replacement preserves data, while `docker compose down -v` removes
+it. For a file backup, stop all writers first and copy the directory after connections close;
+do not copy only the main file from a live WAL database.
+
+Existing `.env`: replace the old database URL and cache backend with the values above and remove
+`REDIS_URL`. PostgreSQL/Redis data are not imported, and their old volumes are not deleted.
 
 ## 4. How rate limits are handled in code
 
@@ -190,7 +209,7 @@ verify the new release's fields and geographic coverage before configuring it. C
 release or query revision invalidates the corresponding cache identity. Old S1 loss-only
 fixtures must be prefetched again before an S2 offline rehearsal.
 
-For a source smoke without Redis:
+For an ephemeral source smoke (no persistent cache):
 
 ```bash
 CACHE_BACKEND=memory uv run python -m terrasentry_integrations.preflight \

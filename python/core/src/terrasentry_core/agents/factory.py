@@ -1,8 +1,8 @@
 """Model-bundle selection shared by the agent CLI and the M4 API.
 
-``scripted`` runs the full graph with no network and no Bedrock calls (the
-deterministic verifier checks are still the hard gate); ``bedrock`` uses the
-orchestrator/extraction model ids configured in the environment.
+``scripted`` runs the full graph with no network and no model calls (the
+deterministic verifier checks are still the hard gate); ``sap`` uses the
+``AICORE_MODEL_*`` ids (SAP AI Core, via LiteLLM) configured in the environment.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from terrasentry_core.agents.scripted import AdaptiveAutopilotResponder, Scripte
 from terrasentry_core.agents.verification import VerificationReport
 from terrasentry_core.seed.schemas import BatchRecord
 
-MODEL_MODES = ("scripted", "bedrock")
+MODEL_MODES = ("scripted", "sap")
 DEFAULT_MODEL_MODE = "scripted"
 #: Scripted-only fault injection: scenario -> (real demo scenario, skip the deep dives).
 FAULT_SCENARIOS: dict[str, tuple[str, bool]] = {"coverage_catch": ("high_risk_live", True)}
@@ -38,10 +38,12 @@ def scripted_bundle(record: BatchRecord, *, skip_deep_dives: bool = False) -> Mo
 
 
 def model_bundle_for(mode: str, record: BatchRecord, *, skip_deep_dives: bool = False) -> ModelBundle:
-    """Resolve a ``scripted`` or ``bedrock`` mode to a concrete :class:`ModelBundle`."""
-    if mode == "bedrock":
-        return ModelBundle.from_settings()
-    return scripted_bundle(record, skip_deep_dives=skip_deep_dives)
+    """Resolve a ``scripted`` or ``sap`` mode to a concrete :class:`ModelBundle`."""
+    if mode == "sap":
+        return ModelBundle.from_aicore()
+    if mode == "scripted":
+        return scripted_bundle(record, skip_deep_dives=skip_deep_dives)
+    raise ValueError(f"unknown model mode {mode!r}; choose one of {', '.join(MODEL_MODES)}")
 
 
 __all__ = ["DEFAULT_MODEL_MODE", "FAULT_SCENARIOS", "MODEL_MODES", "model_bundle_for", "scripted_bundle"]

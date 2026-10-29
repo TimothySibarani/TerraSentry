@@ -1,5 +1,5 @@
-import type { SapActionOut, SupplierSapOut } from "@terrasentry/api-client";
 import { Link } from "@tanstack/react-router";
+import type { SapActionOut, SupplierSapOut } from "@terrasentry/api-client";
 import { LandmarkIcon } from "lucide-react";
 
 import { Badge } from "#/components/ui/badge";
@@ -15,12 +15,14 @@ import { formatDateTime } from "#/lib/format";
 
 type SapBadgeVariant = "compliant" | "risk" | "destructive" | "outline";
 
-const STATUS_LABEL: Record<string, { label: string; variant: SapBadgeVariant }> =
-	{
-		approved: { label: "Approved", variant: "compliant" },
-		blocked: { label: "Blocked", variant: "risk" },
-		failed: { label: "Failed", variant: "destructive" },
-	};
+const STATUS_LABEL: Record<
+	string,
+	{ label: string; variant: SapBadgeVariant }
+> = {
+	approved: { label: "Approved", variant: "compliant" },
+	blocked: { label: "Blocked", variant: "risk" },
+	failed: { label: "Failed", variant: "destructive" },
+};
 
 export function SapStatusBadge({ status }: { status: string }) {
 	const spec = STATUS_LABEL[status] ?? { label: status, variant: "outline" };
@@ -49,8 +51,9 @@ export function SapActionCard({
 						ERP action (SAP)
 					</CardTitle>
 					<CardDescription>
-						No ERP action recorded yet. Ambiguous runs wait for the human
-						decision before any vendor state changes.
+						No ERP action recorded yet. Held runs wait for a person to decide,
+						and confirm-mode runs wait for confirmation, before any vendor state
+						changes.
 					</CardDescription>
 				</CardHeader>
 			</Card>

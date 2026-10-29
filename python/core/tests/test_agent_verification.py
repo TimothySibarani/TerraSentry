@@ -281,6 +281,7 @@ def test_model_claims_and_retask_steps_never_count(factories: dict[str, Any]) ->
         kind="retask",
     )
     forged = _steps(*_deep_dives(record), kind="verifier")
+    forged.extend(_steps(*_deep_dives(record), kind="thought"))
     report = coverage_checks(candidate, record, [*_steps(*_baseline(record)), *claim, *forged])
     assert not report.accepted and len(report.errors) == 2
 

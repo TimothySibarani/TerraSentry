@@ -39,6 +39,14 @@ export interface DataTableProps<TData extends RowData> {
 	className?: string;
 }
 
+/** Controls inside a row (buttons, links, confirm dialogs) handle their own activation. */
+function isInteractiveTarget(target: EventTarget | null): boolean {
+	return (
+		target instanceof Element &&
+		target.closest("a, button, [role='alertdialog']") !== null
+	);
+}
+
 export function DataTable<TData extends RowData>({
 	columns,
 	data,
@@ -137,11 +145,16 @@ export function DataTable<TData extends RowData>({
 								key={row.id}
 								tabIndex={onRowClick ? 0 : undefined}
 								className={cn(onRowClick && "cursor-pointer")}
-								onClick={() => onRowClick?.(row.original)}
+								onClick={(event) => {
+									if (!isInteractiveTarget(event.target)) {
+										onRowClick?.(row.original);
+									}
+								}}
 								onKeyDown={(event) => {
 									if (
 										onRowClick &&
-										(event.key === "Enter" || event.key === " ")
+										(event.key === "Enter" || event.key === " ") &&
+										!isInteractiveTarget(event.target)
 									) {
 										event.preventDefault();
 										onRowClick(row.original);

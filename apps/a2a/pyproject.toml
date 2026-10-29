@@ -1,0 +1,16 @@
+[project]
+name = "terrasentry-a2a"
+version = "0.1.0"
+description = "Joule A2A proxy: lets SAP Joule screen suppliers and open runs through the TerraSentry API."
+requires-python = ">=3.13"
+dependencies = [
+  "a2a-sdk[http-server]==0.3.25",
+  "httpx>=0.28",
+  "pydantic>=2.10",
+  "pydantic-settings>=2.6",
+  "uvicorn[standard]>=0.34",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

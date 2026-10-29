@@ -1,10 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type { BatchMode, ModelMode } from "@terrasentry/api-client";
-import { LayersIcon, PlayIcon } from "lucide-react";
+import { LayersIcon } from "lucide-react";
 import { useState } from "react";
 
 import { ErrorState } from "#/components/error-state";
-import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
 	Field,
@@ -28,7 +28,8 @@ import {
 import { Spinner } from "#/components/ui/spinner";
 import { ModelSelect, useDefaultModel } from "#/features/runs/model-select";
 import { useCreateBatch, useCreateRun } from "#/features/runs/mutations";
-import { scenariosFor } from "#/features/runs/scenarios";
+import { scenariosQuery } from "#/features/runs/queries";
+import { ScenarioCard } from "#/features/runs/scenario-card";
 
 const BATCH_MODES: ReadonlyArray<{
 	value: BatchMode;
@@ -70,12 +71,14 @@ export function RunLauncher({
 	const [batchMode, setBatchMode] = useState<BatchMode>("screening");
 
 	const refresh = cacheMode === "refresh";
-	const scenarios = scenariosFor(selectedModel);
-	const faultScenarios = scenarios.filter(
-		(scenario) => scenario.faultInjection,
-	);
+	const catalog = useQuery({
+		...scenariosQuery(selectedModel),
+		enabled: showScenarios,
+	});
+	const [starting, setStarting] = useState<string | null>(null);
 
 	const startScenario = (scenario: string) => {
+		setStarting(scenario);
 		createRun.mutate(
 			{ scenario, model: selectedModel, refresh },
 			{
@@ -171,26 +174,30 @@ export function RunLauncher({
 				</FieldSet>
 			)}
 
+			{showScenarios && (
+				<div className="flex flex-col gap-2">
+					{catalog.isError ? (
+						<ErrorState
+							error={catalog.error}
+							onRetry={() => void catalog.refetch()}
+						/>
+					) : catalog.data ? (
+						catalog.data.map((scenario) => (
+							<ScenarioCard
+								key={scenario.id}
+								scenario={scenario}
+								pending={pending}
+								starting={createRun.isPending && starting === scenario.id}
+								onRun={() => startScenario(scenario.id)}
+							/>
+						))
+					) : (
+						<Spinner aria-label="Loading scenarios" />
+					)}
+				</div>
+			)}
+
 			<div className="flex flex-wrap items-center gap-2">
-				{showScenarios &&
-					scenarios.map((scenario) => (
-						<Button
-							key={scenario.id}
-							variant={scenario.id === "high_risk_live" ? "default" : "outline"}
-							disabled={pending}
-							onClick={() => startScenario(scenario.id)}
-						>
-							{createRun.isPending ? (
-								<Spinner aria-label="Starting run" data-icon="inline-start" />
-							) : (
-								<PlayIcon data-icon="inline-start" aria-hidden="true" />
-							)}
-							{scenario.label}
-							{scenario.faultInjection && (
-								<Badge variant="review">Fault injection</Badge>
-							)}
-						</Button>
-					))}
 				{showBatch && (
 					<Button variant="outline" disabled={pending} onClick={startBatch}>
 						{createBatch.isPending ? (
@@ -205,13 +212,12 @@ export function RunLauncher({
 				)}
 			</div>
 
-			{showScenarios &&
-				faultScenarios.map((scenario) => (
-					<p key={scenario.id} className="text-body-sm text-muted-foreground">
-						<span className="text-foreground">Fault injection:</span>{" "}
-						{scenario.description}
-					</p>
-				))}
+			{showBatch && (
+				<p className="text-body-sm text-muted-foreground">
+					The batch runs the 50 seeded demo records. To screen your own
+					suppliers, use Import suppliers.
+				</p>
+			)}
 
 			{error && <ErrorState error={error} />}
 		</div>

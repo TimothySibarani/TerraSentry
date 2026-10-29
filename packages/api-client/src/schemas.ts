@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Option, Schema } from "effect";
 
 /**
  * Plain `Schema.Struct`s, not `Schema.Class`es: decoded payloads cross the
@@ -11,7 +11,8 @@ export const HealthResponse = Schema.Struct({
   fixtures_loaded: Schema.Int,
   sap_mode: Schema.String,
   sap_real: Schema.Boolean,
-  bedrock_configured: Schema.Boolean,
+  aicore_configured: Schema.Boolean,
+  adverse_media_mode: Schema.String,
   default_model: Schema.String,
   gfw_configured: Schema.Boolean,
   firms_configured: Schema.Boolean,
@@ -109,6 +110,8 @@ export const TraceKind = Schema.Literals([
   "run",
   "agent",
   "retask",
+  "report",
+  "thought",
   "tool",
   "verifier",
   "writer",
@@ -118,7 +121,7 @@ export const TraceKind = Schema.Literals([
 ]);
 export type TraceKind = typeof TraceKind.Type;
 
-export const ModelMode = Schema.Literals(["scripted", "bedrock"]);
+export const ModelMode = Schema.Literals(["scripted", "sap"]);
 export type ModelMode = typeof ModelMode.Type;
 
 export const Finding = Schema.Struct({
@@ -182,6 +185,56 @@ export const TraceStep = Schema.Struct({
 });
 export type TraceStep = typeof TraceStep.Type;
 
+/** Adverse-media context carried in a `search_adverse_media` trace step. Never a scoring input. */
+export const MediaCitation = Schema.Struct({
+  url: Schema.String,
+  title: Schema.String,
+  published: Schema.NullOr(Schema.String),
+});
+export type MediaCitation = typeof MediaCitation.Type;
+
+export const MediaFinding = Schema.Struct({
+  claim: Schema.String,
+  citations: Schema.Array(MediaCitation),
+});
+export type MediaFinding = typeof MediaFinding.Type;
+
+export const AdverseMediaReport = Schema.Struct({
+  subject: Schema.String,
+  country: Schema.NullOr(Schema.String),
+  status: Schema.Literals(["success", "unavailable"]),
+  summary: Schema.String,
+  findings: Schema.Array(MediaFinding),
+  model: Schema.String,
+  synthetic: Schema.Boolean,
+  disclosure: Schema.NullOr(Schema.String),
+  cached: Schema.Boolean,
+  error: Schema.NullOr(Schema.String),
+});
+export type AdverseMediaReport = typeof AdverseMediaReport.Type;
+
+const AdverseMediaStepPayload = Schema.Struct({ report: AdverseMediaReport });
+
+/** The run's adverse-media report, or `null` when the layer was off or the step is malformed. */
+export const adverseMediaFromSteps = (
+  steps: ReadonlyArray<TraceStep>,
+): AdverseMediaReport | null => {
+  const step = steps.find(
+    (candidate) =>
+      candidate.kind === "tool" &&
+      candidate.name === "search_adverse_media" &&
+      // A `tool_start` step precedes the result and carries no report.
+      candidate.payload?.event !== "tool_start",
+  );
+  if (step === undefined) return null;
+  return Option.getOrNull(
+    Option.map(
+      Schema.decodeUnknownOption(AdverseMediaStepPayload)(step.payload),
+      (payload) => payload.report,
+    ),
+  );
+};
+
 export const ReviewOut = Schema.Struct({
   decision: Schema.Literals(["approve", "override"]),
   reviewer: Schema.String,
@@ -222,6 +275,20 @@ export const SupplierSapOut = Schema.Struct({
 });
 export type SupplierSapOut = typeof SupplierSapOut.Type;
 
+export const ErpMode = Schema.Literals(["off", "confirm", "auto"]);
+export type ErpMode = typeof ErpMode.Type;
+
+/** The few input fields the batch table shows per record (batch listing only). */
+export const InputBrief = Schema.Struct({
+  region: Schema.String,
+  area_ha: Schema.Number,
+  permit_status: Schema.String,
+  commodity: Schema.String,
+  expected_signal: Schema.NullOr(Schema.String),
+  expected_ambiguity: Schema.NullOr(Schema.String),
+});
+export type InputBrief = typeof InputBrief.Type;
+
 const runSummaryFields = {
   run_id: Schema.String,
   kind: Schema.String,
@@ -231,6 +298,7 @@ const runSummaryFields = {
   polygon_id: Schema.NullOr(Schema.String),
   parent_run_id: Schema.NullOr(Schema.String),
   model: Schema.String,
+  erp_mode: ErpMode,
   assessment_date: Schema.optional(Schema.NullOr(Schema.String)),
   operator_profile: Schema.optional(Schema.NullOr(OperatorRecord)),
   summary: Schema.String,
@@ -244,6 +312,7 @@ const runSummaryFields = {
   elapsed_seconds: Schema.NullOr(Schema.Number),
   created_at: Schema.DateTimeUtcFromString,
   metrics: Schema.Record(Schema.String, Schema.Unknown),
+  input_brief: Schema.optional(Schema.NullOr(InputBrief)),
 } as const;
 
 export const RunSummary = Schema.Struct(runSummaryFields);
@@ -271,6 +340,10 @@ export const RunDetail = Schema.Struct({
   pending_assessment: Schema.NullOr(VerdictOut),
   review: Schema.NullOr(ReviewOut),
   sap_action: Schema.NullOr(SapActionOut),
+  // In `confirm` mode: the vendor status waiting for an explicit confirmation.
+  erp_pending: Schema.optional(
+    Schema.NullOr(Schema.Literals(["approved", "blocked"])),
+  ),
   steps: Schema.Array(TraceStep),
   dds: Schema.NullOr(DdsMeta),
 });
@@ -387,6 +460,7 @@ export const RunCreateRequest = Schema.Struct({
   scenario: Schema.optional(Schema.String),
   model: Schema.optional(ModelMode),
   refresh: Schema.optional(Schema.Boolean),
+  erp_mode: Schema.optional(ErpMode),
 });
 export type RunCreateRequest = typeof RunCreateRequest.Type;
 
@@ -403,6 +477,7 @@ export const BatchCreateRequest = Schema.Struct({
   record_ids: Schema.optional(Schema.Array(Schema.String)),
   mode: Schema.optional(BatchMode),
   model: Schema.optional(ModelMode),
+  erp_mode: Schema.optional(ErpMode),
 });
 export type BatchCreateRequest = typeof BatchCreateRequest.Type;
 
@@ -594,3 +669,97 @@ export const ValidationErrorBody = Schema.Struct({
   ),
 });
 export type ValidationErrorBody = typeof ValidationErrorBody.Type;
+
+const optStr = Schema.optional(Schema.NullOr(Schema.String));
+const optNum = Schema.optional(Schema.NullOr(Schema.Number));
+
+/** The seed/submitted record a run screens: plot, legality and consignment. */
+export const BatchRecord = Schema.Struct({
+  record_id: Schema.String,
+  supplier_id: Schema.String,
+  polygon: Schema.Struct({
+    id: Schema.String,
+    country: optStr,
+    provenance: Schema.optional(Provenance),
+    label: Schema.String,
+    region: Schema.String,
+    province: Schema.String,
+    area_ha: Schema.Number,
+    centroid_lat: Schema.Number,
+    centroid_lon: Schema.Number,
+    geometry: GeoJsonObject,
+    input_geometry: Schema.optional(Schema.NullOr(GeoJsonObject)),
+    archetype: optStr,
+    scenario: optStr,
+  }),
+  legality: Schema.Struct({
+    supplier_id: Schema.String,
+    legal_name: Schema.String,
+    trading_name: Schema.String,
+    group: Schema.String,
+    nib: Schema.String,
+    npwp: Schema.String,
+    hgu_number: optStr,
+    pbp_number: optStr,
+    permit_status: Schema.String,
+    permit_expiry: optStr,
+    declared_holder: optStr,
+    concession_area_ha: optNum,
+    province: Schema.String,
+    kabupaten: Schema.String,
+    beneficial_owners: Schema.Array(Schema.String),
+    certifications: Schema.Array(Schema.String),
+    sanctions: Schema.Array(Schema.String),
+    synthetic: Schema.Boolean,
+    provenance: Schema.optional(Provenance),
+    disclosure: Schema.optional(Schema.String),
+  }),
+  consignment: Schema.Struct({
+    commodity: Schema.String,
+    description: Schema.String,
+    hs_heading: Schema.String,
+    species_scientific: optStr,
+    species_common: optStr,
+    net_weight_kg: Schema.Number,
+    production_place: Schema.String,
+    harvest_year: Schema.Int,
+    synthetic: Schema.Boolean,
+    provenance: Schema.optional(Provenance),
+    disclosure: Schema.optional(Schema.String),
+  }),
+  expected_archetype: optStr,
+  expected_signal: optStr,
+  expected_ambiguity: optStr,
+});
+export type BatchRecord = typeof BatchRecord.Type;
+
+export const RunOptions = Schema.Struct({
+  scenario: optStr,
+  refresh: Schema.optional(Schema.NullOr(Schema.Boolean)),
+  batch_mode: Schema.optional(Schema.NullOr(BatchMode)),
+});
+export type RunOptions = typeof RunOptions.Type;
+
+/** Exactly what one run was given (`GET /runs/{id}/input`). */
+export const RunInput = Schema.Struct({
+  run_id: Schema.String,
+  kind: Schema.String,
+  model: Schema.String,
+  erp_mode: ErpMode,
+  assessment_date: optStr,
+  record: BatchRecord,
+  operator: Schema.optional(Schema.NullOr(OperatorRecord)),
+  options: RunOptions,
+});
+export type RunInput = typeof RunInput.Type;
+
+/** One demo scenario with the record it submits (`GET /scenarios`). */
+export const ScenarioOut = Schema.Struct({
+  id: Schema.String,
+  label: Schema.String,
+  description: Schema.String,
+  models: Schema.optional(Schema.NullOr(Schema.Array(ModelMode))),
+  fault_injection: Schema.Boolean,
+  record: BatchRecord,
+});
+export type ScenarioOut = typeof ScenarioOut.Type;

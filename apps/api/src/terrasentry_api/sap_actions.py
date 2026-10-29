@@ -4,8 +4,9 @@ This is the only place that maps a TerraSentry verdict or human decision to an
 ERP action. Rules:
 
 - compliant -> vendor approved, purchasing block cleared
-- high_risk -> vendor blocked, purchasing block set
-- HITL approve -> approved; HITL override -> blocked
+- ambiguous and high_risk wait for a human: approve -> approved, override -> blocked
+- a run's ``erp_mode`` decides whether an action is applied at all: ``auto`` applies it as soon
+  as it is planned, ``confirm`` leaves it pending until someone confirms it, ``off`` never acts
 - an ERP failure never fails the compliance run: it is recorded with
   ``status=failed`` and a disclosure, and the vendor state is left unchanged.
 
@@ -18,6 +19,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
 from terrasentry_core.dds import ErpAction
@@ -32,6 +34,9 @@ from terrasentry_integrations.sap import (
 )
 
 logger = logging.getLogger(__name__)
+
+ErpMode = Literal["off", "confirm", "auto"]
+DEFAULT_ERP_MODE: ErpMode = "auto"
 
 STUB_MODE_DISCLOSURE = (
     "SAP integration is implemented against SAP's published API contract "
@@ -52,6 +57,19 @@ _DISCLOSURES = {
 
 def disclosure_for_mode(mode: str) -> str:
     return _DISCLOSURES.get(mode.strip().lower(), STUB_MODE_DISCLOSURE)
+
+
+def planned_status(*, verdict: Verdict | None, decision: Decision | None) -> str | None:
+    """The vendor status a finished run calls for, or ``None`` while a person still has to decide.
+
+    A human decision always wins. Without one, only a compliant verdict plans an action; an
+    ambiguous or high-risk verdict is held until someone decides.
+    """
+    if decision is not None:
+        return STATUS_APPROVED if decision is Decision.APPROVE else STATUS_BLOCKED
+    if verdict is Verdict.COMPLIANT:
+        return STATUS_APPROVED
+    return None
 
 
 class SapActionRecord(BaseModel):
@@ -140,26 +158,8 @@ class SapActionService:
     def mode(self) -> str:
         return self._mode
 
-    async def apply_verdict(
-        self,
-        *,
-        run_id: str,
-        supplier_id: str,
-        verdict: Verdict,
-    ) -> SapActionRecord:
-        """Apply a released automated verdict (compliant or high risk)."""
-        status = STATUS_BLOCKED if verdict is Verdict.HIGH_RISK else STATUS_APPROVED
-        return await self._apply(run_id=run_id, supplier_id=supplier_id, status=status)
-
-    async def apply_decision(
-        self,
-        *,
-        run_id: str,
-        supplier_id: str,
-        decision: Decision,
-    ) -> SapActionRecord:
-        """Apply a human decision on the ambiguous branch."""
-        status = STATUS_APPROVED if decision is Decision.APPROVE else STATUS_BLOCKED
+    async def apply_status(self, *, run_id: str, supplier_id: str, status: str) -> SapActionRecord:
+        """Apply an already planned status (the explicit confirmation path)."""
         return await self._apply(run_id=run_id, supplier_id=supplier_id, status=status)
 
     async def _apply(self, *, run_id: str, supplier_id: str, status: str) -> SapActionRecord:
@@ -191,10 +191,13 @@ class SapActionService:
 
 
 __all__ = [
+    "DEFAULT_ERP_MODE",
     "LIVE_MODE_DISCLOSURE",
     "SANDBOX_MODE_DISCLOSURE",
     "STUB_MODE_DISCLOSURE",
+    "ErpMode",
     "SapActionRecord",
     "SapActionService",
     "disclosure_for_mode",
+    "planned_status",
 ]

@@ -17,6 +17,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* shadcn components style orientation through these two variants; Base UI only emits
+   data-orientation, so without them Tabs, Separator and ScrollArea lose their layout. */
+@custom-variant data-horizontal (&[data-orientation="horizontal"]);
+@custom-variant data-vertical (&[data-orientation="vertical"]);
+
 /* ---------------------------------------------------------------------------
    1. Raw brand palette + typography + shape (DESIGN.md front matter)
    Spacing needs no tokens: Tailwind's 4px scale matches DESIGN.md exactly
@@ -246,4 +251,38 @@
   line-height: var(--text-caption-mono-sm--line-height);
   letter-spacing: var(--text-caption-mono-sm--letter-spacing);
   text-transform: uppercase;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.75;
+    transform: scale(0.995);
+    box-shadow: 0 0 0 0 rgb(255 122 23 / 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.005);
+    box-shadow: 0 0 24px 2px rgb(255 122 23 / 0.2);
+  }
+}
+
+@utility animate-breathe {
+  animation: breathe 2s ease-in-out infinite;
+}
+
+/* Moving sheen on in-flight timeline spans; gated with motion-safe: at the call site. */
+@keyframes progress-sheen {
+  from {
+    background-position: -8rem 0;
+  }
+  to {
+    background-position: 8rem 0;
+  }
+}
+
+@utility animate-progress {
+  background-image: linear-gradient(90deg, transparent 0, rgb(255 255 255 / 0.22) 50%, transparent 100%);
+  background-size: 8rem 100%;
+  background-repeat: no-repeat;
+  animation: progress-sheen 1.4s linear infinite;
 }

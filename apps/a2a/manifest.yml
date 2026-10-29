@@ -1,0 +1,20 @@
+applications:
+  - name: terrasentry-a2a-startorch
+    memory: 512M
+    disk_quota: 1G
+    instances: 1
+    buildpacks:
+      - https://github.com/cloudfoundry/python-buildpack/releases/download/v1.8.43/python-buildpack-cflinuxfs4-v1.8.43.zip
+    health-check-type: http
+    health-check-http-endpoint: /health
+    timeout: 120
+    command: PYTHONPATH=src python -m uvicorn terrasentry_a2a.server:app --host 0.0.0.0 --port $PORT --workers 1
+    env:
+      BP_PYTHON_VERSION: "3.13.11"
+      A2A_AGENT_MODEL: sap
+      A2A_REPLY_BUDGET_SECONDS: "40"
+      # Secrets and deployment-specific URLs are NOT stored here. After `cf push` run:
+      #   cf set-env terrasentry-a2a-startorch TERRASENTRY_API_URL 'https://<your tunnel or API host>'
+      #   cf set-env terrasentry-a2a-startorch TERRASENTRY_API_TOKEN '<API_TOKEN, if the API sets one>'
+      #   cf set-env terrasentry-a2a-startorch COCKPIT_BASE_URL 'https://<your cockpit host>'
+      #   cf restage terrasentry-a2a-startorch

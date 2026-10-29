@@ -1,0 +1,7 @@
+description: >-
+  Starts a live multi-agent investigation of a supplier (geospatial, thermal and
+  legality analysts plus an independent verifier) and returns a link to follow the
+  trace. Use it when the user asks to investigate or deeply analyse a supplier.
+target:
+  name: ask_function
+  type: function

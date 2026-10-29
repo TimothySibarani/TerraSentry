@@ -18,6 +18,7 @@ from strands.multiagent.base import MultiAgentBase, MultiAgentResult, NodeResult
 from strands.telemetry.metrics import EventLoopMetrics
 from strands.types.content import Message
 
+from terrasentry_core.agents.supervisor import invocation_usage
 from terrasentry_core.agents.verification import (
     VerificationChallenge,
     VerificationReport,
@@ -138,8 +139,20 @@ class VerifierNode(MultiAgentBase):
     async def _llm_review(
         self, sources: PolygonSources, deterministic: VerificationReport
     ) -> VerificationReport:
+        prompt = self._prompt(sources)
+        self._context.trace.add(
+            "verifier",
+            "verifier",
+            "invoked",
+            payload={
+                "agent": "verifier",
+                "invocation": 1,
+                "event": "start",
+                "input": prompt,
+            },
+        )
         try:
-            result = await self._agent.invoke_async(self._prompt(sources))
+            result = await self._agent.invoke_async(prompt)
         except Exception as exc:
             return deterministic.model_copy(
                 update={
@@ -169,7 +182,9 @@ class VerifierNode(MultiAgentBase):
                     ],
                 }
             )
-        return merge_reports(deterministic, review, model_id=self._model_id())
+        candidate = self._context.candidate
+        ledger_ids = {entry.evidence_id for entry in candidate.evidence} if candidate else set()
+        return merge_reports(deterministic, review, ledger_ids=ledger_ids, model_id=self._model_id())
 
     def _model_id(self) -> str | None:
         config = self._agent.model.get_config() if self._agent.model else None
@@ -185,7 +200,14 @@ class VerifierNode(MultiAgentBase):
             "verifier",
             "verification",
             f"{outcome}: {len(report.challenges)} challenge(s), {len(report.checked_claims)} check(s)",
-            payload={"accepted": report.accepted},
+            payload={
+                "accepted": report.accepted,
+                "challenges": [challenge.model_dump(mode="json") for challenge in report.challenges],
+                "event": "finish",
+                "agent": "verifier",
+                "invocation": 1,
+                "usage": invocation_usage(self._agent),
+            },
         )
         return _completed(self.id, f"verification {outcome}", structured=report)
 

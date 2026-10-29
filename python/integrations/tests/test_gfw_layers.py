@@ -217,3 +217,24 @@ async def test_dateline_source_features_and_legacy_queries_are_unavailable() -> 
             assert len(router.calls) == before and route.call_count == 1
         finally:
             await gfw.close()
+
+
+async def test_raster_sum_above_plot_area_is_capped_and_raw_kept() -> None:
+    plot_ha = geodesic_area_ha(shape(PLOT))
+    gfw = GfwClient(
+        IntegrationSettings(gfw_api_key="test", gfw_rate_limit_per_min=10000), cache=MemoryCache()
+    )
+    with respx.mock(assert_all_called=False) as router:
+        register(router)
+        router.post(url("peatlands")).mock(
+            return_value=httpx.Response(
+                200, json={"status": "success", "data": [{"overlap_ha": plot_ha + 0.4}]}
+            )
+        )
+        try:
+            for _ in range(2):  # fresh, then from cache
+                peat = (await gfw.context_layers(PLOT, country="ID")).layers[5]
+                assert peat.overlap_ha == plot_ha
+                assert peat.raw_overlap_ha == pytest.approx(plot_ha + 0.4)
+        finally:
+            await gfw.close()

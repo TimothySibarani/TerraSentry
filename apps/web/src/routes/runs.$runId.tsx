@@ -1,34 +1,50 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import type { TraceStep } from "@terrasentry/api-client";
-import { ArrowLeftIcon, RefreshCwIcon } from "lucide-react";
+import type { ModelMode, TraceStep } from "@terrasentry/api-client";
+import { adverseMediaFromSteps } from "@terrasentry/api-client";
+import { ArrowLeftIcon, RefreshCwIcon, RotateCcwIcon } from "lucide-react";
 import { useMemo } from "react";
 
 import { ErrorState } from "#/components/error-state";
 import { PageHeader } from "#/components/page-header";
 import { SapActionCard } from "#/components/sap-panel";
-import { RunStateBadge, VerdictBadge } from "#/components/status-badge";
+import {
+	ExpectedBadge,
+	RunStateBadge,
+	VerdictBadge,
+} from "#/components/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Skeleton } from "#/components/ui/skeleton";
+import { Spinner } from "#/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import { AdverseMediaCard } from "#/features/runs/adverse-media-card";
+import { AgentBrief } from "#/features/runs/agent-brief";
+import { deriveAgentRun } from "#/features/runs/agent-run";
+import { AgentWorkspace } from "#/features/runs/agent-workspace";
 import { AssessmentPanel } from "#/features/runs/assessment-panel";
 import { DdsDownloadButton, DdsPanel } from "#/features/runs/dds-panel";
+import { ErpPendingCard } from "#/features/runs/erp-pending-card";
 import { EvidenceTable } from "#/features/runs/evidence-table";
+import { useCancelRun, useCreateRun } from "#/features/runs/mutations";
 import {
 	runDdsQuery,
 	runEvidenceQuery,
+	runInputQuery,
 	runQuery,
 } from "#/features/runs/queries";
 import { ReviewDialog } from "#/features/runs/review-dialog";
+import { RunInputBlock } from "#/features/runs/run-input";
 import { RunMapPanel } from "#/features/runs/run-map";
-import { TracePanel } from "#/features/runs/trace-panel";
+import { RunOverview, useRunClock } from "#/features/runs/run-overview";
 import { useRunStream } from "#/features/runs/use-run-stream";
-import { formatDateTime, formatDuration, formatScore } from "#/lib/format";
 
 export const Route = createFileRoute("/runs/$runId")({
-	validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { tab?: string; agent?: string; step?: string } => ({
+		agent: typeof search.agent === "string" ? search.agent : undefined,
+		step: typeof search.step === "string" ? search.step : undefined,
 		tab: typeof search.tab === "string" ? search.tab : undefined,
 	}),
 	loader: async ({ context, params }) => {
@@ -49,11 +65,29 @@ function RunDetailPage() {
 	return <RunDetailScreen key={runId} runId={runId} />;
 }
 
+// The tabs sit below the overview and input blocks; a link that only switches
+// the tab would change nothing the user can see, so bring the tabs into view.
+const scrollToTabs = () =>
+	requestAnimationFrame(() =>
+		document
+			.getElementById("run-tabs")
+			?.scrollIntoView({ behavior: "smooth", block: "start" }),
+	);
+
 function RunDetailScreen({ runId }: { runId: string }) {
-	const { tab = "trace" } = Route.useSearch();
+	const { tab = "trace", agent, step } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 	const run = useQuery(runQuery(runId));
 	const evidence = useQuery(runEvidenceQuery(runId));
+	// Failed runs have no verdict row, so the design target comes from the stored input.
+	const input = useQuery(
+		runInputQuery(
+			runId,
+			run.data?.kind !== "batch" && Boolean(run.data?.record_id),
+		),
+	);
+	const cancel = useCancelRun(runId);
+	const rerun = useCreateRun();
 
 	const seed = useMemo(
 		() => ({
@@ -66,10 +100,11 @@ function RunDetailScreen({ runId }: { runId: string }) {
 		[run.data],
 	);
 	const stream = useRunStream(runId, seed);
+	const now = useRunClock(stream.state.state ?? run.data?.state ?? "queued");
 
 	if (run.isPending) {
 		return (
-			<div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+			<div className="mx-auto flex w-full max-w-[100rem] flex-col gap-6">
 				<Skeleton className="h-28" />
 				<Skeleton className="h-96" />
 			</div>
@@ -91,8 +126,26 @@ function RunDetailScreen({ runId }: { runId: string }) {
 	const ddsReleased =
 		stream.state.ddsReleased || (record.dds?.released ?? false);
 	const steps = mergeSteps(record.steps, stream.state.steps);
+	const adverseMedia = adverseMediaFromSteps(steps);
+	const agentRun = deriveAgentRun(steps, {
+		model: record.model,
+		state,
+		now,
+		verification: record.verification,
+	});
+	const hasBrief =
+		record.kind !== "batch" &&
+		record.model !== "deterministic" &&
+		record.summary.trim() !== "";
 	const pendingVerdict = record.pending_assessment;
 	const releasedVerdict = record.assessment;
+	const inFlight = state === "queued" || state === "running";
+	const canRunAgain =
+		record.kind !== "batch" && record.record_id !== null && state === "failed";
+	const rerunModel: ModelMode | undefined =
+		record.model === "scripted" || record.model === "sap"
+			? record.model
+			: undefined;
 
 	const tone =
 		verdict === "high_risk"
@@ -104,7 +157,7 @@ function RunDetailScreen({ runId }: { runId: string }) {
 					: "neutral";
 
 	return (
-		<div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+		<div className="mx-auto flex w-full max-w-[100rem] flex-col gap-6">
 			<Link
 				to="/runs"
 				className="flex w-fit items-center gap-1 text-body-sm text-muted-foreground no-underline hover:text-foreground"
@@ -126,6 +179,13 @@ function RunDetailScreen({ runId }: { runId: string }) {
 					<>
 						<RunStateBadge state={state} />
 						<VerdictBadge verdict={verdict} />
+						<ExpectedBadge
+							expected={
+								record.expected_archetype ??
+								input.data?.record.expected_archetype
+							}
+							verdict={verdict}
+						/>
 						<Button
 							variant="outline"
 							size="sm"
@@ -135,8 +195,55 @@ function RunDetailScreen({ runId }: { runId: string }) {
 							Refresh
 						</Button>
 						{ddsReleased && <DdsDownloadButton runId={record.run_id} />}
+						{inFlight && (
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={cancel.isPending}
+								onClick={() => cancel.mutate()}
+							>
+								{cancel.isPending && (
+									<Spinner aria-label="Cancelling" data-icon="inline-start" />
+								)}
+								Cancel run
+							</Button>
+						)}
+						{canRunAgain && (
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={rerun.isPending}
+								onClick={() =>
+									rerun.mutate(
+										{
+											record_id: record.record_id ?? undefined,
+											model: rerunModel,
+											erp_mode: record.erp_mode,
+										},
+										{
+											onSuccess: (created) =>
+												void navigate({
+													to: "/runs/$runId",
+													params: { runId: created.run_id },
+												}),
+										},
+									)
+								}
+							>
+								<RotateCcwIcon data-icon="inline-start" aria-hidden="true" />
+								Run again
+							</Button>
+						)}
 						{state === "awaiting_review" && (
-							<ReviewDialog runId={record.run_id} />
+							<ReviewDialog
+								runId={record.run_id}
+								verdict={verdict}
+								erpMode={record.erp_mode}
+								brief={
+									record.model === "deterministic" ? undefined : record.summary
+								}
+								findings={pendingVerdict?.assessment.findings ?? []}
+							/>
 						)}
 					</>
 				}
@@ -175,50 +282,80 @@ function RunDetailScreen({ runId }: { runId: string }) {
 						{record.verification &&
 						!record.verification.accepted &&
 						record.verification.challenges.length > 0 ? (
-							<Link
-								to="/runs/$runId"
-								params={{ runId }}
-								search={{ tab: "assessment" }}
-								className="underline underline-offset-4"
-							>
-								View verification
-							</Link>
+							<span className="flex flex-wrap gap-4">
+								<Link
+									to="/runs/$runId"
+									params={{ runId }}
+									search={{ tab: "trace", agent: "verifier" }}
+									hash="run-tabs"
+									onClick={scrollToTabs}
+									className="underline underline-offset-4"
+								>
+									Inspect the verifier
+								</Link>
+								<Link
+									to="/runs/$runId"
+									params={{ runId }}
+									search={{ tab: "assessment" }}
+									hash="run-tabs"
+									onClick={scrollToTabs}
+									className="underline underline-offset-4"
+								>
+									View verification
+								</Link>
+							</span>
 						) : null}
 					</AlertDescription>
 				</Alert>
 			)}
-			{state === "needs_more_data" && (
+			{state === "awaiting_review" && (
 				<Alert>
-					<AlertTitle>Needs more data</AlertTitle>
+					<AlertTitle>Waiting for your decision</AlertTitle>
 					<AlertDescription>
-						A source did not answer for this polygon. Re-run with refreshed
-						sources once the API keys are available.
+						The rubric verdict is held for a person
+						{verdict === "high_risk" ? " because it is high risk" : ""}. The
+						statement stays withheld and nothing changes in SAP until someone
+						approves or blocks this supplier.
 					</AlertDescription>
 				</Alert>
 			)}
+			{(cancel.error || rerun.error) && (
+				<ErrorState error={cancel.error ?? rerun.error} />
+			)}
 
-			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				<Meta label="Score" value={formatScore(score)} />
-				<Meta label="Model" value={record.model} />
-				<Meta label="Elapsed" value={formatDuration(record.elapsed_seconds)} />
-				<Meta
-					label="Started"
-					value={formatDateTime(record.started_at ?? record.created_at)}
-				/>
-			</div>
+			<RunOverview
+				run={agentRun}
+				score={score}
+				started={record.started_at ?? record.created_at}
+			/>
 
+			{record.kind !== "batch" && record.erp_pending ? (
+				<ErpPendingCard runId={record.run_id} pending={record.erp_pending} />
+			) : null}
 			{record.kind !== "batch" ? (
 				<SapActionCard action={record.sap_action} />
 			) : null}
 
+			<RunInputBlock
+				runId={record.run_id}
+				enabled={record.kind !== "batch" && record.record_id !== null}
+				tone={tone}
+			/>
+
 			<Tabs
+				id="run-tabs"
+				className="scroll-mt-4"
 				value={tab}
 				onValueChange={(value) =>
-					void navigate({ search: { tab: value as string }, replace: true })
+					void navigate({
+						search: (previous) => ({ ...previous, tab: value as string }),
+						replace: true,
+					})
 				}
 			>
 				<TabsList variant="line">
 					<TabsTrigger value="trace">Trace</TabsTrigger>
+					{hasBrief && <TabsTrigger value="brief">Brief</TabsTrigger>}
 					<TabsTrigger value="assessment">Assessment</TabsTrigger>
 					<TabsTrigger value="evidence">
 						Evidence ({evidence.data?.length ?? 0})
@@ -227,27 +364,48 @@ function RunDetailScreen({ runId }: { runId: string }) {
 					<TabsTrigger value="dds">DDS</TabsTrigger>
 				</TabsList>
 				<TabsContent value="trace" className="pt-4">
-					<Card>
-						<CardHeader>
-							<CardTitle>Agent trace</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<TracePanel
-								steps={steps}
-								status={stream.status}
-								error={stream.error}
-								onReconnect={stream.reconnect}
-							/>
-						</CardContent>
-					</Card>
+					<AgentWorkspace
+						run={agentRun}
+						model={record.model}
+						state={state}
+						record={record}
+						selectedAgent={agent}
+						selectedStep={step}
+						onSelect={(agent, step) =>
+							void navigate({
+								search: (previous) => ({ ...previous, agent, step }),
+								replace: true,
+							})
+						}
+						onOpenMap={() =>
+							void navigate({
+								search: (previous) => ({ ...previous, tab: "map" }),
+								replace: true,
+							})
+						}
+						steps={steps}
+						status={stream.status}
+						error={stream.error}
+						onReconnect={stream.reconnect}
+					/>
 				</TabsContent>
-				<TabsContent value="assessment" className="pt-4">
+				{hasBrief && (
+					<TabsContent value="brief" className="pt-4">
+						<AgentBrief
+							summary={record.summary}
+							model={record.model}
+							steps={steps}
+						/>
+					</TabsContent>
+				)}
+				<TabsContent value="assessment" className="flex flex-col gap-4 pt-4">
 					<AssessmentPanel
 						runId={runId}
 						verdict={releasedVerdict ?? pendingVerdict}
 						verification={record.verification}
 						disclosures={record.disclosures}
 					/>
+					{adverseMedia && <AdverseMediaCard report={adverseMedia} />}
 				</TabsContent>
 				<TabsContent value="evidence" className="pt-4">
 					{evidence.isPending ? (
@@ -288,17 +446,4 @@ function mergeSteps(
 		merged.set(step.step_id, step);
 	}
 	return [...merged.values()];
-}
-
-function Meta({ label, value }: { label: string; value: string }) {
-	return (
-		<Card size="sm">
-			<CardContent className="flex flex-col gap-1">
-				<p className="eyebrow-sm text-muted-foreground">{label}</p>
-				<p className="truncate text-body-sm tabular-nums text-foreground">
-					{value}
-				</p>
-			</CardContent>
-		</Card>
-	);
 }

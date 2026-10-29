@@ -1,7 +1,7 @@
 ---
 version: alpha
-name: xAI-design-analysis
-description: An inspired interpretation of xAI's design language — Elon Musk's frontier-AI company whose web surface is a strict near-black canvas broken only by white pill outlines, occasional warm sunset / dusk gradient accents, a custom geometric sans (Universal Sans) for display, and an uppercase tracked monospace caption face; the whole system reads as engineered-cosmic, unmarketed.
+name: terrasentry-design
+description: TerraSentry's dark-canvas design language. A strict near-black canvas, white pill outlines, restrained sunset and dusk accents, a geometric sans for display and an uppercase tracked monospace for captions. The tokens here are mapped one-to-one into apps/web/src/styles.css, which is the single source of truth.
 
 colors:
   primary: "#ffffff"

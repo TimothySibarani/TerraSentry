@@ -1,7 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { RiskLevelBadge, RunStateBadge, VerdictBadge } from "./status-badge";
+import {
+	ExpectedBadge,
+	RiskLevelBadge,
+	RunStateBadge,
+	VerdictBadge,
+} from "./status-badge";
 
 describe("status badges", () => {
 	it("renders run states with readable labels", () => {
@@ -24,5 +29,18 @@ describe("status badges", () => {
 	it("renders risk levels", () => {
 		render(<RiskLevelBadge level="non_negligible" />);
 		expect(screen.getByText("Non-negligible")).toBeDefined();
+	});
+
+	it("compares the design target with the verdict", () => {
+		const { rerender, container } = render(
+			<ExpectedBadge expected="high_risk" verdict="high_risk" />,
+		);
+		expect(screen.getByText("✓ Matches design (High risk)")).toBeDefined();
+		rerender(<ExpectedBadge expected="ambiguous" verdict="compliant" />);
+		expect(screen.getByText("Differs from design (Ambiguous)")).toBeDefined();
+		rerender(<ExpectedBadge expected="compliant" verdict={null} />);
+		expect(screen.getByText("Expected: Compliant")).toBeDefined();
+		rerender(<ExpectedBadge expected={null} verdict="compliant" />);
+		expect(container.textContent).toBe("");
 	});
 });

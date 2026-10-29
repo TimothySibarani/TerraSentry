@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from shapely.geometry import shape
 
 from terrasentry_integrations.cache import CacheBackend, CacheEntry, geometry_hash
@@ -54,6 +54,22 @@ class TreeCoverLossResult(BaseModel):
     by_year: list[TreeCoverLossYear] = Field(default_factory=list)
     cached: bool = False
     fetched_at: datetime | None = None
+
+    @model_validator(mode="after")
+    def _fill_zero_years(self) -> TreeCoverLossResult:
+        # The GROUP BY query returns no row for a year with no loss pixels, so a missing
+        # year inside the queried window is 0 ha. Making it explicit keeps the evidence
+        # from reading as "no data". ponytail: relies on callers capping end_year at the
+        # release's verified coverage (fetch_polygon_sources does), else a 0 could mean
+        # "not yet published".
+        present = {item.year for item in self.by_year}
+        missing = [year for year in range(self.start_year, self.end_year + 1) if year not in present]
+        if missing:
+            self.by_year = sorted(
+                [*self.by_year, *(TreeCoverLossYear(year=year, loss_ha=0.0) for year in missing)],
+                key=lambda item: item.year,
+            )
+        return self
 
 
 class BatchJobStatus(BaseModel):

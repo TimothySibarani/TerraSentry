@@ -1,0 +1,62 @@
+import type { BatchRecord } from "@terrasentry/api-client";
+
+/** A seeded high-risk record shaped like `data/seed/batch_50.json`, for tests. */
+export const highRiskRecord: BatchRecord = {
+	record_id: "REC-001",
+	supplier_id: "SUP-001",
+	polygon: {
+		id: "PLY-001",
+		country: "ID",
+		provenance: "synthetic",
+		label: "Live scenario B — high risk (Riau peat forests)",
+		region: "Riau peat forests",
+		province: "Riau",
+		area_ha: 851.58,
+		centroid_lat: 1.03932,
+		centroid_lon: 102.023674,
+		geometry: {
+			type: "Polygon",
+			coordinates: [
+				[
+					[102.03, 1.06],
+					[102.0, 1.03],
+					[102.02, 1.02],
+					[102.03, 1.06],
+				],
+			],
+		},
+	},
+	legality: {
+		supplier_id: "SUP-001",
+		legal_name: "PT Sumber Sejahtera Sriwijaya",
+		trading_name: "Sumber Sejahtera Sriwijaya (SYNTH-001)",
+		group: "Grup Sriwijaya",
+		nib: "9260597875842",
+		npwp: "12.854.808.3-759.034",
+		hgu_number: "HGU No. 343/HGU/BPN/2020",
+		pbp_number: null,
+		permit_status: "suspended",
+		concession_area_ha: 15110.2,
+		province: "Riau",
+		kabupaten: "Siak",
+		beneficial_owners: ["Bayu Hartono"],
+		certifications: [],
+		sanctions: ["2021 permit suspension (synthetic)"],
+		synthetic: true,
+		provenance: "synthetic",
+	},
+	consignment: {
+		commodity: "oil_palm",
+		description: "Crude palm oil",
+		hs_heading: "1511",
+		species_scientific: "Elaeis guineensis",
+		net_weight_kg: 48_687_000,
+		production_place: "Block 01 — Riau peat forests (SYNTH)",
+		harvest_year: 2024,
+		synthetic: true,
+		provenance: "synthetic",
+	},
+	expected_archetype: "high_risk",
+	expected_signal: "legal",
+	expected_ambiguity: null,
+};

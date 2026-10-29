@@ -16,7 +16,9 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
+from terrasentry_core.agents.media import build_media_client
 from terrasentry_core.agents.settings import get_agent_settings
+from terrasentry_core.errors import CoreError
 from terrasentry_core.tools.datasets import SeedDatasets
 from terrasentry_integrations.cache import CacheBackend, build_cache
 from terrasentry_integrations.fixtures import prime_fixtures
@@ -30,6 +32,7 @@ from terrasentry_integrations.sap import (
 from terrasentry_integrations.settings import IntegrationSettings, get_integration_settings
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
+from terrasentry_integrations.sources.media import MediaSearch
 
 from terrasentry_api.config import Settings
 from terrasentry_api.config import settings as default_settings
@@ -62,7 +65,8 @@ class AppServices:
     sap_real: bool
     offline: bool = False
     fixtures_loaded: int = 0
-    bedrock_configured: bool = False
+    aicore_configured: bool = False
+    adverse_media_mode: str = "off"
 
     async def aclose(self) -> None:
         await self.run_manager.shutdown()
@@ -76,12 +80,25 @@ class AppServices:
 ServicesFactory = Callable[[], AbstractAsyncContextManager[AppServices]]
 
 
+def _build_media(cache: CacheBackend, integration: IntegrationSettings) -> MediaSearch | None:
+    """Adverse media is optional context: a bad configuration disables it instead of the API."""
+    try:
+        return build_media_client(cache, integration=integration)
+    except CoreError as exc:
+        logger.warning(
+            "ADVERSE_MEDIA_MODE=%s is unusable (%s); adverse media is disabled",
+            integration.adverse_media_mode,
+            exc,
+        )
+        return None
+
+
 @asynccontextmanager
 async def build_services(
     settings: Settings = default_settings,
     integration: IntegrationSettings | None = None,
 ) -> AsyncIterator[AppServices]:
-    """Build the real services: Postgres engine, Redis cache, live source clients.
+    """Build the real services: SQLite audit engine and response cache, live source clients.
 
     ``integration`` is an optional override so the rehearsal CLI can force an
     offline cache/fixture directory without mutating process env.
@@ -94,7 +111,9 @@ async def build_services(
     sap: SapGateway | None = None
     try:
         await check_database(engine, settings.database_url)
-        await check_cache(cache, resolved.redis_url)
+        await check_cache(
+            cache, str(resolved.cache_sqlite_path) if resolved.cache_backend == "sqlite" else "memory"
+        )
         fixtures_loaded = 0
         if resolved.cache_fixtures_dir:
             fixtures_loaded = await prime_fixtures(cache, Path(resolved.cache_fixtures_dir))
@@ -124,6 +143,7 @@ async def build_services(
             )
         sap = build_sap_gateway(resolved, stub=sap_stub)
         sap_actions = SapActionService(gateway=sap, mode=sap_mode)
+        media = _build_media(cache, resolved)
         run_manager = RunManager(
             settings=settings,
             session_factory=session_factory,
@@ -132,7 +152,9 @@ async def build_services(
             firms=firms,
             cache=cache,
             sap=sap_actions,
+            media=media,
         )
+        await run_manager.recover_interrupted()
         services = AppServices(
             settings=settings,
             integration=resolved,
@@ -150,7 +172,8 @@ async def build_services(
             sap_real=sap_real,
             offline=resolved.cache_offline,
             fixtures_loaded=fixtures_loaded,
-            bedrock_configured=not get_agent_settings().missing_models,
+            aicore_configured=not get_agent_settings().missing_aicore,
+            adverse_media_mode=resolved.adverse_media_mode if media else "off",
         )
     except BaseException:
         if sap is not None:

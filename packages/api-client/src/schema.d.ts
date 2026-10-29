@@ -326,6 +326,32 @@ export interface paths {
         get: operations["get_run_runs__run_id__get"];
         put?: never;
         post?: never;
+        /**
+         * Delete Run
+         * @description Delete one scenario run or one batch record. Batch parents and in-flight runs are refused.
+         *
+         *     The DDS XML and trace files on disk are kept, so the audit trail outlives the row.
+         */
+        delete: operations["delete_run_runs__run_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Run
+         * @description Stop a run or batch that is executing and mark it failed; 409 when nothing is running.
+         */
+        post: operations["cancel_run_runs__run_id__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -352,6 +378,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{run_id}/erp-action": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Erp Action
+         * @description Apply the ERP action a finished run is waiting on (``confirm`` mode, or a retry after a failure).
+         */
+        post: operations["confirm_erp_action_runs__run_id__erp_action_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{run_id}/evidence": {
         parameters: {
             query?: never;
@@ -361,6 +407,26 @@ export interface paths {
         };
         /** Get Evidence */
         get: operations["get_evidence_runs__run_id__evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{run_id}/input": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Run Input
+         * @description The record, operator and launch options this run was given.
+         */
+        get: operations["get_run_input_runs__run_id__input_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -381,6 +447,23 @@ export interface paths {
          * @description SSE stream of ``snapshot``, ``step``, ``state``, and ``done`` events.
          */
         get: operations["stream_run_runs__run_id__stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Scenarios */
+        get: operations["list_scenarios_scenarios_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -484,13 +567,19 @@ export interface components {
          */
         BatchCreate: {
             /**
+             * Erp Mode
+             * @default auto
+             * @enum {string}
+             */
+            erp_mode: "off" | "confirm" | "auto";
+            /**
              * Mode
              * @default screening
              * @enum {string}
              */
             mode: "screening" | "agent";
             /** Model */
-            model?: ("scripted" | "bedrock") | null;
+            model?: ("scripted" | "sap") | null;
             /** Record Ids */
             record_ids?: string[] | null;
             /**
@@ -503,6 +592,22 @@ export interface components {
              * @default 50
              */
             size: number;
+        };
+        /** BatchRecord */
+        BatchRecord: {
+            consignment: components["schemas"]["ConsignmentRecord"];
+            /** Expected Ambiguity */
+            expected_ambiguity?: ("borderline_area" | "old_fire_scar" | "permit_gap") | null;
+            /** Expected Archetype */
+            expected_archetype?: ("compliant" | "high_risk" | "ambiguous") | null;
+            /** Expected Signal */
+            expected_signal?: ("deforestation" | "fire" | "legal") | null;
+            legality: components["schemas"]["LegalityRecord"];
+            polygon: components["schemas"]["SeedPolygon"];
+            /** Record Id */
+            record_id: string;
+            /** Supplier Id */
+            supplier_id: string;
         };
         /**
          * BatchSummary
@@ -612,6 +717,53 @@ export interface components {
              * @default
              */
             species_scientific: string;
+        };
+        /**
+         * ConsignmentRecord
+         * @description One product lot declared in the DDS, with realistic HS/species structure.
+         */
+        ConsignmentRecord: {
+            /**
+             * Commodity
+             * @enum {string}
+             */
+            commodity: "oil_palm" | "wood" | "rubber" | "cocoa" | "coffee";
+            /** Description */
+            description: string;
+            /**
+             * Disclosure
+             * @default SYNTHETIC TEST DATA — consignment quantities, products, and the EU operator are invented for TerraSentry. Only the HS heading and product structure follow the real EUDR formats.
+             */
+            disclosure: string;
+            /** Harvest Year */
+            harvest_year: number;
+            /** Hs Heading */
+            hs_heading: string;
+            /** Net Weight Kg */
+            net_weight_kg: number;
+            /** Production Place */
+            production_place: string;
+            /**
+             * Provenance
+             * @default synthetic
+             * @enum {string}
+             */
+            provenance: "synthetic" | "supplier_declared" | "document_extracted" | "sap_import" | "real_source" | "operator_configured" | "derived" | "legacy_unknown";
+            /** Species Common */
+            species_common?: string | null;
+            /** Species Scientific */
+            species_scientific?: string | null;
+            /** Supplementary Unit */
+            supplementary_unit?: number | null;
+            /** Supplementary Unit Qualifier */
+            supplementary_unit_qualifier?: string | null;
+            /** Supplier Id */
+            supplier_id: string;
+            /**
+             * Synthetic
+             * @default true
+             */
+            synthetic: boolean;
         };
         /**
          * DdsMeta
@@ -781,15 +933,20 @@ export interface components {
          */
         HealthResponse: {
             /**
+             * Adverse Media Mode
+             * @default off
+             */
+            adverse_media_mode: string;
+            /**
+             * Aicore Configured
+             * @default false
+             */
+            aicore_configured: boolean;
+            /**
              * Auth Enabled
              * @default false
              */
             auth_enabled: boolean;
-            /**
-             * Bedrock Configured
-             * @default false
-             */
-            bedrock_configured: boolean;
             /**
              * Default Model
              * @default scripted
@@ -846,6 +1003,24 @@ export interface components {
             /** Row */
             row: number;
         };
+        /**
+         * InputBrief
+         * @description The few input fields a batch table shows per record.
+         */
+        InputBrief: {
+            /** Area Ha */
+            area_ha: number;
+            /** Commodity */
+            commodity: string;
+            /** Expected Ambiguity */
+            expected_ambiguity?: string | null;
+            /** Expected Signal */
+            expected_signal?: string | null;
+            /** Permit Status */
+            permit_status: string;
+            /** Region */
+            region: string;
+        };
         /** LatestRunOut */
         LatestRunOut: {
             /**
@@ -892,6 +1067,63 @@ export interface components {
             permit_type: "hgu" | "pbph" | "none";
             /** Sanctions */
             sanctions?: string[];
+        };
+        /** LegalityRecord */
+        LegalityRecord: {
+            /** Beneficial Owners */
+            beneficial_owners?: string[];
+            /** Certifications */
+            certifications?: string[];
+            /** Concession Area Ha */
+            concession_area_ha: number;
+            /** Declared Holder */
+            declared_holder?: string | null;
+            /**
+             * Disclosure
+             * @default SYNTHETIC TEST DATA — companies, permits, people, and identifiers are invented for TerraSentry and do not describe any real organisation or person.
+             */
+            disclosure: string;
+            /** Group */
+            group: string;
+            /** Hgu Number */
+            hgu_number?: string | null;
+            /** Kabupaten */
+            kabupaten: string;
+            /** Legal Name */
+            legal_name: string;
+            /** Nib */
+            nib: string;
+            /** Npwp */
+            npwp: string;
+            /** Pbp Number */
+            pbp_number?: string | null;
+            /** Permit Expiry */
+            permit_expiry?: string | null;
+            /**
+             * Permit Status
+             * @default active
+             * @enum {string}
+             */
+            permit_status: "active" | "expired" | "suspended" | "none";
+            /**
+             * Provenance
+             * @default synthetic
+             * @enum {string}
+             */
+            provenance: "synthetic" | "supplier_declared" | "document_extracted" | "sap_import" | "real_source" | "operator_configured" | "derived" | "legacy_unknown";
+            /** Province */
+            province: string;
+            /** Sanctions */
+            sanctions?: string[];
+            /** Supplier Id */
+            supplier_id: string;
+            /**
+             * Synthetic
+             * @default true
+             */
+            synthetic: boolean;
+            /** Trading Name */
+            trading_name: string;
         };
         /**
          * OperatorRecord
@@ -1167,8 +1399,14 @@ export interface components {
          * @description Start one scenario run for a seed record or a named demo scenario.
          */
         RunCreate: {
+            /**
+             * Erp Mode
+             * @default auto
+             * @enum {string}
+             */
+            erp_mode: "off" | "confirm" | "auto";
             /** Model */
-            model?: ("scripted" | "bedrock") | null;
+            model?: ("scripted" | "sap") | null;
             /** Record Id */
             record_id?: string | null;
             /**
@@ -1197,12 +1435,21 @@ export interface components {
             disclosures?: string[];
             /** Elapsed Seconds */
             elapsed_seconds?: number | null;
+            /**
+             * Erp Mode
+             * @default auto
+             * @enum {string}
+             */
+            erp_mode: "off" | "confirm" | "auto";
+            /** Erp Pending */
+            erp_pending?: ("approved" | "blocked") | null;
             /** Error */
             error?: string | null;
             /** Expected Archetype */
             expected_archetype?: string | null;
             /** Finished At */
             finished_at?: string | null;
+            input_brief?: components["schemas"]["InputBrief"] | null;
             /** Kind */
             kind: string;
             /** Metrics */
@@ -1246,6 +1493,41 @@ export interface components {
             verification?: components["schemas"]["VerificationReport"] | null;
         };
         /**
+         * RunInput
+         * @description Exactly what one run was given: the record, the EU operator, and the launch options.
+         */
+        RunInput: {
+            /** Assessment Date */
+            assessment_date?: string | null;
+            /**
+             * Erp Mode
+             * @default auto
+             * @enum {string}
+             */
+            erp_mode: "off" | "confirm" | "auto";
+            /** Kind */
+            kind: string;
+            /** Model */
+            model: string;
+            operator?: components["schemas"]["OperatorRecord"] | null;
+            options?: components["schemas"]["RunOptions"];
+            record: components["schemas"]["BatchRecord"];
+            /** Run Id */
+            run_id: string;
+        };
+        /**
+         * RunOptions
+         * @description How a run was launched; every field is ``None`` on runs recorded before this was stored.
+         */
+        RunOptions: {
+            /** Batch Mode */
+            batch_mode?: ("screening" | "agent") | null;
+            /** Refresh */
+            refresh?: boolean | null;
+            /** Scenario */
+            scenario?: string | null;
+        };
+        /**
          * RunState
          * @description Lifecycle of an assessment run (architecture run-state machine).
          * @enum {string}
@@ -1265,12 +1547,19 @@ export interface components {
             created_at: string;
             /** Elapsed Seconds */
             elapsed_seconds?: number | null;
+            /**
+             * Erp Mode
+             * @default auto
+             * @enum {string}
+             */
+            erp_mode: "off" | "confirm" | "auto";
             /** Error */
             error?: string | null;
             /** Expected Archetype */
             expected_archetype?: string | null;
             /** Finished At */
             finished_at?: string | null;
+            input_brief?: components["schemas"]["InputBrief"] | null;
             /** Kind */
             kind: string;
             /** Metrics */
@@ -1354,6 +1643,68 @@ export interface components {
             status: string;
             /** Vendor Id */
             vendor_id: string;
+        };
+        /**
+         * ScenarioOut
+         * @description One demo scenario with the full record it submits.
+         */
+        ScenarioOut: {
+            /** Description */
+            description: string;
+            /**
+             * Fault Injection
+             * @default false
+             */
+            fault_injection: boolean;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Models */
+            models?: ("scripted" | "sap")[] | null;
+            record: components["schemas"]["BatchRecord"];
+        };
+        /** SeedPolygon */
+        SeedPolygon: {
+            /** Archetype */
+            archetype?: ("compliant" | "high_risk" | "ambiguous") | null;
+            /** Area Ha */
+            area_ha: number;
+            /** Centroid Lat */
+            centroid_lat: number;
+            /** Centroid Lon */
+            centroid_lon: number;
+            /** Country */
+            country?: string | null;
+            /** Geometry */
+            geometry: {
+                [key: string]: unknown;
+            };
+            /** Id */
+            id: string;
+            /** Input Geometry */
+            input_geometry?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Is Demo
+             * @default false
+             */
+            is_demo: boolean;
+            /** Label */
+            label: string;
+            /**
+             * Provenance
+             * @default synthetic
+             * @enum {string}
+             */
+            provenance: "synthetic" | "supplier_declared" | "document_extracted" | "sap_import" | "real_source" | "operator_configured" | "derived" | "legacy_unknown";
+            /** Province */
+            province: string;
+            /** Region */
+            region: string;
+            /** Scenario */
+            scenario?: ("compliant_live" | "high_risk_live" | "fire_live") | null;
         };
         /** SupplierDetail */
         SupplierDetail: {
@@ -1537,7 +1888,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "run" | "agent" | "retask" | "tool" | "verifier" | "writer" | "review" | "state" | "sap";
+            kind: "run" | "agent" | "retask" | "report" | "thought" | "tool" | "verifier" | "writer" | "review" | "state" | "sap";
             /** Name */
             name: string;
             /** Payload */
@@ -2262,6 +2613,8 @@ export interface operations {
         parameters: {
             query?: {
                 kind?: string | null;
+                /** @description Only runs in this state */
+                state?: components["schemas"]["RunState"] | null;
                 parent_run_id?: string | null;
                 limit?: number;
                 offset?: number;
@@ -2356,6 +2709,66 @@ export interface operations {
             };
         };
     };
+    delete_run_runs__run_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_run_runs__run_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     decide_run_runs__run_id__decision_post: {
         parameters: {
             query?: never;
@@ -2378,6 +2791,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_erp_action_runs__run_id__erp_action_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SapActionOut"];
                 };
             };
             /** @description Validation Error */
@@ -2422,6 +2866,37 @@ export interface operations {
             };
         };
     };
+    get_run_input_runs__run_id__input_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunInput"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     stream_run_runs__run_id__stream_get: {
         parameters: {
             query?: never;
@@ -2440,6 +2915,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_scenarios_scenarios_get: {
+        parameters: {
+            query?: {
+                /** @description Only scenarios this model can run */
+                model?: ("scripted" | "sap") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioOut"][];
                 };
             };
             /** @description Validation Error */

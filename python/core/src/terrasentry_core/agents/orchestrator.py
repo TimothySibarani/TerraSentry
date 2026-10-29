@@ -20,6 +20,7 @@ from strands.multiagent import GraphBuilder
 from strands.multiagent.graph import Graph, GraphState
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
+from terrasentry_integrations.sources.media import MediaSearch
 
 from terrasentry_core.agents.models import ModelBundle
 from terrasentry_core.agents.nodes import FunctionNode, VerifierNode
@@ -92,7 +93,9 @@ class RunOrchestrator:
         rubric: RubricConfig | None = None,
         clock: Callable[[], datetime] = utc_now,
         on_step: StepHook | None = None,
+        media: MediaSearch | None = None,
     ) -> None:
+        self._media = media
         self._gfw = gfw
         self._firms = firms
         self._datasets = datasets
@@ -130,8 +133,9 @@ class RunOrchestrator:
             as_of=assessment_date,
             retrieved_at=started,
             refresh=refresh,
+            media=self._media,
         )
-        models = self._models or ModelBundle.from_settings()
+        models = self._models or ModelBundle.from_aicore()
         graph = self._build_graph(record, context, models)
 
         usage: dict[str, int] | None = None
@@ -196,6 +200,54 @@ class RunOrchestrator:
         supervisor = build_supervisor(models.orchestrator, specialists, context=context)
         verifier_agent = build_verifier_agent(models.orchestrator, context)
 
+        configs = {
+            role: model.get_config()
+            for role, model in (("orchestrator", models.orchestrator), ("extraction", models.extraction))
+        }
+        model_ids = {
+            role: str(config.get("model_id") or type(model).__name__)
+            for (role, config), model in zip(
+                configs.items(), (models.orchestrator, models.extraction), strict=True
+            )
+        }
+        agents = []
+        for agent in [supervisor, *specialists, verifier_agent]:
+            role = "extraction" if agent in specialists else "orchestrator"
+            agents.append(
+                {
+                    "name": agent.name,
+                    "role": role,
+                    "model": model_ids[role],
+                    "tools": agent.tool_names,
+                    "system_prompt": agent.system_prompt,
+                }
+            )
+        agents.extend({"name": name, "role": "code", "tools": []} for name in ("assessor", "dds_writer"))
+        context.trace.add(
+            "run",
+            "configuration",
+            payload={
+                "task": self._task(record),
+                "record": {
+                    "record_id": record.record_id,
+                    "supplier_id": record.supplier_id,
+                    "polygon_id": record.polygon.id,
+                    "region": record.polygon.region,
+                    "area_ha": record.polygon.area_ha,
+                    "commodity": record.consignment.commodity,
+                    "hs_heading": record.consignment.hs_heading,
+                },
+                "models": model_ids,
+                "params": {
+                    role: {key: params[key] for key in ("temperature", "max_tokens") if key in params}
+                    for role, params in (
+                        (role, config.get("params", config)) for role, config in configs.items()
+                    )
+                },
+                "agents": agents,
+            },
+        )
+
         builder = GraphBuilder()
         builder.set_graph_id("terrasentry-agent-run")
         builder.set_max_node_executions(8)
@@ -246,7 +298,7 @@ class RunOrchestrator:
                 "run",
                 "assessor",
                 f"{record.record_id}: {candidate.assessment.verdict} score {candidate.assessment.score}",
-                payload={"fingerprint": candidate.fingerprint},
+                payload={"fingerprint": candidate.fingerprint, "agent": "assessor", "event": "finish"},
             )
             return f"candidate assessment: {candidate.assessment.verdict} ({candidate.assessment.score})"
 
@@ -262,7 +314,12 @@ class RunOrchestrator:
                 "writer",
                 "dds_writer",
                 f"{record.record_id}: DDS {'withheld for review' if withheld else 'released'}",
-                payload={"verdict": candidate.assessment.verdict.value, "fingerprint": candidate.fingerprint},
+                payload={
+                    "verdict": candidate.assessment.verdict.value,
+                    "fingerprint": candidate.fingerprint,
+                    "agent": "dds_writer",
+                    "event": "finish",
+                },
             )
             return f"DDS {'withheld for review' if withheld else 'released'}: {candidate.record_id}"
 
@@ -276,7 +333,18 @@ class RunOrchestrator:
         kind = _NODE_KINDS.get(node_id)
         if kind is None:
             return
-        trace.add(kind, node_id, "started" if event_type.endswith("start") else "finished")
+        if node_id == "supervisor" and event_type.endswith("stop"):
+            return
+        trace.add(
+            kind,
+            node_id,
+            "started" if event_type.endswith("start") else "finished",
+            payload={
+                "agent": node_id,
+                "invocation": 1,
+                "event": "start" if event_type.endswith("start") else "finish",
+            },
+        )
 
     def _finish(
         self,

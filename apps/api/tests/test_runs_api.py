@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import api_helpers
 from fastapi.testclient import TestClient
+from terrasentry_api.main import create_app
+from terrasentry_integrations.sources.media import StubMediaClient
 
 
 def _create(client: TestClient, payload: dict[str, Any]) -> str:
@@ -28,6 +31,11 @@ def test_compliant_run_persists_and_releases_the_dds(client: TestClient, source_
     assert detail["review"] is None
     assert len(detail["steps"]) >= 5
     assert detail["elapsed_seconds"] >= 0
+    assert detail["created_at"].endswith("Z")
+    assert detail["started_at"].endswith("Z")
+    assert detail["finished_at"].endswith("Z")
+    assert detail["dds"]["created_at"].endswith("Z")
+    assert all(step["at"].endswith("Z") for step in detail["steps"])
 
     evidence = client.get(f"/runs/{run_id}/evidence")
     assert evidence.status_code == 200
@@ -42,12 +50,15 @@ def test_compliant_run_persists_and_releases_the_dds(client: TestClient, source_
     assert "SubmitDdsRequest" in xml.text
 
 
-def test_high_risk_scenario_completes(client: TestClient, source_router: object) -> None:
+def test_high_risk_scenario_is_held_for_a_person(client: TestClient, source_router: object) -> None:
     run_id = _create(client, {"scenario": "high_risk_live"})
-    detail = api_helpers.wait_for_state(client, run_id, {"complete"})
+    detail = api_helpers.wait_for_state(client, run_id, {"awaiting_review"})
 
     assert detail["verdict"] == "high_risk"
-    assert detail["dds"]["released"] is True
+    assert detail["assessment"] is None
+    assert detail["pending_assessment"]["assessment"]["verdict"] == "high_risk"
+    assert detail["dds"]["released"] is False
+    assert detail["sap_action"] is None
 
 
 def test_ambiguous_run_pauses_until_a_decision(client: TestClient, source_router: object) -> None:
@@ -86,6 +97,7 @@ def test_stream_replays_steps_and_finishes(client: TestClient, source_router: ob
     assert events[-1]["data"]["state"] == "complete"
     steps = [event for event in events if event["event"] == "step"]
     assert len(steps) == len(detail["steps"])
+    assert all(step["data"]["at"].endswith("+00:00") or step["data"]["at"].endswith("Z") for step in steps)
     assert "dds_writer" in [step["data"]["name"] for step in steps]
 
 
@@ -147,7 +159,7 @@ def test_validation_and_not_found_paths(client: TestClient) -> None:
 
 def test_high_risk_scenario_shows_retasks_with_reasons(client: TestClient, signal_router: object) -> None:
     run_id = _create(client, {"scenario": "high_risk_live", "model": "scripted"})
-    detail = api_helpers.wait_for_state(client, run_id, {"complete"})
+    detail = api_helpers.wait_for_state(client, run_id, {"awaiting_review"})
 
     retasks = [step for step in detail["steps"] if step["kind"] == "retask"]
     assert sorted(step["name"] for step in retasks) == ["geospatial_analyst", "legality_analyst"]
@@ -179,7 +191,93 @@ def test_coverage_catch_fault_scenario_is_rejected_by_the_verifier(
     assert detail["dds"] is None and detail["assessment"] is None
 
 
-def test_coverage_catch_is_not_available_on_bedrock(client: TestClient) -> None:
-    response = client.post("/runs", json={"scenario": "coverage_catch", "model": "bedrock"})
+def test_coverage_catch_is_only_available_on_scripted(client: TestClient) -> None:
+    response = client.post("/runs", json={"scenario": "coverage_catch", "model": "sap"})
     assert response.status_code == 422
     assert "fault injection" in response.json()["detail"]
+
+
+def test_adverse_media_step_is_persisted_and_does_not_change_the_verdict(
+    tmp_path: Path, signal_router: object
+) -> None:
+    def run(media: StubMediaClient | None) -> dict[str, Any]:
+        factory = api_helpers.test_services_factory(tmp_path / ("media" if media else "plain"), media=media)
+        with TestClient(create_app(services_factory=factory)) as test_client:
+            run_id = _create(test_client, {"scenario": "high_risk_live", "model": "scripted"})
+            return api_helpers.wait_for_state(test_client, run_id, {"awaiting_review"})
+
+    (tmp_path / "media").mkdir()
+    (tmp_path / "plain").mkdir()
+    plain, with_media = run(None), run(StubMediaClient())
+
+    steps = [
+        step
+        for step in with_media["steps"]
+        if step["name"] == "search_adverse_media" and step["payload"]["event"] == "tool_end"
+    ]
+    assert len(steps) == 1 and steps[0]["payload"]["report"]["synthetic"] is True
+    assert not [step for step in plain["steps"] if step["name"] == "search_adverse_media"]
+    assert with_media["pending_assessment"] == plain["pending_assessment"]
+
+
+def test_run_input_returns_the_record_and_launch_options(client: TestClient, source_router: object) -> None:
+    run_id = _create(client, {"scenario": "high_risk_live", "refresh": True})
+    api_helpers.wait_for_state(client, run_id, {"awaiting_review"})
+
+    body = client.get(f"/runs/{run_id}/input").json()
+    catalog = {item["id"]: item for item in client.get("/scenarios").json()}
+    assert body["record"] == catalog["high_risk_live"]["record"]
+    assert body["record"]["expected_archetype"] == "high_risk"
+    assert body["options"] == {"scenario": "high_risk_live", "refresh": True, "batch_mode": None}
+    assert body["operator"] is not None
+
+    assert client.get("/runs/run-missing/input").status_code == 404
+
+
+def test_batch_parent_has_no_single_input(client: TestClient, source_router: object) -> None:
+    batch = client.post("/batch-runs", json={"size": 1}).json()["run_id"]
+    response = client.get(f"/runs/{batch}/input")
+    assert response.status_code == 404
+    assert "batch parent" in response.json()["detail"]
+
+
+def test_scenario_catalog_carries_records_and_gates_fault_injection(client: TestClient) -> None:
+    every = {item["id"]: item for item in client.get("/scenarios").json()}
+    assert set(every) == {"compliant_live", "high_risk_live", "coverage_catch"}
+    assert every["high_risk_live"]["record"]["expected_archetype"] == "high_risk"
+    assert every["coverage_catch"]["fault_injection"] is True
+    assert every["coverage_catch"]["record"] == every["high_risk_live"]["record"]
+
+    on_sap = {item["id"] for item in client.get("/scenarios", params={"model": "sap"}).json()}
+    assert on_sap == {"compliant_live", "high_risk_live"}
+
+
+def test_deleting_a_finished_run_removes_its_children(client: TestClient, source_router: object) -> None:
+    run_id = _create(client, {"record_id": "REC-001"})
+    api_helpers.wait_for_state(client, run_id, {"complete"})
+    assert client.get(f"/runs/{run_id}/evidence").json()
+
+    assert client.delete(f"/runs/{run_id}").status_code == 204
+    assert client.get(f"/runs/{run_id}").status_code == 404
+    assert client.get(f"/runs/{run_id}/evidence").status_code == 404
+    assert client.delete(f"/runs/{run_id}").status_code == 404
+    assert client.get(f"/dds/{run_id}").status_code == 404
+
+
+def test_batch_parent_is_refused_but_one_record_deletes(
+    client: TestClient, source_router: object
+) -> None:
+    batch = client.post("/batch-runs", json={"size": 2})
+    assert batch.status_code == 202, batch.text
+    batch_id = str(batch.json()["run_id"])
+    api_helpers.wait_for_state(client, batch_id, {"complete"}, path="/batch-runs")
+
+    assert client.delete(f"/runs/{batch_id}").status_code == 409
+    assert client.get(f"/runs/{batch_id}").status_code == 200
+
+    children = client.get("/runs", params={"parent_run_id": batch_id}).json()
+    assert len(children) == 2
+    child_id = children[0]["run_id"]
+    assert client.delete(f"/runs/{child_id}").status_code == 204
+    remaining = client.get("/runs", params={"parent_run_id": batch_id}).json()
+    assert [row["run_id"] for row in remaining] == [children[1]["run_id"]]

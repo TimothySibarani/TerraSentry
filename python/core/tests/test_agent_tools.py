@@ -305,3 +305,18 @@ def test_oversized_feature_facts_are_explicitly_omitted_without_hiding_risk() ->
     assert "evidence artifact" in payload["feature_details_error"]
     assert len(json.dumps(payload).encode()) < 8 * 1024
     assert len(layer.features) == 100 and layer.features[0].properties["name"]
+
+
+async def test_trace_caps_do_not_truncate_model_result(source_clients, monkeypatch) -> None:
+    context = _context(source_clients)
+    oversized = {"detection_count": 1, "value": "😀" * 5000}
+    monkeypatch.setattr(agent_tools, "_hotspot_payload", lambda *_: oversized)
+    context._sources["PLY-001"] = PolygonSources(polygon_id="PLY-001")
+    tools: dict[str, Any] = {tool.tool_name: tool for tool in build_source_tools(context)}
+    result = await tools["get_fire_hotspots"](polygon_id="PLY-001")
+    assert result is oversized and len(result["value"]) == 5000
+    recorded = context.trace.steps[-1].payload["result"]
+    assert recorded["truncated"] is True
+    assert len(json.dumps(recorded, ensure_ascii=False).encode()) <= 4096
+    capped = agent_tools.capped_payload({"value": "😀" * 1000}, 1024)
+    assert capped["truncated"] and len(json.dumps(capped, ensure_ascii=False).encode()) <= 1024

@@ -1,39 +1,6 @@
 name: terrasentry
 
 services:
-  postgres:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-terrasentry}
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-terrasentry}",
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - "6379:6379"
-    volumes:
-      - redisdata:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
   api:
     build:
       context: .
@@ -41,8 +8,9 @@ services:
     environment:
       APP_ENV: docker
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-terrasentry}
-      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: sqlite+aiosqlite:////app/data/sqlite/audit.db
+      CACHE_BACKEND: sqlite
+      CACHE_SQLITE_PATH: /app/data/sqlite/cache.db
       API_CORS_ORIGINS: http://localhost:3000
       SAP_MODE: ${SAP_MODE:-stub}
       AGENT_MODEL: ${AGENT_MODEL:-scripted}
@@ -51,11 +19,8 @@ services:
       BATCH_CONCURRENCY: ${BATCH_CONCURRENCY:-4}
     ports:
       - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    volumes:
+      - sqlite-data:/app/data/sqlite
 
   web:
     build:
@@ -72,5 +37,4 @@ services:
       - api
 
 volumes:
-  pgdata:
-  redisdata:
+  sqlite-data:

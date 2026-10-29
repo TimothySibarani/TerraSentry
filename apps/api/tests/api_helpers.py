@@ -43,6 +43,7 @@ from terrasentry_integrations.sap import SapGateway, StubSapService, build_sap_g
 from terrasentry_integrations.settings import IntegrationSettings
 from terrasentry_integrations.sources.firms import FirmsClient
 from terrasentry_integrations.sources.gfw import GfwClient
+from terrasentry_integrations.sources.media import MediaSearch
 
 GFW_URL = "https://data-api.globalforestwatch.org/dataset/umd_tree_cover_loss/v1.13/query/json"
 FIRMS_REGEX = r"https://firms\.modaps\.eosdis\.nasa\.gov/api/area/csv/TESTKEY/VIIRS_SNPP_NRT/.*"
@@ -187,8 +188,6 @@ def test_settings(
 
 async def _create_all(engine: AsyncEngine) -> None:
     async with engine.begin() as connection:
-        # SQLite test readers must not block the concurrent batch writer; production uses Postgres.
-        await connection.exec_driver_sql("PRAGMA journal_mode=WAL")
         await connection.run_sync(Base.metadata.create_all)
 
 
@@ -211,9 +210,10 @@ def test_services_factory(
     offline: bool = False,
     sap_gateway: SapGateway | None = None,
     api_token: str = "",
-    bedrock_configured: bool = False,
+    aicore_configured: bool = False,
+    media: MediaSearch | None = None,
 ) -> ServicesFactory:
-    """A lifespan-compatible factory that never touches Postgres or Redis."""
+    """A lifespan-compatible factory that uses isolated SQLite and memory cache."""
     resolved = datasets or build_datasets()
 
     @asynccontextmanager
@@ -256,7 +256,9 @@ def test_services_factory(
             firms=firms,
             cache=cache_backend,
             sap=sap_actions,
+            media=media,
         )
+        await manager.recover_interrupted()
         services = AppServices(
             settings=settings,
             integration=integration,
@@ -273,7 +275,8 @@ def test_services_factory(
             sap_mode="stub",
             sap_real=False,
             offline=offline,
-            bedrock_configured=bedrock_configured,
+            aicore_configured=aicore_configured,
+            adverse_media_mode="stub" if media is not None else "off",
         )
         try:
             yield services
@@ -300,6 +303,10 @@ def wait_for_state(
         payload = response.json()
         if payload["state"] in states:
             return payload
+        if payload["state"] == "failed":
+            # Batch summaries omit the failure text; the run row carries it.
+            error = payload.get("error") or client.get(f"/runs/{run_id}").json().get("error")
+            raise AssertionError(f"run {run_id} failed; error={error!r}; payload {payload}")
         time.sleep(0.02)
     raise AssertionError(f"run {run_id} did not reach {states}; last payload {payload}")
 

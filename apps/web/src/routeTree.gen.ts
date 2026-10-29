@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ScreenRouteImport } from './routes/screen'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as BatchIndexRouteImport } from './routes/batch.index'
@@ -18,10 +19,16 @@ import { Route as RunsIndexRouteImport } from './routes/runs.index'
 import { Route as RunsRunIdRouteImport } from './routes/runs.$runId'
 import { Route as SuppliersIndexRouteImport } from './routes/suppliers.index'
 import { Route as SuppliersSupplierIdRouteImport } from './routes/suppliers.$supplierId'
+import { Route as SuppliersImportRouteImport } from './routes/suppliers.import'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScreenRoute = ScreenRouteImport.update({
@@ -64,25 +71,34 @@ const SuppliersSupplierIdRoute = SuppliersSupplierIdRouteImport.update({
   path: '/suppliers/$supplierId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuppliersImportRoute = SuppliersImportRouteImport.update({
+  id: '/suppliers/import',
+  path: '/suppliers/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/review': typeof ReviewRoute
   '/screen': typeof ScreenRoute
   '/settings': typeof SettingsRoute
   '/batch/$batchId': typeof BatchBatchIdRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/suppliers/$supplierId': typeof SuppliersSupplierIdRoute
+  '/suppliers/import': typeof SuppliersImportRoute
   '/batch/': typeof BatchIndexRoute
   '/runs/': typeof RunsIndexRoute
   '/suppliers/': typeof SuppliersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/review': typeof ReviewRoute
   '/screen': typeof ScreenRoute
   '/settings': typeof SettingsRoute
   '/batch/$batchId': typeof BatchBatchIdRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/suppliers/$supplierId': typeof SuppliersSupplierIdRoute
+  '/suppliers/import': typeof SuppliersImportRoute
   '/batch': typeof BatchIndexRoute
   '/runs': typeof RunsIndexRoute
   '/suppliers': typeof SuppliersIndexRoute
@@ -90,11 +106,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/review': typeof ReviewRoute
   '/screen': typeof ScreenRoute
   '/settings': typeof SettingsRoute
   '/batch/$batchId': typeof BatchBatchIdRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/suppliers/$supplierId': typeof SuppliersSupplierIdRoute
+  '/suppliers/import': typeof SuppliersImportRoute
   '/batch/': typeof BatchIndexRoute
   '/runs/': typeof RunsIndexRoute
   '/suppliers/': typeof SuppliersIndexRoute
@@ -103,33 +121,39 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/review'
     | '/screen'
     | '/settings'
     | '/batch/$batchId'
     | '/runs/$runId'
     | '/suppliers/$supplierId'
+    | '/suppliers/import'
     | '/batch/'
     | '/runs/'
     | '/suppliers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/review'
     | '/screen'
     | '/settings'
     | '/batch/$batchId'
     | '/runs/$runId'
     | '/suppliers/$supplierId'
+    | '/suppliers/import'
     | '/batch'
     | '/runs'
     | '/suppliers'
   id:
     | '__root__'
     | '/'
+    | '/review'
     | '/screen'
     | '/settings'
     | '/batch/$batchId'
     | '/runs/$runId'
     | '/suppliers/$supplierId'
+    | '/suppliers/import'
     | '/batch/'
     | '/runs/'
     | '/suppliers/'
@@ -137,11 +161,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ReviewRoute: typeof ReviewRoute
   ScreenRoute: typeof ScreenRoute
   SettingsRoute: typeof SettingsRoute
   BatchBatchIdRoute: typeof BatchBatchIdRoute
   RunsRunIdRoute: typeof RunsRunIdRoute
   SuppliersSupplierIdRoute: typeof SuppliersSupplierIdRoute
+  SuppliersImportRoute: typeof SuppliersImportRoute
   BatchIndexRoute: typeof BatchIndexRoute
   RunsIndexRoute: typeof RunsIndexRoute
   SuppliersIndexRoute: typeof SuppliersIndexRoute
@@ -154,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/screen': {
@@ -212,16 +245,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuppliersSupplierIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/suppliers/import': {
+      id: '/suppliers/import'
+      path: '/suppliers/import'
+      fullPath: '/suppliers/import'
+      preLoaderRoute: typeof SuppliersImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ReviewRoute: ReviewRoute,
   ScreenRoute: ScreenRoute,
   SettingsRoute: SettingsRoute,
   BatchBatchIdRoute: BatchBatchIdRoute,
   RunsRunIdRoute: RunsRunIdRoute,
   SuppliersSupplierIdRoute: SuppliersSupplierIdRoute,
+  SuppliersImportRoute: SuppliersImportRoute,
   BatchIndexRoute: BatchIndexRoute,
   RunsIndexRoute: RunsIndexRoute,
   SuppliersIndexRoute: SuppliersIndexRoute,

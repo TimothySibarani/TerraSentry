@@ -1,13 +1,13 @@
 # TerraSentry — Architecture & Tech Stack
 
-**Status:** Proposed for team review
-**Date:** 2026-09-10
+**Status:** Implemented through S3 plus the review-flow, import and MCP work (§11, last entry)
+**Date:** 2026-09-10 (decisions); status updated 2026-10-13
 **Related:** [prd.md](./prd.md) · [milestones.md](./milestones.md)
 **Scope:** MVP
 
 This document decides the repo shape, the runtime architecture, and every framework around the
 fixed choices: **Turborepo + pnpm** (JS/TS), **TanStack Start** (UI), **Effect** (TypeScript
-runtime library), **Python + uv** (AI orchestration), and **AWS/SAP** integration. It also records
+runtime library), **Python + uv** (AI orchestration), and **SAP** integration (AI Core models, Joule, Cloud Foundry). It also records
 the alternatives that were considered and why they were rejected, so the decisions can be revisited
 deliberately rather than by accident.
 
@@ -19,21 +19,26 @@ TerraSentry is a compliance product whose core is an **evidence-assembly agent**
 The architecture therefore puts the agent runtime and the data contracts at the center, and treats
 the UI as a cockpit over a Python-owned API.
 
+- **The story the product tells:** agents investigate and brief, a fixed rubric decides, a person
+  approves anything uncertain or high-risk, and SAP enforces it. Every section below serves that line.
 - **One backend**, in Python: FastAPI owns persistence, business logic, batch runs, and the agent
   runtime. This avoids a second TypeScript backend and the duplicate domain models that come with it.
-- **One database**, PostgreSQL: suppliers, runs, per-step agent traces, evidence, verdicts, DDS
-  documents, and cached source responses are relational data with a real audit-trail requirement.
-- **Agents run on Strands Agents SDK** against Amazon Bedrock, using the SDK's multi-agent patterns
-  (agents-as-tools and graph) to implement Supervisor, Specialists, and Independent Verifier. The
-  same code can later be deployed to Bedrock AgentCore Runtime with minimal change.
+- **SQLite audit store**: suppliers, runs, per-step agent traces, evidence, verdicts, DDS
+  documents and ERP actions remain relational audit data. A separate disposable SQLite file
+  caches source responses.
+- **Agents run on Strands Agents SDK** against **SAP AI Core** (Generative AI Hub) through LiteLLM,
+  using the SDK's multi-agent patterns (agents-as-tools and graph) to implement Supervisor,
+  Specialists, and Independent Verifier. A `scripted` mode replays the same graph offline.
 - **Deterministic scoring stays in code**, not in the model. The LLM gathers evidence and writes
   narrative; `python/core/.../scoring.py` computes the number. This is what makes the verdict
   reproducible and answers "what if the AI hallucinates?".
 - **The TypeScript side is Effect-first**: domain logic lives in `effect` services with `Schema` at
   trust boundaries, and the web app bridges Effect into React through a `ManagedRuntime` and
   TanStack Query. The FastAPI OpenAPI schema remains the contract source of truth.
-- **Deployment is containers on AWS**, with CDK in TypeScript; AgentCore, SQS batch workers, and
-  guardrails are explicit stretch items, not MVP dependencies.
+- **Hosting uses what the hackathon provides.** The Joule A2A proxy is a Cloud Foundry app in the
+  committee's SAP BTP space. The API, database and cockpit run on a developer machine (a tunnel makes
+  the API reachable from Cloud Foundry), with SQLite files on persistent local disk. AWS is a possible
+  later hosting target, but nothing in the repo calls AWS today.
 
 ---
 
@@ -48,21 +53,21 @@ the UI as a cockpit over a Python-owned API.
 | Web production server | Nitro Node server (`.output/server/index.mjs`) | `nitro` |
 | TS runtime & domain layer | Effect 4 (RC): services, Layers, Schema, typed errors, HttpClient | `effect` (pnpm catalog) |
 | Effect <-> React bridge | `ManagedRuntime` + TanStack Query loaders/hooks | `effect`, `@tanstack/react-query` |
-| Maps | MapLibre GL JS + Amazon Location Service tiles | to add in the cockpit workstream |
+| Maps | MapLibre GL JS; Esri World Imagery by default, Amazon Location tiles via `VITE_SATELLITE_TILES_URL` | `maplibre-gl`, `terra-draw` |
 | Backend | FastAPI + Uvicorn, SSE for live traces | `fastapi[standard]`, `sse-starlette` |
-| ORM / migrations | SQLAlchemy 2.0 async + Alembic | `sqlalchemy[asyncio]`, `asyncpg`, `alembic` |
-| Database | PostgreSQL 16+ (Neon for dev, RDS/Aurora Serverless v2 for AWS) | `postgresql+asyncpg://` |
-| Source response cache | Redis with per-entry TTL (in-memory backend for tests) | `redis` (M1), facade in `python/integrations/.../cache.py` |
-| Agent framework | Strands Agents SDK on Bedrock; multi-agent graph | `strands-agents`, `boto3` |
-| Models | Role-based routing: one orchestrator/verifier model, one extraction model | `BedrockModel`; ids from `BEDROCK_MODEL_*` env |
+| ORM / migrations | SQLAlchemy 2.0 async + Alembic | `sqlalchemy[asyncio]`, `aiosqlite`, `alembic` |
+| Database | SQLite audit store on persistent local disk | `sqlite+aiosqlite:///data/sqlite/audit.db` |
+| Source response cache | SQLite with per-entry TTL (memory for tests) | `aiosqlite`, `data/sqlite/cache.db`, facade in `python/integrations/.../cache.py` |
+| Agent framework | Strands Agents SDK on SAP AI Core; multi-agent graph | `strands-agents[litellm]` |
+| Models | Role-based routing: one orchestrator/verifier model, one extraction model | `LiteLLMModel` (`sap/` route); ids from `AICORE_MODEL_*` env |
 | Geo / math | Shapely, pyproj | `shapely`, `pyproj` |
 | HTTP sources | Async httpx with rate limiting, retry, and caching | `httpx`, `tenacity`, `aiolimiter` |
 | API-to-web contract | FastAPI OpenAPI -> generated TS types, Effect Schema at runtime | `openapi-typescript`, `effect/Schema` |
-| Infrastructure | AWS CDK in TypeScript | `aws-cdk-lib`, `constructs` |
+| Hosting | SAP BTP Cloud Foundry (`cf push`) for the Joule proxy; the rest runs locally. `infra/cdk` is an empty AWS CDK shell kept for a possible later move | `manifest.yml`, `aws-cdk-lib` (unused) |
 | Lint / format | Biome (TS), Ruff (Python) | `@biomejs/biome`, `ruff` |
 | Type checking | `tsc --noEmit` (TS), Pyright (Python) | `pyright` |
 | Testing | Vitest + `@effect/vitest` (TS), pytest + respx (Python) | `@effect/vitest`, `pytest`, `pytest-asyncio`, `respx` |
-| CI/CD | GitHub Actions, turbo cache, uv cache, CDK deploy | `.github/workflows` (to add) |
+| CI/CD | GitHub Actions (JS, Python, OpenAPI drift, migrations, Docker); CDK deploy is not wired | `.github/workflows/ci.yml` |
 
 ---
 
@@ -72,7 +77,7 @@ the UI as a cockpit over a Python-owned API.
 TerraSentry/
 ├── apps/
 │   ├── api/                          Python service (uv workspace member)
-│   │   ├── Dockerfile                container image for AWS (runs migrations then uvicorn)
+│   │   ├── Dockerfile                container image (runs migrations then uvicorn)
 │   │   ├── package.json              Turbo/PNPM shim so `pnpm dev` and `pnpm test` include Python
 │   │   ├── pyproject.toml            terrasentry-api
 │   │   ├── alembic.ini + alembic/    async migration environment (M4)
@@ -90,6 +95,8 @@ TerraSentry/
 │   │   │   ├── export_openapi.py     dumps OpenAPI for the TS client
 │   │   │   └── routers/              health, suppliers, runs, batch, dds, mock_sap
 │   │   └── tests/                    TestClient suites on SQLite + respx
+│   ├── a2a/                          Joule A2A proxy for SAP BTP (screen, investigate, status)
+│   ├── mcp/                          MCP server for Claude Code and other agents (docs/setup/mcp.md)
 │   └── web/                          TanStack Start cockpit (pnpm workspace member)
 │       ├── Dockerfile                Nitro production image
 │       ├── package.json              @terrasentry/web
@@ -117,7 +124,7 @@ TerraSentry/
 │       └── src/terrasentry_integrations/
 │           ├── sources/              GFW/Hansen, NASA FIRMS clients (+ shared http.py)
 │           ├── sap/                  SapGateway protocol + sandbox/stub clients
-│           ├── cache.py              Redis/memory cache keyed by source + geometry + window
+│           ├── cache.py              SQLite/memory cache keyed by source + geometry + window
 │           ├── preflight.py          live credential/latency/quota probe
 │           └── settings.py           pydantic-settings for sources and cache
 ├── packages/
@@ -131,7 +138,7 @@ TerraSentry/
 │   │       └── schemas.test.ts       @effect/vitest suite
 │   └── config/                       @terrasentry/config (shared tsconfig base)
 ├── infra/
-│   └── cdk/                          @terrasentry/infra (AWS CDK app)
+│   └── cdk/                          @terrasentry/infra (empty AWS CDK shell, unused)
 │       ├── bin/terrasentry.ts
 │       └── lib/terrasentry-stack.ts  split into stacks as resources land
 ├── data/
@@ -172,7 +179,7 @@ TerraSentry/
         +---------------------------------------------------+
         |  apps/api  ·  FastAPI                             |
         |  REST + SSE + batch worker (asyncio)              |
-        |  SQLAlchemy async -> PostgreSQL                   |
+        |  SQLAlchemy async -> SQLite                       |
         +---------+---------------------------+-------------+
                   |                           |
                   v                           v
@@ -181,7 +188,7 @@ TerraSentry/
         | Supervisor Agent   |      | integrations           |
         |  ├ Geospatial      |      |  ├ GFW / Hansen GFC    |
         |  ├ Thermal (FIRMS) |----->|  ├ NASA FIRMS          |
-        |  ├ Legality (mock) |      |  ├ SAP BTP / API Hub   |
+        |  ├ Legality (decl) |      |  ├ SAP BTP / API Hub   |
         |  └ Verifier        |      |  └ cache + rate limits |
         | rubric, evidence,  |      +-----------+------------+
         | DDS writer         |                  |
@@ -189,20 +196,14 @@ TerraSentry/
                   |                    +-------------------+
                   v                    +  external APIs    |
         +--------------------+         +-------------------+
-        | Amazon Bedrock     |
+        | SAP AI Core        |
         | configured models  |
-        +--------------------+
-                  |
-                  v  (stretch)
-        +--------------------+
-        | Bedrock AgentCore  |
-        | Runtime + Memory   |
         +--------------------+
 ```
 
 **Request flow (live scenario):** `POST /runs` creates a run and starts the agent task ->
 supervisor calls specialist tools -> each tool result is written to the evidence ledger and the run
-trace in Postgres -> the verifier independently cross-checks -> the deterministic rubric scores ->
+trace in SQLite -> the verifier independently cross-checks -> the deterministic rubric scores ->
 DDS payload is generated -> the run ends `complete` or `awaiting_review`. The UI subscribes to
 `GET /runs/{id}/stream` (SSE) for the step-by-step trace, then fetches the final dossier.
 
@@ -218,20 +219,25 @@ supervisor (orchestrator model, agents-as-tools)
    assessor (deterministic)  -> candidate Assessment + ledger + DDS draft
         │
         v
-   verifier (orchestrator model + deterministic checks) -> re-derives metrics,
+   verifier (orchestrator model + deterministic checks) -> re-runs the rubric to compare,
         │                                                  validates citations,
+        │                                                  checks tool coverage,
         │                                                  challenges the summary
         │ accepted edge only
         v
-   dds_writer (deterministic) -> releases the DDS, or withholds it for
-                                 `awaiting_review` (human approve/override)
+   dds_writer (deterministic) -> releases a compliant DDS, or withholds it for
+                                 `awaiting_review` (ambiguous or high-risk: a person
+                                 approves or blocks the supplier)
 ```
 
 Strands' **agents-as-tools** pattern gives the supervisor explicit delegation, and its **Graph**
 builder gives the verify-before-write edge: `dds_writer` only runs when the verifier's
 `VerificationReport.accepted` is true. The verifier is a separate agent with a different prompt and
-only read tools over the evidence ledger, so "verification is a real step" is structurally true,
-not decorative. Ambiguous verdicts keep the DDS in `pending_assessment` until a human decision is
+only read tools over the evidence ledger. Be precise about what it checks: the deterministic part
+re-runs the same rubric on the same source snapshot and compares the outcome (a consistency check,
+which catches tampering or a diverged candidate), validates every DDS citation, and the coverage check
+confirms the supervisor really made the required tool calls. The coverage check is what catches a
+misbehaving agent; the model review can only add a veto, never improve a verdict. Ambiguous and high-risk verdicts keep the DDS in `pending_assessment` until a human decision is
 recorded through the M2 run-state machine. Everything the model sees comes from ids-only tools; the
 rubric always computes the score.
 
@@ -292,65 +298,102 @@ the database.
 **Why:** the agents are Python, so making the backend Python removes a network hop and avoids
 maintaining domain models twice. FastAPI's OpenAPI output becomes the contract for the TS client.
 Background work runs as asyncio tasks with a bounded semaphore, which is sufficient for a 50-record
-batch and needs no extra infrastructure (Celery/Redis) on demo day.
+batch and needs no external job queue on demo day.
 
 **Rejected:** Hono/NestJS backend in TypeScript (would need the domain model, DB access, and job
 scheduling duplicated across languages); GraphQL (no client-driven query complexity to justify it);
 gRPC (browsers need a proxy; REST + SSE is simpler and demo-visible).
 
-### 5.4 Database: PostgreSQL + SQLAlchemy 2.0
+### 5.4 Database: SQLite + SQLAlchemy 2.0
 
-**Decision:** PostgreSQL with SQLAlchemy 2.0 async + asyncpg + Alembic. Dev on Neon free tier or a
-local/Docker Postgres; AWS on RDS or Aurora Serverless v2.
+**Decision:** SQLite through SQLAlchemy 2.0 async + aiosqlite + Alembic. The audit store is
+`data/sqlite/audit.db`; disposable source responses live separately in `data/sqlite/cache.db`.
+Relative paths resolve from the repository root. A fresh audit file is migrated and seeded from
+the committed demo data. Legacy PostgreSQL/Redis data and volumes are left untouched.
 
-**Why:** the audit trail is inherently relational and queryable: suppliers -> parcels -> runs ->
-steps -> evidence -> verdicts -> DDS. JSONB handles flexible agent traces and raw payload snapshots
-without a second store. Aggregate throughput queries for the batch are trivial SQL.
+**Why:** the hackathon runs one API process on a developer machine. Its audit trail remains
+relational (suppliers → parcels → runs → steps/evidence/verdicts/DDS/ERP actions), JSON remains
+validated at application boundaries, and SQLite removes database-server setup. Existing migrations
+already support SQLite batch alterations; all six revision IDs remain.
 
-**Rejected:** DynamoDB (single-table design overhead for trace/aggregate access patterns; local dev
-needs Java tooling; the PRD's DynamoDB mention is only the SAP-less fallback for a status write);
-SQLite as the deployed store (no concurrency story for batch runs; keep it only as an optional
-unit-test backend); Prisma/Drizzle (the DB is owned by Python; a TS ORM would be a second writer).
+**Concurrency and integrity:** runtime connections use WAL, a 30-second busy timeout and enforced
+foreign keys. Writes remain short; batch concurrency is bounded by existing semaphores. WAL permits
+one writer per file. A UTC datetime column type normalizes instants and restores timezone metadata
+on reads. Alembic alone disables FK enforcement for referenced-table rebuilds, then validates with
+`foreign_key_check`. Stop writers before migrations and backups.
+
+**Operational boundary:** one API process, one persistent local disk, no replicas or shared network
+WAL storage. Stop the API before a rehearsal manager opens the same audit file: startup recovery
+assumes ownership of active runs. Compose persists both files in its API volume. The cache owns its
+single disposable table and can initialize independently of the API's Alembic migrations.
+
+**Rejected for this scope:** database servers and distributed job infrastructure add setup without
+helping the bounded demo. Revisit a server database if multiple API replicas or sustained concurrent
+writers become requirements. The former decision to reserve SQLite only for tests is superseded.
 
 ### 5.5 Agent orchestration: Strands Agents SDK
 
-**Decision:** Strands Agents SDK with Bedrock models, using agents-as-tools for the
-Supervisor -> Specialists structure and a graph for verify-before-write. Optional extra
-`terrasentry-core[agentcore]` adds `bedrock-agentcore` for Runtime and Memory deployment.
+**Decision:** Strands Agents SDK, using agents-as-tools for the Supervisor -> Specialists structure
+and a graph for verify-before-write. Models come from SAP AI Core through Strands' LiteLLM adapter.
 
-**Why:** Strands is AWS's first-party agent SDK, so the Bedrock path, tracing, and AgentCore story
-are native rather than adapted. It supports exactly the two patterns the PRD needs (delegation and
-an ordered verifier step) in code, and it can run locally against Bedrock during development.
+**Why:** it supports exactly the two patterns the PRD needs (delegation and an ordered verifier
+step) in code, it is model-agnostic, and it ships tracing hooks and structured output. The same
+graph runs against a scripted model offline, which is what makes the test suite and the offline
+demo possible.
 
 **Rejected:** LangGraph (strong alternative, especially for durable checkpointing and HITL
-interrupts; rejected as the default because it is a general graph engine rather than an
-AWS-integrated agent SDK. Revisit if resumable long-running approvals become a hard requirement);
-CrewAI/AutoGen (less control over the verification step, more prompt magic to explain on stage);
-direct Bedrock Converse tool-use loop (the existing RIMBA prototype did this; it works, but
-re-implements delegation, tracing, and agent packaging that Strands already provides. Keep the
-prototype as the reference implementation for parity tests).
+interrupts; the committee's Joule sample uses it. Rejected as the default because it is a general
+graph engine and our review hold lives in the API state machine anyway. Revisit if resumable
+long-running approvals become a hard requirement); CrewAI/AutoGen (less control over the
+verification step, more prompt magic to explain on stage); a hand-written provider tool-use loop
+(the existing RIMBA prototype did this; it works, but re-implements delegation, tracing, and agent
+packaging that Strands already provides. Keep the prototype as the reference implementation for
+parity tests).
 
 ### 5.6 AI models and routing
 
 | Job | Role | Rationale |
 | --- | --- | --- |
 | Supervisor decisions, verification, final synthesis | `orchestrator` model | low volume, high judgement |
-| Extraction/normalisation (names, legal fields, units) | `extraction` model | high volume, low judgement, cheap |
+| Specialist tool-calling (read the evidence a tool returns and report it) | `extraction` model | high volume, low judgement, cheap |
 
-The concrete Bedrock model for each role is configuration, not code:
-`BEDROCK_MODEL_ORCHESTRATOR` and `BEDROCK_MODEL_EXTRACTION` are required for the live agent path
-(`--model bedrock`) and accept plain model IDs or cross-region inference profiles, so changing the
-model is an `.env` edit. Verify model access and current IDs in the target account before build day
-(PRD risk table).
+The concrete model for each role is configuration, not code. `--model sap` runs the roles on SAP AI
+Core (Generative AI Hub) through LiteLLM's `sap/` route (`strands.models.litellm.LiteLLMModel`). It
+reads `AICORE_MODEL_ORCHESTRATOR` and `AICORE_MODEL_EXTRACTION` plus `AICORE_SERVICE_KEY` (or the
+individual `AICORE_*` fields); the service key is passed per call, never exported to `os.environ`.
+`/health` reports it as `aicore_configured`. Setup and the hackathon model catalogue:
+`docs/sap-hackathon-resources.md`. `--model scripted` (the default) needs no credentials.
 
-The live client follows Bedrock best practice: adaptive retries (`AGENT_RETRY_MAX_ATTEMPTS`,
-default 5) with explicit connect (10s) and read (`AGENT_READ_TIMEOUT_SECONDS`, default 120s)
-timeouts, and an explicit `max_tokens` so Bedrock does not reserve the model maximum. Prompt caching
-is opt-in (`BEDROCK_PROMPT_CACHE=off|auto|anthropic`) and defaults off because the roles' static
-prefixes are below the model minimums (Claude Sonnet 4.5: 1,024 tokens, Haiku 4.5: 4,096), where
-cache points are silently ignored; `anthropic` is the explicit mode for opaque ARN inference
-profiles. `python -m terrasentry_core.agents.preflight` pings both roles through the same Strands path
-and maps AWS failures to fixes, which is the §3 model-access gate check.
+Three properties of the SAP route matter in practice. LiteLLM's SAP provider **drops `tool_choice`**,
+so Strands' forced structured output cannot force a tool call and the verifier relies on the model
+using the structured-output tool unprompted. It also **repeats its token, deployment and
+configuration lookups on every call**; `terrasentry_integrations.sap_ai_core` caches them once per
+process (guarded, and tested against a fake AI Core server: 24 requests for 4 calls became 7).
+`python -m terrasentry_core.agents.preflight` pings both roles, probes structured output on the
+orchestrator and reports the working Sonar name, so both surface before a demo.
+
+**Adverse media (context only).** `ADVERSE_MEDIA_MODE=off|stub|live` adds an optional
+`search_adverse_media` tool to the legality analyst. `live` asks Sonar on AI Core (`AICORE_MODEL_MEDIA`)
+for cited reporting about the supplier; `stub` serves a clearly simulated result for offline demos.
+Findings without a source URL are dropped. The report is kept **outside** the evidence ledger, the
+findings, the DDS and the fingerprint, so the rubric verdict, scripted/live/reference parity and the
+verifier's re-derivation are unchanged (`python/core/tests/test_agent_media.py` asserts this). It
+reaches the cockpit as the payload of the `search_adverse_media` trace step and renders as a
+"Context only, not scored" card on the assessment tab. Results use the response cache
+(`adverse_media` source), so a primed rehearsal replays them offline.
+
+**Joule (A2A proxy).** `apps/a2a` is a separate, tiny service for SAP BTP Cloud Foundry that exposes
+three skills (screen, investigate, status) to Joule over the A2A protocol. It calls the existing API
+over HTTP, so runs it starts appear in the cockpit and the verdict is still the deterministic rubric's.
+Joule's synchronous `agent-request` has a 60 s limit, so screening replies within a reply budget and a
+live agent run is started and linked rather than awaited. See `docs/sap-hackathon-resources.md`.
+
+The live client uses LiteLLM retries (`AGENT_RETRY_MAX_ATTEMPTS`, default 5), a read timeout
+(`AGENT_READ_TIMEOUT_SECONDS`, default 120s) and an explicit `max_tokens` (`AGENT_MAX_TOKENS`).
+
+There is no separate extraction pipeline: no code reads documents or normalises supplier fields with a
+model today (permit-document extraction is out of scope). The `extraction` role is the cheaper model the
+three specialists run on.
 
 **Non-negotiable:** the model never produces the risk score. `scoring.py` computes it from structured
 tool outputs; the model writes the explanation. Every claim in the dossier must pass through the
@@ -401,25 +444,29 @@ timeouts, spans, and typed errors in the same composition); tRPC (impossible acr
 Python/TypeScript); hand-written shared types (drift); Zod-first contracts (source of truth would
 move to TS, away from the Python domain; Effect `Schema` already covers parsing and encoding).
 
-### 5.9 AWS integration
+### 5.9 Hosting and AWS
 
-| Concern | Service / SDK |
-| --- | --- |
-| Model inference | Amazon Bedrock (Strands `BedrockModel`, boto3) |
-| Agent deployment (stretch) | Bedrock AgentCore Runtime + Memory |
-| Object storage (raw payloads, raster chips, DDS artifacts) | S3 via boto3 |
-| Database | RDS / Aurora Serverless v2 PostgreSQL |
-| Batch scale-out (stretch) | SQS + worker container; EventBridge Scheduler for re-screening |
-| Maps | Amazon Location Service tiles rendered by MapLibre GL |
-| Secrets | Secrets Manager (deployed) / `.env` (local, gitignored) |
-| Observability | CloudWatch Logs + OpenTelemetry (ADOT) / X-Ray |
-| IaC | AWS CDK (TypeScript) in `infra/cdk` |
+| Concern | What runs today | Planned or optional |
+| --- | --- | --- |
+| Models | SAP AI Core through LiteLLM (committee-provided, no quota issues) | none |
+| Joule proxy (`apps/a2a`) | Cloud Foundry app in the committee's `hackathon-<team>` space (`cf push`) | none |
+| API, cockpit, MCP server | A developer machine; a tunnel exposes the API to Cloud Foundry | a container host if a public deployment is wanted |
+| Database | SQLite audit file | one persistent local host |
+| Cache | SQLite cache file or memory for tests | no external cache service |
+| Object storage (raw payloads, raster chips, DDS artifacts) | SQLite JSON and local files | S3 (not built) |
+| Maps | Esri World Imagery by default | Amazon Location tiles via `VITE_SATELLITE_TILES_URL` (optional) |
+| Secrets | `.env` (gitignored); `cf set-env` on Cloud Foundry | a secrets manager if hosted |
+| Observability | The SQLite run trace | OpenTelemetry, if hosted |
+| IaC | `infra/cdk` is an empty AWS CDK shell | fill it only if the API moves to AWS |
+
+**Nothing in the repo calls AWS today.** A public deployment needs a persistent local filesystem
+for SQLite, not a managed database service. The Joule proxy can remain on Cloud Foundry and call
+the API over HTTPS. See `docs/setup/aws.md` for the supported single-host boundary.
 
 **Rejected:** Terraform (adds a second language and state management for a small team; CDK keeps
-infra in TypeScript next to the app); SST v3 (great TanStack Start deployment DX, but AgentCore and
-finer IAM control favor CDK; SST can be evaluated later for the web tier); Vercel/Amplify for the
-web app (splits the deployment surface across vendors; a container keeps web and API behind one
-CloudFront distribution and path routing).
+infra in TypeScript next to the app); SST v3 (great TanStack Start deployment DX; can be evaluated
+later for the web tier); Vercel/Amplify for the web app (splits the deployment surface across
+vendors; a container keeps web and API behind one entry point).
 
 ### 5.10 Rate limits, caching, and source reliability
 
@@ -427,12 +474,12 @@ PRD section 5 makes this a build-blocking concern, so it is designed in from the
 
 - `httpx.AsyncClient` with `tenacity` exponential backoff + jitter and an `aiolimiter` per-source
   concurrency cap.
-- Persistent Redis cache keyed by `(source, geometry_hash, date_window)` with a per-entry TTL
-  (`ts:cache:v1:*`). Each entry stores the request description plus a normalized snapshot of the
-  source-derived result (including `fetched_at`), so cached re-runs make zero external calls and
-  remain auditable. Postgres stays the audit/evidence store; Redis is only the hot response cache.
-  An in-memory backend serves tests and no-Docker smoke runs. Fixtures are deliberately not
-  committed — warm the cache with a live run, then use `--offline` for rehearsals.
+- Persistent SQLite cache keyed by `(namespace, source, geometry_hash, date_window)`. Each row
+  stores the full response envelope and a write-time TTL (90 days by default; <=0 disables expiry).
+  Expired entries count as misses, including in offline mode. `CACHE_PREFIX` selects the namespace.
+  `audit.db` preserves run/evidence history; `cache.db` is disposable and independently initialized.
+  Memory remains available for tests. Fixture export/prime preserves offline rehearsals across
+  processes; priming refreshes TTL without changing the source's original `fetched_at`.
 - A preflight script runs 5-10 dummy lookups before committing engineering time to the 50-record
   batch, per the PRD action item, and reports observed latency and quota behaviour.
 
@@ -478,7 +525,7 @@ works unchanged in server contexts (Nitro SSR today, a future worker or server f
 **Rejected:** `@effect/atom-react` as the default React state layer — it is on the 4.0 beta line
 while `effect` is on RC, and TanStack Query already provides the SSR dehydration the cockpit needs.
 Revisit only if client state outgrows server-cache patterns. Also rejected: `effect/unstable/sql`
-and `effect/unstable/httpapi` for this project, because PostgreSQL and the HTTP API are owned by
+and `effect/unstable/httpapi` for this project, because SQLite and the HTTP API are owned by
 Python (section 5.3).
 
 ---
@@ -488,8 +535,9 @@ Python (section 5.3).
 1. **The model never invents numbers.** Deterministic rubric in code; model explains.
 2. **Every claim carries a citation.** Sources, artifacts, and retrieval timestamps live in the
    evidence ledger; the verifier rejects uncited claims.
-3. **No-Go is never automatic.** Runs end in `awaiting_review` for the ambiguous branch; a human
-   decision is recorded before any DDS is finalized.
+3. **No adverse action is automatic.** Ambiguous and high-risk verdicts end in `awaiting_review`; a
+   human decision is recorded before the DDS is released or a vendor is blocked in SAP. Only a
+   compliant verdict releases on its own.
 4. **Simulated data is labelled as simulated.** Legality/entity fields are synthetic and surfaced as
    such in the UI and dossier.
 5. **The reference pipeline and the agent share the same tools.** A hardcoded pipeline remains the
@@ -498,15 +546,21 @@ Python (section 5.3).
 ### Run state machine
 
 ```
-queued -> running -> complete
-             |  \
-             |   -> needs_more_data (retryable)
-             v
-        awaiting_review -> (approve | override) -> complete
+queued -> running -> complete                       (compliant verdicts only)
              |
-             v
-          failed -> retry / manual
+             +-----> awaiting_review -> approve | override -> complete   (ambiguous, high-risk)
+             |
+             +-----> failed        (error, timeout, verifier rejection, cancelled, or a restart sweep)
 ```
+
+`failed` is final for that run: "Run again" starts a new run for the same record, and `POST
+/runs/{id}/cancel` ends a running one. `needs_more_data` and the `retry` event are defined in
+`run_state.py` but nothing fires them; a source gap becomes a data gap on the assessment, which holds
+the run for a person instead.
+
+Each run also carries an `erp_mode`: `auto` applies the vendor change when it is planned (a compliant
+release, or a review decision), `confirm` computes it and waits for `POST /runs/{id}/erp-action`, and
+`off` never touches SAP. Held runs plan nothing until a person decides.
 
 ### Batch execution (PRD section 4)
 
@@ -517,20 +571,60 @@ elapsed time and status. `GET /batch-runs/{id}/stream` emits progress over SSE; 
 reports wall-clock time, average/median/p95 per record, throughput, the expected-vs-actual
 confusion matrix, and the cache-stats delta for the run. `python -m terrasentry_api.rehearsal`
 drives the same worker headlessly for recorded KPI runs (`docs/kpi.md`,
-`docs/setup/rehearsal.md`). When moving to AWS, the same worker runs as a container consuming SQS
-— the API contract does not change.
+`docs/setup/rehearsal.md`). If it is ever hosted at scale, the same worker could consume a queue
+instead — the API contract does not change.
 
 ### Live agent trace
 
-The demo needs the reasoning visible. The API persists every supervisor turn, tool call, and tool
-result as run steps, and streams them to the cockpit. OpenTelemetry/AgentCore observability is for
-operators; the Postgres run trace is the demo's source of truth because it is deterministic and
-replayable from `data/fixtures`.
+The API persists run steps in `run_steps.payload` and streams the same facts through the existing
+SSE `step` event. No separate workspace endpoint or database migration is required. Trace kinds
+are `run`, `agent`, `retask`, `report`, `thought`, `tool`, `verifier`, `writer`, `review`, `state`
+and `sap`.
+
+- One `run/configuration` step records the supervisor task, record identifiers and consignment
+  context, model ids per role, temperature/max tokens when configured, and the actual agents'
+  names, roles, tools and system prompts. Only those allowed model parameters are copied; model
+  client configuration and credentials are excluded. Assessor and DDS writer are labelled `code`.
+- Delegation and re-task steps carry `agent`, a 1-based `invocation`, and the input the specialist
+  received. Re-tasks preserve `reason` and `ordinal`. The verifier records its actual review input.
+- Source `tool` steps retain their names, kind and existing ids/status fields. New fields are
+  `agent`, `invocation`, `tool_use_id`, `input`, `result`, `duration_ms` (monotonic) and `started_at`
+  (UTC). Verifier inspection tools retain kind `verifier` with the same enrichment. Serialized UTF-8
+  tool input is capped at 1 KiB and result at 4 KiB; oversized values become a preview with
+  `truncated: true`. These caps affect the recorded copy, never the value returned to the model.
+- `thought` steps contain only model-emitted reasoning blocks and pre-tool assistant notes,
+  labelled separately in the inspector. Combined thought text is capped at 2 KiB and truncation
+  is flagged. Final report text is not duplicated as a thought. Scripted runs emit no reasoning.
+  **Thoughts never count toward verification coverage:** `coverage_checks` trusts only server
+  `tool` steps with the required name and ids.
+- Each specialist invocation emits a `report` finish even without written text. It includes
+  `agent`, `invocation` and per-invocation `usage` (`inputTokens`, `outputTokens`, `totalTokens`).
+  The supervisor records usage on its single finish step; verifier usage accompanies its existing
+  `verification` result. The supervisor summary remains the run's Agent brief.
+
+The cockpit's pure `deriveAgentRun` function decodes payloads with Effect Schema and derives
+pipeline stages, per-agent invocation spans, thoughts, calls and totals from precise timestamps.
+The run header shows models, parameters, counts and a collapsible pipeline checklist. The Trace
+workspace contains a roster, waterfall, recorded-run replay scrubber and per-agent inspector;
+`?agent=` and `?step=` make selections linkable. Live runs follow the clock; replay derives state
+from steps at or before the playhead. The inspector uses a Sheet below `lg`. All new status and
+span animations use existing CSS utilities with reduced-motion guards. The Log view retains the
+flat trace with millisecond UTC timestamps and elapsed offsets.
+
+Historical runs without configuration or attribution use the run's model mode and a static
+source-tool-to-specialist map mirroring `build_specialists`. Missing prompts, inputs, results,
+reasoning and token usage are shown as unrecorded; they are not reconstructed. Old specialist
+spans without a finish are closed by supervisor completion or the next invocation.
+
+System prompts, tool data and any emitted reasoning are visible to the same audience that can
+open the run. Review that access before a multi-tenant deployment. Trace caps bound individual
+payloads, but batch trace volume still needs measurement. Partial thought token streaming and a
+batch child workspace remain follow-up work. OpenTelemetry remains outside this cockpit trace.
 
 ### Secrets and configuration
 
-Single `.env` at the repo root for local development (gitignored, `.env.example` committed). In AWS,
-values come from Secrets Manager and task IAM roles. `pydantic-settings` validates the API side; the
+Single `.env` at the repo root for local development (gitignored, `.env.example` committed). On Cloud Foundry,
+values come from `cf set-env`. `pydantic-settings` validates the API side; the
 web app only receives `VITE_*` values at build time.
 
 ---
@@ -538,31 +632,21 @@ web app only receives `VITE_*` values at build time.
 ## 7. Deployment topology
 
 ```
-                         CloudFront
-                             |
-                    ALB (path-based routing)
-               /api/*  |                |  /*
-                       v                v
-              ECS Fargate / App Runner  ECS Fargate / App Runner
-              apps/api (FastAPI)        apps/web (Nitro Node)
-                       |                        |
-                       +-----------+------------+
-                                   |
-                      RDS PostgreSQL / Secrets Manager / S3
-                                   |
-                        Amazon Bedrock / (stretch) AgentCore
+   Joule (SAP)  --A2A-->  BTP Destination  -->  apps/a2a (Cloud Foundry, committee space)
+                                                        |  HTTPS (tunnel)
+   Claude Code  --MCP-->  apps/mcp (stdio)  ------------+
+                                                        v
+   browser  -->  apps/web :3000  -->  apps/api :8000 (FastAPI)  -->  SQLite audit + cache (local files)
+                                              |
+                                              +-->  SAP AI Core (models)   +-->  GFW / FIRMS
 ```
 
-- **MVP:** two containers, ALB path routing (`/api/*` -> API, else web), RDS Postgres in a private
-  subnet, S3 for artifacts, CloudWatch logs. CDK app in `infra/cdk` grows one stack per concern
-  (`Network`, `Data`, `Api`, `Web`, `Observability`).
-- **Stretch:** deploy the Strands agent to AgentCore Runtime (`bedrock-agentcore-control`
-  `create_agent_runtime` with an ECR image), use AgentCore Memory for per-supplier history, and
-  AgentCore Observability for traces. This is additive because the agent code already runs on
-  Strands.
-- **Local:** `pnpm dev` runs web (port 3000) and API (port 8000) with CORS and the Effect API
-  client. Web calls `VITE_API_BASE_URL` directly; production uses the same path scheme through
-  CloudFront.
+- **Demo topology (today):** `pnpm dev` runs web (port 3000) and API (port 8000) with CORS and the
+  Effect API client. Web calls `VITE_API_BASE_URL` directly. Only the Joule proxy is deployed, to
+  the committee's Cloud Foundry space; it reaches the API through a tunnel (`docs/sap-hackathon-resources.md`).
+- **If hosted:** API and web containers on one host with persistent local storage for SQLite.
+  One API worker/replica owns run recovery, review locks and SSE. Container replacement retains
+  the named volume; deleting it resets audit data and cache. Hosting automation remains unbuilt.
 
 ---
 
@@ -587,28 +671,29 @@ web app only receives `VITE_*` values at build time.
 ## 9. Suggested build order (de-risking first)
 
 0. **Day 1, before code:** check SAP API Business Hub / BTP trial access; register the NASA FIRMS
-   key; request Bedrock model access; verify the GFW key. These have external lead times (PRD
+   key; fetch the SAP AI Core key from the keybroker; verify the GFW key. These have external lead times (PRD
    sections 5 and 6).
 1. **Integrations + cache:** GFW and FIRMS clients with retry, limiter, and cache; test with 5-10
    records. This is the schedule-critical path.
 2. **Deterministic core:** domain models, evidence ledger, rubric, DDS builder — testable with no
-   AWS account.
+   accounts.
 3. **Agents:** Strands supervisor/specialists/verifier wired to the same tools; parity against the
    reference pipeline.
-4. **API:** Postgres models + Alembic, run/step/batch endpoints, SSE.
+4. **API:** SQLite models + Alembic, run/step/batch endpoints, SSE.
 5. **Cockpit:** Effect runtime + query modules, supplier table, run detail with live trace, batch
    summary, map.
 6. **Batch:** 50-record generation around real forest coordinates; measure throughput.
 7. **SAP action:** sandbox if access landed, otherwise the schema-accurate stub.
-8. **Rehearsal:** pre-fetch the demo cache, run the batch end-to-end, then deploy to AWS.
+8. **Rehearsal:** pre-fetch the demo cache, run the batch end-to-end, then deploy the Joule proxy to Cloud Foundry.
 
 ---
 
 ## 10. Getting started
 
-Prerequisites: Node >= 22 (corepack enabled), pnpm via corepack, `uv`, and Docker (for the local
-Postgres + Redis from `pnpm db:up`) or your own Postgres connection string in `DATABASE_URL`
-(Neon free tier is the zero-install option; set `CACHE_BACKEND=memory` for a no-Docker smoke run).
+Prerequisites: Node >= 22 (corepack enabled), pnpm via corepack, and `uv`. Local development
+requires no database containers. Set `DATABASE_URL=sqlite+aiosqlite:///data/sqlite/audit.db`,
+`CACHE_BACKEND=sqlite`, and `CACHE_SQLITE_PATH=data/sqlite/cache.db` in an existing `.env`;
+remove obsolete `REDIS_URL`. Preserve the rest of your credentials.
 
 ```bash
 corepack enable
@@ -616,7 +701,6 @@ pnpm install
 uv sync
 cp .env.example .env
 
-pnpm db:up      # Postgres + Redis containers
 pnpm db:upgrade # apply the Alembic audit schema
 pnpm dev        # web on :3000 and API on :8000
 pnpm check      # Biome + Ruff + tsc + Pyright
@@ -627,8 +711,8 @@ uv run python -m terrasentry_integrations.preflight   # live source probe (needs
 uv run python -m terrasentry_core.reference            # live run, then cached
 uv run python -m terrasentry_core.reference --offline  # zero external calls
 uv run python -m terrasentry_core.agents --record REC-001 --model scripted
-uv run python -m terrasentry_core.agents.preflight              # live Bedrock gate check (both roles)
-uv run python -m terrasentry_core.agents --scenario high_risk_live --model bedrock  # live agents
+uv run python -m terrasentry_core.agents.preflight              # live SAP AI Core check (roles, structured output, media)
+uv run python -m terrasentry_core.agents --scenario high_risk_live --model sap      # live agents
 ```
 
 Before writing Effect code, read `node_modules/effect/AGENTS.md` (required by the repo `AGENTS.md`).
@@ -645,6 +729,13 @@ pnpm exec turbo run typecheck --filter=@terrasentry/web
 ---
 
 ## 11. Current scaffold status (2026-09-10)
+
+Historical implementation/measurement notes below retain the backend used at the time. The
+2026-10-25 SQLite decision in §5.4 supersedes older PostgreSQL/Redis setup and validation notes.
+
+> Entries below dated before 2026-10-13 mention Amazon Bedrock, AgentCore and `--model bedrock`.
+> That model mode was **removed on 2026-10-13** (see the last entry); the entries stay as written
+> because they record what was built and verified at the time.
 
 Verified locally:
 
@@ -863,14 +954,53 @@ kind and `coverage` challenges flow through the regenerated OpenAPI contract, th
 the cockpit trace/assessment panels. Live Bedrock and browser acceptance are tracked in
 `docs/milestones.md`.
 
+S4 landed (2026-10-13): the review flow, harvest rule, import screen and MCP server.
+
+- **High-risk is held for a person.** `state_for_verdict` returns `awaiting_review` for ambiguous and
+  high-risk verdicts; only compliant releases on its own. A decision (`approve` / `override`, shown in
+  the UI as **Approve supplier** / **Block supplier**) releases the DDS and plans the SAP change.
+  Approving a high-risk supplier requires a note (422 otherwise, and in the dialog).
+- **`erp_mode` per run** (`off | confirm | auto`, migration `e3a81f5c7b26`): `POST /runs`,
+  `POST /batch-runs` take it; `RunDetail.erp_pending` shows a waiting change and
+  `POST /runs/{id}/erp-action` applies it. The Joule proxy and the MCP server default to `off`.
+- **Steering:** `POST /runs/{id}/cancel` (scenario runs and batches), `GET /runs?state=`, a startup
+  sweep that fails runs a dead process left open, and the cockpit's "Run again" / "Cancel run".
+- **Specialist reports** are recorded as `report` trace steps (new `TraceKind`), and the supervisor
+  summary is shown as the "Agent brief" on the run page and in the review dialog.
+- **Rubric 1.2.0 (harvest rule):** flagged loss for a wood consignment whose plot lies at least 90 %
+  inside a wood-fibre concession held by the declared holder becomes a borderline finding that asks a
+  person "harvest or conversion?". Loss is aggregate, not located within the plot, so this routes the
+  case to review and never clears it.
+- **Interfaces:** `/review` queue (verdict filter, bulk approve or block with a confirmation naming the
+  SAP effect), `/suppliers/import` (CSV/GeoJSON with client-side checks and per-row results, then
+  "Screen all"), a "Needs your decision" tile, wood pulp/paper lots in the consignment step. Tabs and
+  separators now lay out correctly: `styles.css` defines the `data-horizontal`/`data-vertical`
+  variants that shadcn components assume.
+- **MCP server** (`apps/mcp`, mcp 2.x `MCPServer`): 12 tools over stdio or streamable HTTP. The two
+  consequential ones ask the human through MCP elicitation (a resolver), and a client that cannot ask
+  is refused. See [setup/mcp.md](setup/mcp.md).
+- Verified: 442 Python (21 of them for the MCP server), 111 web and 28 client tests; `pnpm check`; the migration chain
+  on SQLite; and a real stdio MCP session against a running API (screen, decide, confirm, read
+  evidence). Not run here: the Postgres migration check, live GFW/FIRMS, live SAP AI Core.
+
+Bedrock removed (2026-10-13): models are SAP AI Core or `scripted` only, because the committee
+provides the models and the Bedrock quota was the original blocker. Removed: `--model bedrock`,
+`BEDROCK_*` and `AWS_*` settings, `boto3`/`botocore`/`bedrock-agentcore`, `/health.bedrock_configured`
+and the cockpit's Bedrock option; `AGENT_MODEL` is now `scripted | sap` and an unknown mode raises
+instead of silently running the scripted model. Added: `terrasentry_integrations.sap_ai_core`
+(per-process cache of LiteLLM's token, deployment and configuration lookups, tested against a fake
+AI Core server: 24 requests for 4 calls became 7) and a preflight that probes structured output on the
+orchestrator and finds the working Sonar name. AWS is now documented as an optional hosting target
+that nothing calls. Live on the same day: the preflight passes on Claude 4.6 Sonnet and GPT-5.4, and full `high_risk_live` / `compliant_live` runs completed the graph on SAP AI Core. That surfaced a streamed-tool-call crash in LiteLLM (fixed in `sap_ai_core.prepare_litellm`), a too-small `AGENT_MAX_TOKENS` (now 8192), and an LLM verifier whose strictness varies from run to run (see `docs/evidence/README.md`).
+
 ## 12. Open questions to revisit
 
 | Question | Impact | Trigger to revisit |
 | --- | --- | --- |
 | SAP access: API Hub sandbox or BTP trial obtained? | `SAP_MODE=sandbox` vs `stub` | Resolved 2026-09-11: no access in the build environment → `stub`; promote by setting `SAP_MODE` + credentials (no code change) |
-| Which Bedrock region and model IDs are enabled? | Config only | Day 1 model-access check |
+| Which SAP AI Core model names does our key serve, and does the orchestrator model use the structured-output tool? | Config only (`AICORE_MODEL_*`) | `preflight` on the first live run |
 | Does GFW expose a bulk/async query endpoint for 50 polygons? | Batch wall-clock time | First 10-record pipeline run |
-| Is Neon acceptable for team dev, or install Postgres? | Dev setup friction | Team environment review |
-| Is AgentCore Runtime worth the deploy time for judging? | Stretch scope | After the batch rehearsal passes |
+| Does the demo need more than one API writer process? | Revisit server database/job coordination | Only when the single-process boundary becomes insufficient |
+| Which persistent local host should run a public API? | SQLite volume durability | Only if the API must leave the developer machine |
 | TanStack Query vs `@effect/atom-react` for client state | Cockpit state architecture | Only if client state outgrows server-cache patterns |
 | Add durable HITL (LangGraph-style interrupts)? | Approval UX | Only if in-process review proves insufficient |

@@ -47,7 +47,7 @@ export function describeError(error: unknown): ErrorCopy {
 						api.status === null
 							? `The ${api.operation} request could not reach the API.`
 							: `The ${api.operation} request failed with status ${api.status}.`,
-					hint: "Start the stack with pnpm dev (it starts Postgres and Redis), or run pnpm db:up && pnpm db:upgrade, then retry.",
+					hint: "Start the app with pnpm dev (it migrates SQLite), or run pnpm db:upgrade, then retry.",
 				};
 		}
 	}

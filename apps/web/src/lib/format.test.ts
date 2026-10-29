@@ -43,6 +43,7 @@ describe("format helpers", () => {
 	it("formats unknown evidence values", () => {
 		expect(formatValue(null)).toBe("—");
 		expect(formatValue("text")).toBe("text");
+		expect(formatValue("a".repeat(150), 10)).toBe(`${"a".repeat(9)}…`);
 		expect(formatValue(42)).toBe("42");
 		expect(formatValue({ a: 1 })).toBe('{"a":1}');
 	});

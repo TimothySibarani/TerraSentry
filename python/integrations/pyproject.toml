@@ -1,7 +1,7 @@
 [project]
 name = "terrasentry-integrations"
 version = "0.1.0"
-description = "External gateways: Global Forest Watch, NASA FIRMS, and SAP."
+description = "External gateways: Global Forest Watch, NASA FIRMS, SAP, and adverse-media search."
 requires-python = ">=3.13"
 dependencies = [
   "httpx>=0.28",
@@ -9,9 +9,10 @@ dependencies = [
   "aiolimiter>=1.2",
   "pydantic>=2.10",
   "pydantic-settings>=2.6",
-  "redis>=5.2",
+  "aiosqlite>=0.20",
   "shapely>=2.1",
   "pyproj>=3.7",
+  "litellm>=1.80",
 ]
 
 [build-system]

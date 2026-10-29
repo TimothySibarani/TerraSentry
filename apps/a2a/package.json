@@ -1,0 +1,13 @@
+{
+  "name": "@terrasentry/a2a",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd ../.. && uv run uvicorn terrasentry_a2a.server:app --app-dir apps/a2a/src --port 8080 --reload",
+    "lint": "cd ../.. && uv run ruff check apps/a2a",
+    "format": "cd ../.. && uv run ruff format apps/a2a",
+    "typecheck": "cd ../.. && uv run pyright apps/a2a/src",
+    "test": "cd ../.. && uv run pytest apps/a2a/tests",
+    "export-reqs": "cd ../.. && uv export --package terrasentry-a2a --no-hashes --no-dev --no-emit-project --no-header -o apps/a2a/requirements.txt"
+  }
+}

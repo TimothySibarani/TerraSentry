@@ -31,7 +31,7 @@ from terrasentry_core.domain.enums import (
 from terrasentry_core.domain.models import Assessment, AssessmentInput, Finding
 from terrasentry_core.evidence import EvidenceLedger
 
-RUBRIC_VERSION = "1.1.0"
+RUBRIC_VERSION = "1.2.0"
 
 #: EUDR reference date: products must come from land not deforested after 2020-12-31.
 EUDR_CUTOFF_YEAR = 2021
@@ -46,6 +46,9 @@ class RubricConfig(BaseModel):
     loss_flag_ha: float = 4.0
     loss_flag_ratio: float = 0.01
     loss_borderline_ha: float = 0.5
+    #: Share of the plot a supplier's own wood-fibre concession must cover before flagged loss is
+    #: treated as a possible plantation harvest (sent to a person) instead of a deforestation flag.
+    harvest_overlap_ratio: float = 0.9
 
     hotspot_flag_count: int = 5
     hotspot_borderline_count: int = 1
@@ -126,6 +129,43 @@ def _source_timestamp(input: AssessmentInput):
     return max(timestamps) if timestamps else None
 
 
+def _harvest_context(input: AssessmentInput, config: RubricConfig) -> str | None:
+    """Why flagged loss may be harvest of the supplier's own fibre plantation, else ``None``.
+
+    Hansen loss is aggregate, not located within the plot, so this is an approximation: the plot
+    must be a wood consignment lying (almost) wholly inside a wood-fibre concession whose holder
+    matches the declared holder. It never clears the loss; it routes it to a person.
+    """
+    layers, consignment, area = input.layers, input.consignment, input.parcel.area_ha
+    if layers is None or consignment is None or consignment.commodity != "wood" or area <= 0:
+        return None
+    layer = next(
+        (
+            item
+            for item in layers.layers
+            if item.name == "wood_fiber_concessions" and item.status == "success"
+        ),
+        None,
+    )
+    if layer is None:
+        return None
+    declared = input.supplier.declared_holder or input.supplier.legal_name
+    held_ha = min(
+        layer.overlap_ha,
+        sum(
+            feature.overlap_ha
+            for feature in layer.features
+            if holder_matches(feature.properties.get("company"), declared)
+        ),
+    )
+    if held_ha / area < config.harvest_overlap_ratio:
+        return None
+    return (
+        f"{held_ha:.2f} ha ({held_ha / area:.0%}) of the plot lies in a wood-fibre concession held by "
+        f"{declared}"
+    )
+
+
 def _evaluate_loss(
     input: AssessmentInput, ledger: EvidenceLedger, config: RubricConfig
 ) -> tuple[Finding | None, list[str]]:
@@ -136,16 +176,26 @@ def _evaluate_loss(
     ratio = post_cutoff / input.parcel.area_ha if input.parcel.area_ha > 0 else 0.0
     flagged_by_area = post_cutoff >= config.loss_flag_ha
     flagged_by_ratio = post_cutoff >= config.loss_borderline_ha and ratio >= config.loss_flag_ratio
-    if flagged_by_area or flagged_by_ratio:
+    harvest = _harvest_context(input, config) if flagged_by_area or flagged_by_ratio else None
+    if harvest is not None:
+        level, points = FindingLevel.BORDERLINE, config.loss_borderline_points
+    elif flagged_by_area or flagged_by_ratio:
         level, points = FindingLevel.FLAG, config.loss_flag_points
     elif post_cutoff >= config.loss_borderline_ha:
         level, points = FindingLevel.BORDERLINE, config.loss_borderline_points
     else:
         level, points = FindingLevel.CLEAR, 0
     detail = (
-        f"post-{config.cutoff_year} tree cover loss {post_cutoff:.2f} ha "
+        f"tree cover loss since {config.cutoff_year}: {post_cutoff:.2f} ha "
         f"({ratio:.2%} of plot) in {loss.date_window}"
     )
+    metrics: dict[str, float | int | str] = {"post_cutoff_loss_ha": post_cutoff, "loss_ratio": ratio}
+    if harvest is not None:
+        detail += (
+            f"; possible plantation harvest, needs review: {harvest}. Loss is not located within the plot, "
+            "so a person must confirm harvest rather than conversion of forest"
+        )
+        metrics["harvest_candidate"] = 1
     return (
         _metric_finding(
             ledger,
@@ -153,7 +203,7 @@ def _evaluate_loss(
             level=level,
             points=points,
             detail=detail,
-            metrics={"post_cutoff_loss_ha": post_cutoff, "loss_ratio": ratio},
+            metrics=metrics,
             source_ids=[*ledger.ids_for("loss.total_loss_ha"), *ledger.ids_for("loss.by_year")],
             input=input,
             config=config,
@@ -231,7 +281,10 @@ def _evaluate_legal(input: AssessmentInput, ledger: EvidenceLedger, config: Rubr
         detail = "declared legality record lists neither an HGU nor a PBPH permit"
     else:
         level, points = FindingLevel.CLEAR, 0
-        detail = f"permit status {supplier.permit_status!r}, HGU/PBPH present, no sanctions"
+        permits = " and ".join(
+            name for name, number in (("HGU", supplier.hgu_number), ("PBPH", supplier.pbp_number)) if number
+        )
+        detail = f"permit status {supplier.permit_status!r}, {permits} on record, no sanctions"
     return _metric_finding(
         ledger,
         code=FindingCode.LEGAL_PERMIT,
@@ -319,6 +372,8 @@ def _evaluate_context(
             for feature in layer.features[:3]
         ]
         feature_detail = f"features: {', '.join(feature_names)}; " if feature_names else ""
+        if layer.raw_overlap_ha is not None:
+            feature_detail += f"capped at plot area from raw {layer.raw_overlap_ha:.4f} ha; "
         findings.append(
             _metric_finding(
                 ledger,

@@ -1,0 +1,14 @@
+schema_version: 3.28.0
+
+metadata:
+  namespace: joule.ext
+  name: terrasentry_capability
+  version: 1.0.0
+  display_name: TerraSentry_Capability
+  description: Screen suppliers for EU deforestation-regulation risk, start AI-agent investigations, and check run status
+
+# Joule reaches the Cloud Foundry app through this BTP Destination
+# (Connectivity > Destinations: type HTTP, authentication NoAuthentication, URL = the app route).
+system_aliases:
+  TERRASENTRY_AGENT:
+    destination: TERRASENTRY_AGENT_STARTORCH

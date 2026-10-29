@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import contextlib
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
+from terrasentry_core.errors import SeedLookupError
 
-from terrasentry_api.schemas import BatchCreate, BatchSummary, RunSummary
+from terrasentry_api.schemas import BatchCreate, BatchSummary, InputBrief, RunSummary
 from terrasentry_api.services import AppServices, get_services, get_session
 from terrasentry_api.sse import event_source_response
 from terrasentry_api.store import RunStore
@@ -43,6 +45,7 @@ async def create_batch(
         refresh=payload.refresh,
         record_ids=payload.record_ids,
         mode=payload.mode,
+        erp_mode=payload.erp_mode,
         model=(payload.model or services.settings.agent_model) if payload.mode == "agent" else None,
     )
     return await _summary(RunStore(session), batch_run_id)
@@ -74,7 +77,9 @@ async def get_batch_run(batch_run_id: str, session: SessionDep) -> BatchSummary:
 
 
 @router.get("/{batch_run_id}/records", response_model=list[RunSummary])
-async def list_batch_records(batch_run_id: str, session: SessionDep) -> list[RunSummary]:
+async def list_batch_records(
+    batch_run_id: str, services: ServicesDep, session: SessionDep
+) -> list[RunSummary]:
     store = RunStore(session)
     if await store.get_run(batch_run_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"no batch run {batch_run_id!r}")
@@ -82,10 +87,15 @@ async def list_batch_records(batch_run_id: str, session: SessionDep) -> list[Run
     ids = [run.id for run in runs]
     verdicts = await store.verdicts_for(ids)
     counts = await store.step_counts(ids)
-    return [
-        RunSummary.from_row(run, verdict=verdicts.get(run.id), step_count=counts.get(run.id, 0))
-        for run in runs
-    ]
+    rows = []
+    for run in runs:
+        row = RunSummary.from_row(run, verdict=verdicts.get(run.id), step_count=counts.get(run.id, 0))
+        if run.record_id is not None:
+            # A record dropped from the registry still lists, without its brief.
+            with contextlib.suppress(SeedLookupError):
+                row.input_brief = InputBrief.from_record(services.datasets.get_record(run.record_id))
+        rows.append(row)
+    return rows
 
 
 @router.get("/{batch_run_id}/stream")

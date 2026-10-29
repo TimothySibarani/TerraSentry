@@ -10,7 +10,6 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "0f21d00d4152"
@@ -38,17 +37,17 @@ def upgrade() -> None:
         sa.Column("kabupaten", sa.String(length=64), nullable=False),
         sa.Column(
             "beneficial_owners",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column(
             "certifications",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column(
             "sanctions",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column("synthetic", sa.Boolean(), nullable=False),
@@ -67,7 +66,7 @@ def upgrade() -> None:
         sa.Column("centroid_lon", sa.Float(), nullable=False),
         sa.Column(
             "geometry",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column("archetype", sa.String(length=16), nullable=False),
@@ -110,17 +109,17 @@ def upgrade() -> None:
         sa.Column("error", sa.Text(), nullable=True),
         sa.Column(
             "disclosures",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column(
             "metrics",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column(
             "verification",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=True,
         ),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
@@ -151,7 +150,7 @@ def upgrade() -> None:
         sa.Column("run_id", sa.String(length=64), nullable=False),
         sa.Column(
             "document",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column("xml", sa.Text(), nullable=False),
@@ -173,14 +172,14 @@ def upgrade() -> None:
         sa.Column("claim", sa.String(length=128), nullable=False),
         sa.Column(
             "value",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column("unit", sa.String(length=32), nullable=True),
         sa.Column("source", sa.String(length=48), nullable=False),
         sa.Column(
             "artifact",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column("retrieved_at", sa.DateTime(timezone=True), nullable=True),
@@ -206,7 +205,7 @@ def upgrade() -> None:
         sa.Column("at", sa.DateTime(timezone=True), nullable=False),
         sa.Column(
             "payload",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
@@ -238,22 +237,22 @@ def upgrade() -> None:
         sa.Column("fingerprint", sa.String(length=64), nullable=False),
         sa.Column(
             "findings",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column(
             "citations",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column(
             "disclosures",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column(
             "data_gaps",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON(),
             nullable=False,
         ),
         sa.Column("expected_archetype", sa.String(length=16), nullable=False),
