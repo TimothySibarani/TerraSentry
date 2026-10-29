@@ -94,4 +94,14 @@ describe("ReviewDialog", () => {
 		open({ erpMode: "off" });
 		expect(screen.getAllByText(/SAP is not touched/)).toHaveLength(2);
 	});
+
+	it("renders markdown properly in the agent brief without raw markdown tokens", () => {
+		open({
+			brief:
+				"Both deep dives are complete.\n\n## Summary\n- **Deforestation** detected",
+		});
+		expect(screen.getByText("Both deep dives are complete.")).toBeDefined();
+		expect(screen.getByRole("heading", { name: "Summary" })).toBeDefined();
+		expect(screen.getByText("Deforestation")).toBeDefined();
+	});
 });

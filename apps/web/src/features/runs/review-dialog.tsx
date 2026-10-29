@@ -2,6 +2,7 @@ import type { ErpMode } from "@terrasentry/api-client";
 import { useState } from "react";
 
 import { ErrorState } from "#/components/error-state";
+import { Markdown } from "#/components/markdown";
 import { VerdictBadge } from "#/components/status-badge";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -36,7 +37,6 @@ import {
 	sapEffect,
 } from "#/features/runs/decision";
 import { useRunDecision } from "#/features/runs/mutations";
-import { truncate } from "#/lib/format";
 
 export interface ReviewFinding {
 	readonly code: string;
@@ -105,7 +105,7 @@ export function ReviewDialog({
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger render={<Button />}>Review and decide</DialogTrigger>
-			<DialogContent>
+			<DialogContent className="sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle>Decide on this supplier</DialogTitle>
 					<DialogDescription>
@@ -114,7 +114,7 @@ export function ReviewDialog({
 					</DialogDescription>
 				</DialogHeader>
 				<form
-					className="flex flex-col gap-4"
+					className="flex flex-col gap-4 min-w-0"
 					onSubmit={(event) => {
 						event.preventDefault();
 						void submit();
@@ -122,7 +122,7 @@ export function ReviewDialog({
 				>
 					<section
 						aria-label="Reviewer brief"
-						className="flex flex-col gap-2 rounded-md border border-border p-3"
+						className="flex flex-col gap-2.5 rounded-md border border-border bg-canvas-card/40 p-3 min-w-0"
 					>
 						<div className="flex items-center gap-2">
 							<span className="eyebrow-sm text-muted-foreground">
@@ -131,24 +131,31 @@ export function ReviewDialog({
 							<VerdictBadge verdict={verdict} />
 						</div>
 						{flagged.length > 0 && (
-							<ul className="flex flex-col gap-1 text-body-sm">
+							<ul className="flex flex-col gap-1.5 text-body-sm">
 								{flagged.map((finding) => (
-									<li key={finding.code} className="flex gap-2">
+									<li key={finding.code} className="flex items-start gap-2 min-w-0">
 										<Badge
 											variant={finding.level === "flag" ? "risk" : "review"}
+											className="mt-0.5 shrink-0"
 										>
 											{finding.level}
 										</Badge>
-										<span className="text-foreground">{finding.detail}</span>
+										<span className="text-foreground leading-snug break-words min-w-0">
+											{finding.detail}
+										</span>
 									</li>
 								))}
 							</ul>
 						)}
 						{brief && (
-							<p className="text-body-sm text-muted-foreground">
-								<span className="text-foreground">Agent brief: </span>
-								{truncate(brief, 280)}
-							</p>
+							<div className="flex flex-col gap-1 border-t border-border/50 pt-2 text-body-sm min-w-0">
+								<span className="text-caption-mono-sm font-medium uppercase text-muted-foreground">
+									Agent brief
+								</span>
+								<div className="max-h-56 overflow-x-hidden overflow-y-auto break-words rounded-md border border-border/50 bg-canvas-soft/60 p-3 text-xs text-muted-foreground [&_h1]:text-xs [&_h1]:font-medium [&_h1]:text-foreground [&_h2]:text-xs [&_h2]:font-medium [&_h2]:text-foreground [&_h2]:border-none [&_h2]:mt-2 [&_h2]:mb-1 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-foreground [&_p]:text-xs [&_p]:leading-relaxed [&_p]:mb-1.5 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_li]:text-xs">
+									<Markdown content={brief} />
+								</div>
+							</div>
 						)}
 					</section>
 					<FieldSet>
@@ -159,7 +166,11 @@ export function ReviewDialog({
 							className="grid gap-3"
 						>
 							{CHOICES.map((option) => (
-								<FieldLabel key={option} htmlFor={`decision-${option}`}>
+								<FieldLabel
+									key={option}
+									htmlFor={`decision-${option}`}
+									className="cursor-pointer rounded-md border border-border/70 bg-canvas-card/30 transition-colors hover:border-border hover:bg-canvas-card/60"
+								>
 									<Field orientation="horizontal">
 										<RadioGroupItem value={option} id={`decision-${option}`} />
 										<FieldContent>
