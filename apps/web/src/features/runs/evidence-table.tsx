@@ -26,20 +26,28 @@ const columns = helper.columns([
 	helper.accessor("value", {
 		header: "Value",
 		enableSorting: false,
-		cell: (info) => (
-			<details className="max-w-96 text-body-sm text-muted-foreground">
-				<summary className="cursor-pointer">
-					{formatValue(info.getValue())}
-				</summary>
-				<pre className="max-h-96 overflow-auto whitespace-pre-wrap break-all text-xs">
-					{JSON.stringify(
-						{ value: info.getValue(), artifact: info.row.original.artifact },
-						null,
-						2,
-					)}
-				</pre>
-			</details>
-		),
+		cell: (info) => {
+			const formatted = formatValue(info.getValue());
+			return (
+				<details className="max-w-[20rem] text-body-sm text-muted-foreground sm:max-w-[24rem]">
+					<summary
+						className="cursor-pointer truncate max-w-[20rem] sm:max-w-[24rem]"
+						title={formatted}
+					>
+						<span className="inline-block max-w-[18rem] truncate align-bottom sm:max-w-[22rem]">
+							{formatted}
+						</span>
+					</summary>
+					<pre className="mt-1 max-h-96 overflow-auto whitespace-pre-wrap break-all rounded bg-canvas-soft/60 p-2 text-xs">
+						{JSON.stringify(
+							{ value: info.getValue(), artifact: info.row.original.artifact },
+							null,
+							2,
+						)}
+					</pre>
+				</details>
+			);
+		},
 	}),
 	helper.accessor("unit", {
 		header: "Unit",
